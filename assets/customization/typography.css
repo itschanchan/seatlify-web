@@ -1,0 +1,122 @@
+/* ============================================
+   TYPOGRAPHY CUSTOMIZATION
+   ============================================ */
+
+:root {
+    /* Font Family */
+    --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Font Weights */
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+    /* Font Sizes */
+    --fs-xs: 12px;
+    --fs-sm: 0.875rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.2rem;
+    --fs-xl: 1.25rem;
+    --fs-2xl: 1.5rem;
+    --fs-3xl: 2rem;
+    --fs-4xl: 2.5rem;
+    --fs-5xl: 3rem;
+}
+
+body {
+    font-family: var(--font-family-base);
+    font-size: var(--fs-base);
+    font-weight: var(--fw-regular);
+}
+
+/* Header / Navbar */
+.navbar-brand {
+    font-size: var(--fs-2xl);
+    font-weight: var(--fw-semibold);
+}
+
+.nav-link {
+    font-weight: var(--fw-medium);
+}
+
+/* Main Hero Section */
+.main-title {
+    font-size: var(--fs-4xl);
+    font-weight: var(--fw-bold);
+}
+
+/* Description Section */
+.description-heading {
+    font-size: var(--fs-3xl); /* 2rem, smaller than default h1 */
+    font-weight: var(--fw-bold);
+}
+
+/* Display Features Section */
+.heading-title {
+    font-size: var(--fs-4xl);
+    font-weight: var(--fw-bold);
+}
+
+.display-features-btns {
+    font-weight: var(--fw-semibold);
+}
+
+.demo-panel-header {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-bold);
+}
+
+.demo-panel-description {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-regular);
+}
+
+/* Dashboard Sidebar */
+.sidebar-title {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-xl);
+}
+
+/* Demo Seat Planner */
+.sp-btn {
+    font-weight: var(--fw-bold);
+}
+
+.counter-available p,
+.counter-booked p {
+    font-size: var(--fs-2xl);
+    font-weight: var(--fw-bold);
+}
+
+.stage,
+.modal-btn.confirm {
+    font-weight: var(--fw-semibold);
+}
+
+.row-label,
+.total-price {
+    font-weight: var(--fw-bold);
+}
+
+.seat-btn {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+}
+
+.seat-btn::after {
+    font-size: var(--fs-xs);
+}
+
+.row-price {
+    font-size: var(--fs-sm);
+}
+
+.total-price {
+    font-size: var(--fs-lg);
+}
+
+/* Scroll Top Button */
+#scrollTopBtn i {
+    font-size: var(--fs-2xl);
+}

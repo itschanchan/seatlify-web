@@ -1,0 +1,97 @@
+
+/* ============================================
+   NAVBAR STYLES
+   ============================================ */
+.navbar {
+    padding: var(--navbar-padding-y) var(--navbar-padding-x);
+    box-shadow: var(--navbar-shadow);
+    background-color: var(--color-bg-white);
+}
+
+.container-fluid {
+    padding-left: var(--container-padding-x);
+    padding-right: var(--container-padding-x);
+}
+
+/* Brand */
+.navbar-brand {
+    color: var(--color-primary);
+    transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+    color: var(--color-primary-hover);
+}
+
+
+/* ============================================
+   NAV LINKS
+   ============================================ */
+.nav-link {
+    color: var(--color-text-muted);
+    padding: var(--nav-item-padding-y) var(--nav-item-padding-x);
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--color-primary);
+}
+
+
+/* ============================================
+   DROPDOWN STYLES
+   ============================================ */
+.dropdown-menu {
+    border: none;
+    box-shadow: var(--navbar-shadow);
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+/* Show dropdown on hover for desktop */
+@media (min-width: 768px) {
+    .nav-item.dropdown:hover .dropdown-menu {
+        display: block;
+    }
+}
+
+.dropdown-item {
+    padding: var(--dropdown-item-padding-y) var(--dropdown-item-padding-x);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 767px) {
+    :root {
+        --navbar-padding-y: 0.75rem;
+        --navbar-padding-x: 1rem;
+    }
+
+    .d-flex.gap-2 {
+        margin-top: 1rem;
+        width: 100%;
+    }
+
+    .d-flex.gap-2 button {
+        flex: 1;
+    }
+
+    .navbar-nav {
+        text-align: center;
+    }
+
+    .dropdown-menu {
+        text-align: center;
+    }
+}

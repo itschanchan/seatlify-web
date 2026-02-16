@@ -1,0 +1,213 @@
+/* ===========================
+   Base Styles
+=========================== */
+body {
+  background: #f4f6f8;
+  margin: 0;
+  padding: 0;
+}
+
+.demo-panel {
+  display: flex;
+  flex-direction: row;
+  max-width: 1200px;
+  margin: 20px auto;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.demo-content {
+  padding: 20px;
+}
+
+.planner-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+/* ===========================
+   Seat Planner / Canvas
+=========================== */
+.seat-planner-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  background: #fff;
+  border: 2px solid #ccc;
+  overflow: auto; /* allow panning */
+}
+
+/* Zoomable canvas */
+.canvas-inner {
+  position: relative;
+  width: 3000px;
+  height: 3000px;
+  transform-origin: top left;
+}
+
+/* ===========================
+   Grid Layer
+=========================== */
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(to right, #e0e0e0 1px, transparent 1px),
+    linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
+/* ===========================
+   Toolbar / Ribbon
+=========================== */
+.ribbon {
+  width: 200px;
+  background: #fff;
+  border: 2px solid #ccc;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ribbon button {
+  padding: 8px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #f8f8f8;
+  transition: 0.2s;
+}
+
+.ribbon button:hover {
+  background: #e0e0e0;
+}
+
+/* ===========================
+   Draggable Shapes
+=========================== */
+.shape {
+  position: absolute;
+  z-index: 2; /* ABOVE GRID */
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  box-sizing: border-box;
+  transition: left 0.05s, top 0.05s;
+}
+
+.shape.selected {
+  outline: 2px solid #0d6efd; /* Bootstrap primary blue */
+  z-index: 10; /* Bring to front */
+}
+
+/* Resize Handles */
+.resizer {
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 1px solid #0d6efd;
+  position: absolute;
+  display: none; /* Hidden by default */
+  z-index: 11;
+}
+
+.shape.selected .resizer {
+  display: block;
+}
+
+/* Cursor directions */
+.resizer.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+.resizer.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+.resizer.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resizer.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.shape:active {
+  cursor: grabbing;
+}
+
+/* Rectangle */
+.rect {
+  width: 80px;
+  height: 50px;
+  background: #4caf50;
+  border-radius: 4px;
+}
+
+/* Circle */
+.circle {
+  width: 50px;
+  height: 50px;
+  background: #2196f3;
+  border-radius: 50%;
+}
+
+/* Chair */
+.chair {
+  width: 40px;
+  height: 40px;
+  background: #795548;
+  border-radius: 6px;
+}
+
+/* Text & Comment */
+.text,
+.comment {
+  min-width: 60px;
+  min-height: 30px;
+  padding: 5px;
+  background: #fff8c4;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: text;
+  white-space: pre-wrap;
+}
+
+/* ===========================
+   Zoom Controls
+=========================== */
+.zoom-controls-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.zoom-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  pointer-events: auto;
+}
+
+.zoom-controls button {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.zoom-controls button:hover {
+  background: #eee;
+}
+
+/* ===========================
+   Responsive Helpers
+=========================== */
+@media (max-width: 900px) {
+  .seat-planner-container {
+    width: 100%;
+    height: 400px;
+  }
+
+  .ribbon {
+    width: 150px;
+  }
+}

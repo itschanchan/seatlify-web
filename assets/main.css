@@ -1,0 +1,201 @@
+/* ============================================
+   ADJUSTABLE VARIABLES - Edit these values
+   ============================================ */
+
+:root {
+    /* Navbar padding */
+    --navbar-padding-y: 1rem;        /* Top and bottom padding */
+    --navbar-padding-x: 1.5rem;      /* Left and right padding */
+    
+    /* Container padding */
+    --container-padding-x: 1rem;     /* Container left/right padding */
+    
+    /* Nav item spacing */
+    --nav-item-padding-x: 0.75rem;   /* Space between nav items */
+    --nav-item-padding-y: 0.5rem;    /* Top/bottom padding for nav links */
+    
+    /* Button spacing */
+    --button-gap: 0.5rem;            /* Gap between login/signup buttons */
+    --button-padding-x: 1.5rem;      /* Button left/right padding */
+    --button-padding-y: 0.5rem;      /* Button top/bottom padding */
+    
+    /* Dropdown padding */
+    --dropdown-item-padding-x: 1rem; /* Dropdown item left/right padding */
+    --dropdown-item-padding-y: 0.5rem; /* Dropdown item top/bottom padding */
+    
+ 
+
+} 
+
+/* ============================================
+   BODY & BACKGROUND
+   ============================================ */
+body {
+    background-color: var(--background-color);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   CONTAINER STYLES
+   ============================================ */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 5rem;
+}
+.main-container {
+    padding: 2rem;
+    /* margin: 2rem auto; */
+    border-bottom-left-radius: 50px;
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--main-div-color);
+}
+
+.display-features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--display-features-color);
+    min-height: 120vh;
+}
+
+.description-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+    background-color: var(--description-container-color);
+    border-top-left-radius: 50px;
+}
+
+
+.img-fluid {
+    border-radius: 2vh;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.img-wrapper {
+    overflow: hidden;
+    border-radius: 2vh;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    max-width: 100%;
+}
+
+.img-wrapper .img-fluid {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.main-logo {
+    transition: transform 0.5s ease;
+    display: block;
+}
+
+.main-logo:hover {
+    transform: scale(1.1);
+}
+
+.main-title {
+    color: var(--color-text-dark);
+    margin-bottom: 1rem;
+}
+
+.text-theme {
+    color: var(--color-primary);
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 767px) {
+    :root {
+        /* Adjust padding for mobile if needed */
+        --navbar-padding-y: 0.75rem;
+        --navbar-padding-x: 1rem;
+    }
+    
+    .d-flex.gap-2 {
+        margin-top: 1rem;
+        width: 100%;
+    }
+    
+    .d-flex.gap-2 button {
+        flex: 1;
+    }
+    
+    .navbar-nav {
+        text-align: center;
+    }
+    
+    .dropdown-menu {
+        text-align: center;
+    }
+}
+
+/* ============================================
+   HEADER SCROLL EFFECTS
+   ============================================ */
+.navbar {
+    transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+.navbar.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    background-color: rgba(0, 0, 0, 0.8) !important; /* Semi-transparent black */
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Ensure text is white on the black background */
+.navbar.fixed-header .nav-link,
+.navbar.fixed-header .navbar-brand,
+.navbar.fixed-header .btn-outline-primary {
+    color: #ffffff !important;
+    border-color: #ffffff;
+}
+
+.navbar.hidden-header {
+    transform: translateY(-100%);
+}
+
+/* ============================================
+   SCROLL TO TOP BUTTON
+   ============================================ */
+#scrollTopBtn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1050;
+    width: 3.5rem;
+    height: 3.5rem;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--color-primary); /* Red from theme */
+    color: var(--color-text-white);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease-in-out;
+}
+
+#scrollTopBtn:hover {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}

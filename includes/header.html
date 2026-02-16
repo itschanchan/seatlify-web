@@ -1,0 +1,127 @@
+<header id="header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand fw-bold" href="index.html">SEATLIFY</a>
+            
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Left-aligned nav items -->
+                <ul class="navbar-nav me-auto">
+                    <!-- Features Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="featuresDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Features
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="featuresDropdown">
+                            <li><a class="dropdown-item" href="#display-features">Seat Planner</a></li>
+                            <li><a class="dropdown-item" href="#display-features">Virtual Ticket</a></li>
+                            <li><a class="dropdown-item" href="#display-features">Invitation</a></li>
+                            <li><a class="dropdown-item" href="#display-features">Analytics</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Pricing Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="pricingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Pricing
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="pricingDropdown">
+                            <li><a class="dropdown-item" href="#">Personal</a></li>
+                            <li><a class="dropdown-item" href="#">Business</a></li>
+                            <li><a class="dropdown-item" href="#">Enterprise</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- About Us Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="aboutDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            About Us
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="aboutDropdown">
+                            <li><a class="dropdown-item" href="#">Our Story</a></li>
+                            <li><a class="dropdown-item" href="#">Team</a></li>
+                            <li><a class="dropdown-item" href="#">Careers</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Support Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="supportDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Support
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="supportDropdown">
+                            <li><a class="dropdown-item" href="#">Help Center</a></li>
+                            <li><a class="dropdown-item" href="#">Contact Us</a></li>
+                            <li><a class="dropdown-item" href="#">FAQ</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- Right-aligned buttons -->
+                <div class="d-flex gap-2">
+                    <!-- Login Button-->
+                    <button 
+                        class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#loginModal"
+                        >
+                            Login
+                    </button>
+                    
+                    <!-- Create an Event Button-->
+                    <button class="btn btn-primary" onclick="window.location.href='includes/create-event.html'">Create an Event</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Login Modal & JS -->
+<div id="loginModalContainer"></div>
+<script>
+    loadLoginModal();
+</script>
+
+<!-- Dropdown Hover Functionality -->
+<script>
+    // Add hover functionality to dropdowns for desktop only
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdowns = document.querySelectorAll('.navbar .dropdown');
+        
+        dropdowns.forEach(dropdown => {
+            const dropdownToggle = dropdown.querySelector('.dropdown-toggle');
+            const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+            
+            // Only apply hover on desktop (screen width >= 768px)
+            if (window.innerWidth >= 768) {
+                dropdown.addEventListener('mouseenter', function() {
+                    dropdownMenu.classList.add('show');
+                    dropdownToggle.setAttribute('aria-expanded', 'true');
+                });
+                
+                dropdown.addEventListener('mouseleave', function() {
+                    dropdownMenu.classList.remove('show');
+                    dropdownToggle.setAttribute('aria-expanded', 'false');
+                });
+            }
+        });
+        
+        // Re-apply on window resize
+        window.addEventListener('resize', function() {
+            const dropdowns = document.querySelectorAll('.navbar .dropdown');
+            dropdowns.forEach(dropdown => {
+                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                if (window.innerWidth < 768) {
+                    // Remove hover functionality on mobile
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    });
+</script>

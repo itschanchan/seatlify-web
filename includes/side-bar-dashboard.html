@@ -1,0 +1,68 @@
+<div class="sidebar collapsed d-flex flex-column flex-shrink-0">
+    <div class="sidebar-header">
+        <div class="sidebar-title">
+            <i class="bi bi-calendar-check-fill text-primary fs-4"></i>
+            <span class="logo-text ms-2">Seatlify</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+            <i class="bi bi-grid-fill fs-4"></i>
+        </button>
+    </div>
+    
+    <ul class="nav nav-pills flex-column mb-auto sidebar-nav">
+        <li class="nav-item">
+            <a href="#" class="nav-link active" aria-current="page">
+                <i class="bi bi-speedometer2 fs-5"></i>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="nav-link">
+                <i class="bi bi-grid-3x3-gap fs-5"></i>
+                <span class="sidebar-label">Seat Planner</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="nav-link">
+                <i class="bi bi-ticket-perforated fs-5"></i>
+                <span class="sidebar-label">Tickets</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="nav-link">
+                <i class="bi bi-people fs-5"></i>
+                <span class="sidebar-label">Attendees</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="nav-link">
+                <i class="bi bi-graph-up fs-5"></i>
+                <span class="sidebar-label">Analytics</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="mt-auto p-2 border-top border-secondary">
+        <a href="#" class="nav-link d-flex align-items-center gap-2 text-decoration-none text-muted">
+            <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle">
+            <span class="sidebar-label"><strong>User</strong></span>
+        </a>
+    </div>
+</div>
+
+<script>
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const icon = toggleBtn.querySelector('i');
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        
+        // Toggle Icon: Grid (Collapsed) <-> List (Expanded)
+        if (sidebar.classList.contains('collapsed')) {
+            icon.className = 'bi bi-grid-fill fs-4';
+        } else {
+            icon.className = 'bi bi-list fs-4';
+        }
+    });
+</script>

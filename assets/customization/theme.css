@@ -1,0 +1,75 @@
+/* assets/theme.css */
+:root {
+    /* --- 1. BRAND COLORS --- */
+    --color-primary: #dc3545;
+    --color-primary-hover: #bb2d3b;
+    --color-primary-light: #f8d7da;
+    
+    /* Bootstrap Override (Optional but helpful) */
+    --bs-primary: var(--color-primary);
+    --bs-primary-rgb: 220, 53, 69;
+
+    /* --- 2. NEUTRALS & BACKGROUNDS --- */
+    --color-bg-page: #343A40;
+    --color-bg-white: #ffffff;
+    --color-text-dark: #1f2937;
+    --color-text-muted: #495057;
+    --color-text-white: #ffffff;
+    --color-border-light: #e5e7eb;
+
+    /* --- 3. LAYOUT & SPACING (Global Tokens) --- */
+    --navbar-padding-y: 1rem;
+    --navbar-padding-x: 2rem;
+    --container-padding-x: 1rem;
+    --button-padding-y: 0.5rem;
+    --button-padding-x: 1.5rem;
+    --section-gap: 5rem;
+    --border-radius-lg: 50px;
+
+    /* --- 4. THEME MAPPING (Mapping colors to specific areas) --- */
+    --main-div-bg: var(--color-bg-white);
+    --display-features-bg: transparent;
+    --description-bg: var(--color-bg-white);
+
+    /* --- 5. DISPLAY FEATURES NAV BUTTONS --- */
+    --display-features-btn-bg: var(--color-primary);
+    --display-features-btn-bg-hover: var(--color-primary-hover);
+    --display-features-btn-text: #ffffff;
+    --display-features-btn-border: var(--color-primary);
+    --display-features-btn-shadow: rgba(220, 53, 69, 0.3);
+    --display-features-btn-shadow-active: rgba(220, 53, 69, 0.4);
+}
+
+/* ============================================
+   BOOTSTRAP BUTTON OVERRIDES
+   ============================================ */
+
+/* Primary Button - Solid Red */
+.btn-primary {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--color-primary-hover) !important;
+    border-color: var(--color-primary-hover) !important;
+    color: #ffffff !important;
+}
+
+/* Outline Primary Button - Red Border */
+.btn-outline-primary {
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: #ffffff !important;
+}

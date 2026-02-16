@@ -1,0 +1,115 @@
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Create New Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <!-- Step 1: Event Details -->
+                    <div id="step1">
+                        <div class="mb-3">
+                            <label for="eventName" class="form-label" style="color: var(--text-muted);">Event Name</label>
+                            <input type="text" class="form-control" id="eventName" placeholder="e.g. Tech Conference 2026" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="eventDate" class="form-label" style="color: var(--text-muted);">Date</label>
+                                <input type="date" class="form-control" id="eventDate" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="eventTime" class="form-label" style="color: var(--text-muted);">Start Time</label>
+                                <input type="time" class="form-control" id="eventTime" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="eventEndTime" class="form-label" style="color: var(--text-muted);">End Time</label>
+                                <input type="time" class="form-control" id="eventEndTime" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventVenue" class="form-label" style="color: var(--text-muted);">Venue</label>
+                            <select class="form-select" id="eventVenue" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                <option selected disabled value="">Select Venue</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventAttendees" class="form-label" style="color: var(--text-muted);">Expected Attendees</label>
+                            <input type="number" class="form-control" id="eventAttendees" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventDescription" class="form-label" style="color: var(--text-muted);">Description</label>
+                            <textarea class="form-control" id="eventDescription" rows="3" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Seat Planning -->
+                    <div id="step2" style="display: none;">
+                        <h6 class="mb-3" style="color: var(--text-muted);">Seat Planning Setup</h6>
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="eventTotalSeats" class="form-label" style="color: var(--text-muted);">Number of Seats</label>
+                                    <input type="number" class="form-control" id="eventTotalSeats" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="eventTotalTables" class="form-label" style="color: var(--text-muted);">Number of Tables</label>
+                                    <input type="number" class="form-control" id="eventTotalTables" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                            </div>
+                            <label class="form-label" style="color: var(--text-muted);">Initial Layout</label>
+                            <select class="form-select" id="seatLayout" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                <option value="empty">Empty Canvas</option>
+                                <option value="theater">Theater Style</option>
+                                <option value="banquet">Banquet Hall</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info bg-opacity-10 border-0" style="background-color: var(--primary); color: var(--text-main);">
+                            <i class="bi bi-info-circle me-2"></i> You can customize the seat plan fully in the Seat Planner module after creating the event.
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Ticket Setup -->
+                    <div id="step3" style="display: none;">
+                        <h6 class="mb-3" style="color: var(--text-muted);">Ticket Setup</h6>
+                        <div class="mb-3">
+                            <label class="form-label d-block" style="color: var(--text-muted);">Event Type</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="eventType" id="typeFree" value="free" checked style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                                <label class="form-check-label" for="typeFree" style="color: var(--text-main);">Free Event</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="eventType" id="typePaid" value="paid" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                                <label class="form-check-label" for="typePaid" style="color: var(--text-main);">Paid Event</label>
+                            </div>
+                        </div>
+
+                        <div id="ticketTiersContainer" style="display: none;">
+                            <label class="form-label" style="color: var(--text-muted);">Ticket Tiers</label>
+                            <div id="tiersList">
+                                <div class="row g-2 mb-2 tier-row">
+                                    <div class="col-5">
+                                        <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name (e.g. VIP)" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                    <div class="col-3">
+                                        <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="addTierBtn" style="border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-plus"></i> Add Tier</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" id="btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="btnBack" style="display: none;">Back</button>
+                <button type="button" class="btn btn-primary" id="btnNext" style="background-color: var(--primary); border-color: var(--primary);">Next</button>
+                <button type="button" class="btn btn-primary" id="btnCreate" style="background-color: var(--primary); border-color: var(--primary); display: none;">Create Event</button>
+            </div>
+        </div>
+    </div>
+</div>

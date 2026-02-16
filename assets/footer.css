@@ -1,0 +1,11 @@
+body {
+    background-color: var(--background-color);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    color: var(--font-color-white);
+}
+
+.fw-bold {
+    color: var(--font-color-white)
+}

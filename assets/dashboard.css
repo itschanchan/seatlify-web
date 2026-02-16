@@ -1,0 +1,163 @@
+:root {
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 80px;
+
+    /* Theme Integration */
+    --bg-page: var(--color-bg-page, #f4f6f8);
+    --bg-panel: var(--color-bg-white, #ffffff);
+    --bg-muted: #f8f9fa;
+    --primary: var(--color-primary, #dc3545);
+    --text-main: var(--color-text-dark, #1f2937);
+    --text-muted: var(--color-text-muted, #6c757d);
+    --border-color: var(--color-border-light, #dee2e6);
+}
+
+/* ============================
+   GLOBAL
+============================ */
+body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--text-main);
+}
+
+/* ============================
+   LAYOUT
+============================ */
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ============================
+   SIDEBAR
+============================ */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    transition: width 0.25s ease;
+    overflow: hidden;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary);
+}
+
+.sidebar-toggle {
+    border: none;
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hide labels when collapsed */
+.sidebar.collapsed .label,
+.sidebar.collapsed .logo-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-nav .nav-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: var(--bg-muted);
+    color: var(--primary);
+}
+
+.sidebar-nav .nav-link.active {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* ============================
+   MAIN CONTENT
+============================ */
+.main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    transition: margin-left 0.25s ease, width 0.25s ease;
+}
+
+.main-content.expanded {
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* ============================
+   DASHBOARD UI
+============================ */
+.demo-wrapper {
+    padding: 24px;
+    max-width: 1400px;
+    margin: auto;
+}
+
+.demo-menu,
+.event-planner-tabs,
+.demo-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+#seat-planner {
+    height: auto;
+    min-height: 500px;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-muted);
+}
+
+/* ============================
+   DROPDOWN OVERRIDES
+============================ */
+.dropdown-item:active,
+.dropdown-item:focus {
+    background-color: var(--primary);
+    color: var(--bg-panel) !important;
+}
+
+.create-event-link {
+    color: var(--primary);
+}

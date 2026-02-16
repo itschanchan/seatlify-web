@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard SPA Demo</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    >
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../assets/typography.css">
+    <link rel="stylesheet" href="../assets/dashboard.css">
+    <link rel="stylesheet" href="../assets/seat-planner.css">
+
+    <style>
+        /* Speed Dial / FAB */
+        .speed-dial-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .speed-dial-toggle {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary);
+            color: var(--bg-panel);
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .speed-dial-toggle .bi-plus-lg {
+            transition: transform 0.3s ease;
+        }
+
+        .speed-dial-menu {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            margin-bottom: 15px;
+            list-style: none;
+            padding: 0;
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+            opacity: 0;
+        }
+
+        .speed-dial-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--bg-panel);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .speed-dial-item:hover {
+            background-color: var(--primary);
+            transform: scale(1.1);
+            color: var(--bg-panel);
+        }
+
+        /* Active State */
+        .speed-dial-container.active .speed-dial-menu {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        .speed-dial-container.active .speed-dial-toggle .bi-plus-lg {
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <!-- ============================
+         SIDEBAR (Injected Once)
+    ============================ -->
+    <div class="sidebar-container" id="sidebar-container"></div>
+
+    <!-- ============================
+         MAIN CONTENT
+    ============================ -->
+    <main class="main-content expanded" id="mainContent">
+
+        <div class="demo-wrapper">
+            <div class="demo-menu mb-3 d-flex justify-content-between align-items-center">
+                <h1>Dashboard SPA Demo</h1>
+                <button
+                    class="btn btn-secondary"
+                    onclick="window.location.href='../index.html'"
+                >
+                    Go Back to Home
+                </button>
+            </div>
+
+            <div class="demo-content">
+                <div id="dashboard-content">
+                    <!-- Default content will load here -->
+                    <div class="demo-panel p-3">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================
+             SPEED DIAL (FAB)
+        ============================ -->
+        <div class="speed-dial-container" id="speedDial">
+            <div class="speed-dial-menu">
+                <a href="#" class="speed-dial-item" title="Add Event" onclick="event.preventDefault(); document.querySelector('[data-target=event-manager]').click()">
+                    <i class="bi bi-calendar-plus"></i>
+                </a>
+                <a href="#" class="speed-dial-item" title="New Seat Plan" onclick="event.preventDefault(); document.querySelector('[data-target=seat-planner]').click()">
+                    <i class="bi bi-diagram-3"></i>
+                </a>
+                <a href="#" class="speed-dial-item" title="Send Invitation" onclick="event.preventDefault(); document.querySelector('[data-target=invitations]').click()">
+                    <i class="bi bi-envelope"></i>
+                </a>
+            </div>
+            <button class="speed-dial-toggle">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </main>
+</div>
+
+<!-- ============================
+     OFFCANVAS
+============================ -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="dashboardOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Dashboard Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <label class="form-label">Grid Size</label>
+        <input type="range" class="form-range mb-3">
+
+        <label class="form-label">Seat Size</label>
+        <input type="number" class="form-control mb-3">
+
+        <button class="btn btn-danger w-100">Clear Canvas</button>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SortableJS (Required for Event Manager) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+<!-- Simulated Database -->
+<script src="../js/simulated-db.js"></script>
+
+<!-- ============================
+     SPA Dashboard Loader
+============================ -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ----------------------------
+    // Load Sidebar once
+    // ----------------------------
+    fetch("side-bar-dashboard.html")
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("sidebar-container").innerHTML = html;
+
+            // Sidebar toggle
+            const sidebar = document.getElementById("sidebar");
+            const mainContent = document.getElementById("mainContent");
+            const toggleBtn = document.getElementById("sidebarToggle");
+
+            // Initialize sidebar as collapsed
+            if (sidebar) sidebar.classList.add("collapsed");
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener("click", () => {
+                    sidebar.classList.toggle("collapsed");
+                    mainContent.classList.toggle("expanded");
+                });
+            }
+
+            // ----------------------------
+            // Sidebar link click handling
+            // ----------------------------
+            document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+                link.addEventListener('click', async e => {
+                    e.preventDefault();
+
+                    // Remove active class from all links
+                    document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+
+                    const target = link.dataset.target; // e.g. "event-manager" or "seat-planner"
+                    const container = document.getElementById("dashboard-content");
+                    
+                    if (target === "dashboard") {
+                        container.innerHTML = `<div class="demo-panel p-3">Loading Dashboard...</div>`;
+                        try {
+                            const res = await fetch("../dashboard/dashboard-content.html");
+                            if (res.ok) {
+                                container.innerHTML = await res.text();
+                                if (typeof initDashboard === 'function') initDashboard();
+                            }
+                            else container.innerHTML = `<p class="text-danger">Failed to load Dashboard.</p>`;
+                        } catch (err) {
+                            container.innerHTML = `<p class="text-danger">Error loading Dashboard.</p>`;
+                        }
+                    }
+
+                    // Load content dynamically based on target
+                    if(target === "event-manager") {
+                        const em = document.getElementById("event-manager");
+                        if(!em || !em.dataset.loaded) {
+                            container.innerHTML = `<div id="event-manager" class="demo-panel p-3">Loading Event Manager...</div>`;
+                            await loadEventManager();
+                        }
+                    }
+
+                    if(target === "seat-planner") {
+                        if(!document.getElementById("seat-planner")?.dataset.loaded) {
+                            container.innerHTML = `<div id="seat-planner" class="demo-panel p-3">Loading Seat Planner...</div>`;
+                            await loadSeatPlanner();
+                        } else {
+                            container.innerHTML = document.getElementById("seat-planner").outerHTML;
+                        }
+                    }
+
+                    if(target === "tickets") {
+                        container.innerHTML = `<div class="demo-panel p-3">Loading Tickets...</div>`;
+                        try {
+                            const res = await fetch("../dashboard/tickets.html");
+                            if (res.ok) container.innerHTML = await res.text();
+                            else container.innerHTML = `<p class="text-danger">Failed to load Tickets.</p>`;
+                        } catch (err) {
+                            container.innerHTML = `<p class="text-danger">Error loading Tickets.</p>`;
+                        }
+                    }
+
+                    if(target === "analytics") {
+                        container.innerHTML = `<div class="demo-panel p-3">Loading Analytics...</div>`;
+                        try {
+                            const res = await fetch("../dashboard/analytics.html");
+                            if (res.ok) container.innerHTML = await res.text();
+                            else container.innerHTML = `<p class="text-danger">Failed to load Analytics.</p>`;
+                        } catch (err) {
+                            container.innerHTML = `<p class="text-danger">Error loading Analytics.</p>`;
+                        }
+                    }
+
+                    if(target === "finance") {
+                        container.innerHTML = `<div class="demo-panel p-3">Loading Finance...</div>`;
+                        try {
+                            const res = await fetch("../dashboard/finance.html");
+                            if (res.ok) container.innerHTML = await res.text();
+                            else container.innerHTML = `<p class="text-danger">Failed to load Finance.</p>`;
+                        } catch (err) {
+                            container.innerHTML = `<p class="text-danger">Error loading Finance.</p>`;
+                        }
+                    }
+
+                    if(target === "invitations") {
+                        container.innerHTML = `<div class="demo-panel p-3">Loading Invitations...</div>`;
+                        try {
+                            const res = await fetch("../dashboard/invitations.html");
+                            if (res.ok) container.innerHTML = await res.text();
+                            else container.innerHTML = `<p class="text-danger">Failed to load Invitations.</p>`;
+                        } catch (err) {
+                            container.innerHTML = `<p class="text-danger">Error loading Invitations.</p>`;
+                        }
+                    }
+                });
+            });
+
+            // Load default tab: Dashboard
+            const defaultLink = document.querySelector('.sidebar-nav .nav-link[data-target="dashboard"]');
+            if(defaultLink) defaultLink.click();
+        })
+        .catch(err => console.error("Sidebar load failed:", err));
+
+    // ----------------------------
+    // Lazy load Event Manager
+    // ----------------------------
+    async function loadEventManager() {
+        const container = document.getElementById("event-manager");
+        if (!container) return;
+        try {
+            const res = await fetch("../dashboard/event-manager.html");
+            container.innerHTML = await res.text();
+
+            // Load JS
+            if(!document.querySelector(`script[src="../js/event-manager.js"]`)) {
+                const s = document.createElement("script");
+                s.src = "../js/event-manager.js";
+                s.onload = () => {
+                    if(typeof initEventManager === "function") initEventManager();
+                    container.dataset.loaded = true;
+                };
+                document.body.appendChild(s);
+            } else {
+                container.dataset.loaded = true;
+                if(typeof initEventManager === "function") initEventManager();
+            }
+        } catch(err) {
+            console.error(err);
+            container.innerHTML = `<p class="text-danger">Failed to load Event Manager.</p>`;
+        }
+    }
+
+    // ----------------------------
+    // Lazy load Seat Planner
+    // ----------------------------
+    async function loadSeatPlanner() {
+        const container = document.getElementById("seat-planner");
+        if (!container) return;
+        try {
+            const res = await fetch("../dashboard/seat-planner.html");
+            container.innerHTML = await res.text();
+
+            // Initialize Bootstrap dropdowns
+            container.querySelectorAll(".dropdown-toggle")
+                .forEach(el => new bootstrap.Dropdown(el));
+
+            // Load JS
+            if(!document.querySelector(`script[src="../js/seat-planner.js"]`)) {
+                const s = document.createElement("script");
+                s.src = "../js/seat-planner.js";
+                s.onload = () => {
+                    if(typeof initSeatPlanner === "function") initSeatPlanner();
+                    container.dataset.loaded = true;
+                };
+                document.body.appendChild(s);
+            } else {
+                container.dataset.loaded = true;
+                if(typeof initSeatPlanner === "function") initSeatPlanner();
+            }
+        } catch(err) {
+            console.error(err);
+            container.innerHTML = `<p class="text-danger">Failed to load Seat Planner.</p>`;
+        }
+    }
+
+    // ----------------------------
+    // Speed Dial Handler
+    // ----------------------------
+    const speedDialContainer = document.getElementById('speedDial');
+    if (speedDialContainer) {
+        const speedDialToggle = speedDialContainer.querySelector('.speed-dial-toggle');
+        speedDialToggle.addEventListener('click', () => {
+            speedDialContainer.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!speedDialContainer.contains(e.target) && speedDialContainer.classList.contains('active')) {
+                speedDialContainer.classList.remove('active');
+            }
+        });
+    }
+});
+
+// ==========================================
+// DASHBOARD LOGIC (Simulated Data Binding)
+// ==========================================
+let dashboardFilter = 'current'; // 'current' or 'past'
+
+function initDashboard() {
+    // Bind Tabs
+    const tabCurrent = document.getElementById('tabCurrent');
+    const tabPast = document.getElementById('tabPast');
+
+    if (tabCurrent && tabPast) {
+        tabCurrent.addEventListener('click', (e) => {
+            e.preventDefault();
+            setDashboardFilter('current');
+        });
+        tabPast.addEventListener('click', (e) => {
+            e.preventDefault();
+            setDashboardFilter('past');
+        });
+    }
+
+    // Initial Load
+    setDashboardFilter('current');
+
+    // Listen for DB updates to refresh dropdown
+    window.addEventListener('db-events-updated', () => setDashboardFilter(dashboardFilter));
+}
+
+function setDashboardFilter(filter) {
+    dashboardFilter = filter;
+    
+    // Update UI Tabs
+    const tabCurrent = document.getElementById('tabCurrent');
+    const tabPast = document.getElementById('tabPast');
+    if (tabCurrent && tabPast) {
+        if (filter === 'current') {
+            tabCurrent.classList.add('active');
+            tabCurrent.style.backgroundColor = 'var(--primary)';
+            tabCurrent.style.color = '#fff';
+            
+            tabPast.classList.remove('active');
+            tabPast.style.backgroundColor = 'transparent';
+            tabPast.style.color = 'var(--text-muted)';
+        } else {
+            tabPast.classList.add('active');
+            tabPast.style.backgroundColor = 'var(--primary)';
+            tabPast.style.color = '#fff';
+
+            tabCurrent.classList.remove('active');
+            tabCurrent.style.backgroundColor = 'transparent';
+            tabCurrent.style.color = 'var(--text-muted)';
+        }
+    }
+
+    renderEventDropdown();
+    
+    // Select first event of the filtered list
+    const events = getFilteredEvents();
+    if (events.length > 0) {
+        renderDashboardEvent(events[0].event_id);
+    } else {
+        clearDashboardView();
+    }
+}
+
+function getFilteredEvents() {
+    const allEvents = MockDB.getEvents();
+    if (dashboardFilter === 'current') {
+        return allEvents.filter(e => e.status === 'draft' || e.status === 'published');
+    } else {
+        return allEvents.filter(e => e.status === 'completed' || e.status === 'cancelled');
+    }
+}
+
+function renderEventDropdown() {
+    const events = getFilteredEvents();
+    const list = document.getElementById('dashboardEventDropdownList');
+    if (!list) return;
+
+    list.innerHTML = '<li><h6 class="dropdown-header">Switch Event</h6></li>';
+    if (events.length === 0) {
+        list.innerHTML += '<li><span class="dropdown-item text-muted">No events found</span></li>';
+        return;
+    }
+
+    events.forEach(evt => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.className = 'dropdown-item';
+        a.href = '#';
+        a.textContent = evt.title;
+        a.onclick = (e) => {
+            e.preventDefault();
+            renderDashboardEvent(evt.event_id);
+        };
+        li.appendChild(a);
+        list.appendChild(li);
+    });
+}
+
+function renderDashboardEvent(id) {
+    const events = MockDB.getEvents();
+    const event = events.find(e => e.event_id == id);
+    if(!event) return;
+    
+    // Store current ID for other modules (like Seat Planner)
+    localStorage.setItem('seatlify_current_event_id', id);
+
+    // Update Dropdown Label
+    const dropdownBtn = document.getElementById('dashboardSelectedEvent');
+    if(dropdownBtn) dropdownBtn.textContent = event.title;
+
+    // Update Details
+    document.getElementById('dashboardTitle').textContent = event.title;
+    
+    // Status Badge
+    const statusBadge = document.getElementById('dashboardStatusBadge');
+    if (statusBadge) {
+        statusBadge.textContent = event.status.charAt(0).toUpperCase() + event.status.slice(1);
+        let badgeClass = 'bg-secondary';
+        if (event.status === 'published') badgeClass = 'bg-success';
+        if (event.status === 'draft') badgeClass = 'bg-warning text-dark';
+        if (event.status === 'cancelled') badgeClass = 'bg-danger';
+        statusBadge.className = `badge ${badgeClass}`;
+    }
+
+    document.getElementById('dashboardDescription').textContent = event.description || '';
+
+    const venue = MockDB.getVenueById(event.venue_id);
+    document.getElementById('dashboardVenue').innerHTML = `<i class="bi bi-geo-alt me-1"></i> ${venue ? venue.name : 'Unknown Venue'}`;
+
+    // Update Seats Available
+    const seatsEl = document.getElementById('dashboardSeatsAvailable');
+    if (seatsEl) seatsEl.textContent = event.total_seats || 0;
+
+    // Update Attendees
+    const attendeesEl = document.getElementById('dashboardAttendees');
+    if (attendeesEl) attendeesEl.textContent = event.attendees || 0;
+
+    // Update Tickets Sold
+    const ticketsEl = document.getElementById('dashboardTicketsSold');
+    if (ticketsEl) {
+        if (event.is_paid) {
+            ticketsEl.textContent = "0"; // Placeholder for actual sales
+        } else {
+            ticketsEl.textContent = "Free";
+        }
+    }
+
+    // Update Revenue
+    const revenueEl = document.getElementById('dashboardRevenue');
+    if (revenueEl) {
+        if (event.is_paid) {
+            revenueEl.textContent = "₱0"; // Placeholder for actual revenue
+        } else {
+            revenueEl.textContent = "No Revenue";
+        }
+    }
+
+    // Date & Time
+    const start = new Date(event.start_datetime);
+    const end = event.end_datetime ? new Date(event.end_datetime) : null;
+    
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    document.getElementById('dashboardDateDay').textContent = start.getDate();
+    document.getElementById('dashboardDateMonth').textContent = months[start.getMonth()];
+
+    const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
+                    (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
+    document.getElementById('dashboardTime').innerHTML = `<i class="bi bi-clock me-1"></i> ${timeStr}`;
+
+    // Countdown Logic
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize to midnight for accurate day calculation
+    const eventDate = new Date(start);
+    eventDate.setHours(0, 0, 0, 0);
+
+    const diffTime = eventDate - now;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    const countVal = document.getElementById('dashboardCountdownValue');
+    const countTitle = document.getElementById('dashboardCountdownTitle');
+    const countSub = document.getElementById('dashboardCountdownSubtext');
+
+    if (countVal) {
+        if (diffDays > 0) {
+            countVal.textContent = diffDays;
+            if (countTitle) countTitle.textContent = "Days Until Event";
+            if (countSub) countSub.textContent = "Prepare your checklist!";
+        } else if (diffDays === 0) {
+            countVal.textContent = "Today";
+            if (countTitle) countTitle.textContent = "Event is Happening";
+            if (countSub) countSub.textContent = "Good luck!";
+        } else {
+            countVal.textContent = Math.abs(diffDays);
+            if (countTitle) countTitle.textContent = "Days Since Event";
+            if (countSub) countSub.textContent = "Event completed.";
+        }
+    }
+
+    // Draft Action Logic
+    const draftAction = document.getElementById('dashboardDraftAction');
+    if (draftAction) {
+        if (event.status === 'draft') {
+            draftAction.style.display = 'block';
+            const btnPublish = document.getElementById('btnPublishNow');
+            if (btnPublish) {
+                // Clone to strip old listeners
+                const newBtn = btnPublish.cloneNode(true);
+                btnPublish.parentNode.replaceChild(newBtn, btnPublish);
+                
+                newBtn.addEventListener('click', () => {
+                    if (confirm(`Publish "${event.title}" now?`)) {
+                        MockDB.updateEvent(event.event_id, { status: 'published' });
+                        renderDashboardEvent(event.event_id); // Refresh view
+                    }
+                });
+            }
+        } else {
+            draftAction.style.display = 'none';
+        }
+    }
+}
+
+function clearDashboardView() {
+    const dropdownBtn = document.getElementById('dashboardSelectedEvent');
+    if(dropdownBtn) dropdownBtn.textContent = "No Events Found";
+
+    document.getElementById('dashboardTitle').textContent = "-";
+    const statusBadge = document.getElementById('dashboardStatusBadge');
+    if(statusBadge) { statusBadge.textContent = ""; statusBadge.className = "badge"; }
+    
+    document.getElementById('dashboardDescription').textContent = "No events in this category.";
+    document.getElementById('dashboardVenue').innerHTML = `<i class="bi bi-geo-alt me-1"></i> -`;
+    document.getElementById('dashboardTime').innerHTML = `<i class="bi bi-clock me-1"></i> -`;
+    document.getElementById('dashboardDateDay').textContent = "-";
+    document.getElementById('dashboardDateMonth').textContent = "-";
+    
+    document.getElementById('dashboardSeatsAvailable').textContent = "0";
+    document.getElementById('dashboardAttendees').textContent = "0";
+    document.getElementById('dashboardTicketsSold').textContent = "0";
+    document.getElementById('dashboardRevenue').textContent = "₱0";
+    
+    document.getElementById('dashboardCountdownValue').textContent = "-";
+    document.getElementById('dashboardCountdownSubtext').textContent = "-";
+
+    const draftAction = document.getElementById('dashboardDraftAction');
+    if(draftAction) draftAction.style.display = 'none';
+}
+</script>
+</body>
+</html>

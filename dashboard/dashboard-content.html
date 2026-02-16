@@ -1,0 +1,156 @@
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Dashboard Overview</h2>
+
+    <!-- Search & Navigation Bar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3 p-3 rounded shadow-sm" style="background-color: var(--bg-panel);">
+        <!-- Search Bar -->
+        <div class="input-group" style="max-width: 400px;">
+            <span class="input-group-text border-end-0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-start-0 ps-0" placeholder="Search events..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main); box-shadow: none;">
+            <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);">Search</button>
+        </div>
+
+        <!-- Nav Pills -->
+        <ul class="nav nav-pills">
+            <li class="nav-item">
+                <a class="nav-link active" id="tabCurrent" href="#" style="background-color: var(--primary);">Current</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tabPast" href="#" style="color: var(--text-muted);">Past Events</a>
+            </li>
+
+            <li>
+                <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);" onclick="openCreateEventModal()">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Event
+                </button>
+            </li>
+
+        </ul>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <div class="d-flex align-items-center mb-3">
+            <h4 class="mb-0 me-2" style="color: var(--text-muted);">Managing:</h4>
+            <div class="dropdown me-3">
+                <button id="dashboardSelectedEvent" class="btn btn-link fw-bold text-decoration-none dropdown-toggle p-0 fs-4" style="color: var(--text-main);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Select Event
+                </button>
+                <ul id="dashboardEventDropdownList" class="dropdown-menu" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Event Details & Countdown Row -->
+        <div class="row g-4 mb-4">
+            <!-- Event Details -->
+            <div class="col-lg-8">
+                <div class="card h-100 shadow-sm border-0" style="background-color: var(--bg-panel);">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3" style="color: var(--text-muted);">Event Details</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="rounded p-3 me-3 text-center" style="min-width: 80px; background-color: var(--bg-muted);">
+                                <h3 id="dashboardDateDay" class="mb-0" style="color: var(--primary);">-</h3>
+                                <small id="dashboardDateMonth" class="fw-bold">-</small>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h3 id="dashboardTitle" class="mb-0" style="color: var(--text-main);">Loading...</h3>
+                                    <span id="dashboardStatusBadge" class="badge bg-secondary"></span>
+                                </div>
+                                <p id="dashboardDescription" class="mb-1 text-muted small"></p>
+                                <p id="dashboardVenue" class="mb-0" style="color: var(--text-muted);"><i class="bi bi-geo-alt me-1"></i> -</p>
+                                <p id="dashboardTime" class="mb-0" style="color: var(--text-muted);"><i class="bi bi-clock me-1"></i> -</p>
+                                
+                                <div id="dashboardDraftAction" class="mt-3 p-3 rounded bg-warning bg-opacity-10 border border-warning" style="display: none;">
+                                    <p class="mb-2 fw-bold text-warning-emphasis"><i class="bi bi-info-circle-fill me-2"></i> Finish setting up your event?</p>
+                                    <button id="btnPublishNow" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm">Publish Now!</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Countdown -->
+            <div class="col-lg-4">
+                <div class="card h-100 shadow-sm border-0 text-white" style="background-color: var(--primary);">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                        <h5 id="dashboardCountdownTitle" class="card-title opacity-75">Days Until Event</h5>
+                        <h1 id="dashboardCountdownValue" class="display-1 fw-bold mb-0">-</h1>
+                        <p id="dashboardCountdownSubtext" class="mb-0">Prepare your checklist!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'seat-planner\']').click()">
+                    <div class="card-body">
+                        <p class="mb-1" style="color: var(--text-muted);">Seats Available</p>
+                        <h3 id="dashboardSeatsAvailable" class="mb-0" style="color: var(--text-main);">0</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> 12% left</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'analytics\']').click()">
+                    <div class="card-body">
+                        <p class="mb-1" style="color: var(--text-muted);">Attendees</p>
+                        <h3 id="dashboardAttendees" class="mb-0" style="color: var(--text-main);">0</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> 5% new</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'tickets\']').click()">
+                    <div class="card-body">
+                        <p class="mb-1" style="color: var(--text-muted);">Tickets Sold</p>
+                        <h3 id="dashboardTicketsSold" class="mb-0" style="color: var(--text-main);">0</h3>
+                        <small style="color: var(--text-muted);">Target: 1000</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'finance\']').click()">
+                    <div class="card-body">
+                        <p class="mb-1" style="color: var(--text-muted);">Revenue</p>
+                        <h3 id="dashboardRevenue" class="mb-0" style="color: var(--text-main);">₱450k</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> 8% increase</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="card shadow-sm border-0" style="background-color: var(--bg-panel);">
+        <div class="card-header border-0 pt-4 ps-4" style="background-color: var(--bg-panel);">
+            <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="card-body">
+            <div class="list-group list-group-flush">
+                <div class="text-center py-3 text-muted small">No recent activity</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .press-card {
+        cursor: pointer;
+        transition: transform 0.1s ease-in-out;
+    }
+    .press-card:active {
+        transform: scale(0.95);
+    }
+</style>
+
+<!-- Container for the Create Event Modal -->
+<div id="createEventModalContainer"></div>

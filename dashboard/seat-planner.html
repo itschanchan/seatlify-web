@@ -1,0 +1,122 @@
+<div class="d-flex flex-column align-items-center w-100">
+    
+    <!-- CANVAS WRAPPER -->
+    <div class="position-relative mb-3 shadow-sm border rounded overflow-hidden w-100">
+        <!-- CANVAS -->
+        <div class="seat-planner-container" id="canvas" style="border: none;">
+            <div class="canvas-inner" id="canvasInner">
+                <div class="grid"></div>
+            </div>
+        </div>
+
+        <!-- ZOOM CONTROLS -->
+        <div class="zoom-controls-container">
+            <div class="zoom-controls">
+                <button id="zoomIn" class="btn btn-light btn-sm border">+</button>
+                <button id="zoomOut" class="btn btn-light btn-sm border">−</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="btn-toolbar gap-1 justify-content-center p-2 bg-white rounded shadow-sm border" id="seatPlannerToolbar">
+
+        <!-- Select -->
+        <button class="btn btn-outline-secondary tool-btn active" data-tool="select">
+            <i class="bi bi-cursor-fill"></i>
+        </button>
+
+        <!-- Rectangle + Circle Dropdown -->
+        <div class="btn-group">
+            <button
+                class="btn btn-outline-secondary tool-btn"
+                id="shapeMainBtn"
+                data-tool="rect"
+            >
+                <i id="shapeMainIcon" class="bi bi-square"></i>
+            </button>
+
+            <button
+                class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                data-bs-toggle="dropdown"
+            ></button>
+
+            <ul class="dropdown-menu">
+                <li>
+                    <button class="dropdown-item shape-option" data-tool="rect" data-icon="bi-square">
+                        <i class="bi bi-square me-2"></i> Rectangle
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item shape-option" data-tool="circle" data-icon="bi-circle">
+                        <i class="bi bi-circle me-2"></i> Circle
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Text -->
+        <button class="btn btn-outline-secondary tool-btn" data-tool="text">
+            <i class="bi bi-type"></i>
+        </button>
+
+        <!-- Chair -->
+        <button class="btn btn-outline-secondary tool-btn" data-tool="chair">
+            <i class="bi bi-chair"></i>
+        </button>
+
+        <!-- Comment -->
+        <button class="btn btn-outline-secondary tool-btn" data-tool="comment">
+            <i class="bi bi-chat-left-text"></i>
+        </button>
+
+        <!-- Toggle Grid -->
+        <button class="btn btn-outline-secondary" id="toggleGrid">
+            <i class="bi bi-grid"></i>
+        </button>
+
+        <!-- Clear Button -->
+        <button class="btn btn-outline-danger" id="clearBtn">
+            <i class="bi bi-trash"></i>
+        </button>
+
+        <div class="vr mx-2"></div>
+
+        <!-- Bulk Add -->
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bulkAddModal" title="Bulk Add">
+            <i class="bi bi-collection"></i>
+        </button>
+
+        <!-- Save Button -->
+        <button class="btn btn-primary ms-2" id="savePlanBtn">
+            Save
+        </button>
+    </div>
+
+    <!-- Bulk Add Modal -->
+    <div class="modal fade" id="bulkAddModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Bulk Add</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" id="bulkType">
+                            <option value="chair">Chairs</option>
+                            <option value="rect">Tables (Rect)</option>
+                            <option value="circle">Tables (Circle)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="bulkQty" value="10" min="1" max="100">
+                    </div>
+                    <button type="button" class="btn btn-primary w-100" id="confirmBulkAdd" data-bs-dismiss="modal">Add Items</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

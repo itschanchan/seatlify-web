@@ -1,0 +1,37 @@
+<div class="seatmap-container">
+  <div class="seatmap-grid">
+
+    <div class="sp-panel">
+      <div class="sp-header">
+        <div>
+          <h2 class="fw-bold">Seat Booking</h2>
+          <p class="text-muted">Choose your seat • Prices in PHP</p>
+        </div>
+        <button class="sp-btn" id="resetBtn">
+          Reset Seats
+        </button>
+      </div>
+
+      <div class="counter-grid">
+        <div class="counter counter-available">
+          <p id="availableCount">0</p>Available
+        </div>
+        <div class="counter counter-booked">
+          <p id="bookedCount">0</p>Booked
+        </div>
+      </div>
+
+      <div class="stage">STAGE</div>
+      <div id="seatContainer" class="seat-buttons-container"></div>
+    </div>
+
+    <div class="sp-panel">
+      <h2 class="fw-bold mb-3">Selected Seats</h2>
+      <div id="selectedSeatsContainer">
+        No seats selected yet
+      </div>
+      <div class="total-price" id="totalPrice"></div>
+    </div>
+
+  </div>
+</div>
