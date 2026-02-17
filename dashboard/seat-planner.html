@@ -1,120 +1,211 @@
 <div class="d-flex flex-column align-items-center w-100">
-    
-    <!-- CANVAS WRAPPER -->
-    <div class="position-relative mb-3 shadow-sm border rounded overflow-hidden w-100">
-        <!-- CANVAS -->
-        <div class="seat-planner-container" id="canvas" style="border: none;">
-            <div class="canvas-inner" id="canvasInner">
-                <div class="grid"></div>
-            </div>
-        </div>
+    <style>
+        .grid {
+            background-image:
+                linear-gradient(to right, var(--border-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--border-color) 1px, transparent 1px) !important;
+        }
+    </style>
 
-        <!-- ZOOM CONTROLS -->
-        <div class="zoom-controls-container">
-            <div class="zoom-controls">
-                <button id="zoomIn" class="btn btn-light btn-sm border">+</button>
-                <button id="zoomOut" class="btn btn-light btn-sm border">−</button>
-            </div>
+    <!-- NAV BAR -->
+    <div class="seat-planner-nav-container mb-3 d-flex justify-content-between align-items-center w-100">
+        <ul class="nav nav-pills" id="seatPlannerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-chart-tab" data-bs-toggle="pill" data-bs-target="#pills-chart" type="button" role="tab" aria-controls="pills-chart" aria-selected="true">Chart</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-blueprint-tab" data-bs-toggle="pill" data-bs-target="#pills-blueprint" type="button" role="tab" aria-controls="pills-blueprint" aria-selected="false">Blueprint</button>
+            </li>
+        </ul>
+
+        <!-- Seat Counter -->
+        <div class="d-flex align-items-center gap-2 px-3 py-2 rounded shadow-sm" style="background-color: var(--bg-panel); border: 1px solid var(--border-color);">
+            <i class="bi bi-person-workspace" style="color: var(--text-muted);"></i>
+            <span style="color: var(--text-muted);">Total Seats:</span>
+            <span id="plannerTotalSeats" class="fw-bold" style="color: var(--primary);">0</span>
         </div>
     </div>
 
-    <!-- TOOLBAR -->
-    <div class="btn-toolbar gap-1 justify-content-center p-2 bg-white rounded shadow-sm border" id="seatPlannerToolbar">
+    <div class="tab-content w-100" id="seatPlannerTabContent">
+        <!-- CHART VIEW -->
+        <div class="tab-pane fade show active" id="pills-chart" role="tabpanel" aria-labelledby="pills-chart-tab">
+            <div class="p-3 border rounded" style="background-color: var(--bg-panel); color: var(--text-muted); border-color: var(--border-color) !important;">
+                <div class="d-flex h-100">
+                    <!-- Guest List Sidebar -->
+                    <div id="guestListSidebar" class="d-flex flex-column border-end pe-2" style="width: 280px; min-width: 200px; max-width: 50%; border-color: var(--border-color) !important;">
+                        <h5 class="mb-3" style="color: var(--text-main);">Guest List</h5>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Search..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div id="chartGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 500px;">
+                            <!-- Populated by JS -->
+                            <div class="text-center text-muted small mt-5">Loading guests...</div>
+                        </div>
+                    </div>
 
-        <!-- Select -->
-        <button class="btn btn-outline-secondary tool-btn active" data-tool="select">
-            <i class="bi bi-cursor-fill"></i>
-        </button>
+                    <!-- Resizer Handle -->
+                    <div id="guestListResizer"></div>
 
-        <!-- Rectangle + Circle Dropdown -->
-        <div class="btn-group">
-            <button
-                class="btn btn-outline-secondary tool-btn"
-                id="shapeMainBtn"
-                data-tool="rect"
-            >
-                <i id="shapeMainIcon" class="bi bi-square"></i>
-            </button>
-
-            <button
-                class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
-                data-bs-toggle="dropdown"
-            ></button>
-
-            <ul class="dropdown-menu">
-                <li>
-                    <button class="dropdown-item shape-option" data-tool="rect" data-icon="bi-square">
-                        <i class="bi bi-square me-2"></i> Rectangle
-                    </button>
-                </li>
-                <li>
-                    <button class="dropdown-item shape-option" data-tool="circle" data-icon="bi-circle">
-                        <i class="bi bi-circle me-2"></i> Circle
-                    </button>
-                </li>
-            </ul>
+                    <!-- Chart Area -->
+                    <div class="flex-grow-1 ps-2" style="min-width: 0;">
+                        <div class="d-flex gap-2 justify-content-start align-items-center mb-3">
+                            <button class="btn btn-outline-secondary" id="btnAddRow" style="color: var(--text-main); border-color: var(--border-color);">
+                                <i class="bi bi-layout-three-columns"></i> Add Row
+                            </button>
+                            <button class="btn btn-outline-secondary" id="btnAddSeat" style="color: var(--text-main); border-color: var(--border-color);">
+                                <i class="bi bi-square"></i> Add Seat
+                            </button>
+                            <button class="btn btn-outline-secondary" id="btnAddTable" style="color: var(--text-main); border-color: var(--border-color);">
+                                <i class="bi bi-circle"></i> Add Table
+                            </button>
+                            <div class="vr"></div>
+                            <button class="btn btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
+                                <i class="bi bi-list-ul"></i> Row
+                            </button>
+                            <button class="btn btn-outline-secondary" id="btnGroupTable" title="Group by Table" style="color: var(--text-main); border-color: var(--border-color);">
+                                <i class="bi bi-grid-3x3"></i> Table
+                            </button>
+                            <div class="vr"></div>
+                            <button class="btn btn-primary" id="btnAutoBuild" style="background-color: var(--primary); border-color: var(--primary);">
+                                <i class="bi bi-magic"></i> Auto Build
+                            </button>
+                            <button class="btn btn-outline-danger" id="btnClearChart">
+                                <i class="bi bi-trash"></i> Clear
+                            </button>
+                            <div class="vr mx-2"></div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="toggleRowLabels" checked style="cursor: pointer;">
+                                <label class="form-check-label" for="toggleRowLabels" style="color: var(--text-main); cursor: pointer;">Row Labels</label>
+                            </div>
+                        </div>
+                        <div id="chartViewContainer" class="p-3 border rounded" style="min-height: 400px; background-color: var(--bg-muted);">
+                            <div class="text-center text-muted">Click 'Auto Build' to generate a layout based on event seat count.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Text -->
-        <button class="btn btn-outline-secondary tool-btn" data-tool="text">
-            <i class="bi bi-type"></i>
-        </button>
+        <!-- BLUEPRINT VIEW -->
+        <div class="tab-pane fade" id="pills-blueprint" role="tabpanel" aria-labelledby="pills-blueprint-tab">
+        <!-- CANVAS WRAPPER -->
+        <div class="position-relative mb-3 shadow-sm border rounded overflow-hidden w-100">
+            <!-- CANVAS -->
+            <div class="seat-planner-container" id="canvas" style="border: none; background-color: var(--bg-panel);">
+                <div class="canvas-inner" id="canvasInner">
+                    <div class="grid"></div>
+                </div>
+            </div>
 
-        <!-- Chair -->
-        <button class="btn btn-outline-secondary tool-btn" data-tool="chair">
-            <i class="bi bi-chair"></i>
-        </button>
+            <!-- ZOOM CONTROLS -->
+            <div class="zoom-controls-container">
+                <div class="zoom-controls">
+                    <button id="zoomIn" class="btn btn-sm border" style="background-color: var(--bg-panel); color: var(--text-main); border-color: var(--border-color);">+</button>
+                    <button id="zoomOut" class="btn btn-sm border" style="background-color: var(--bg-panel); color: var(--text-main); border-color: var(--border-color);">−</button>
+                </div>
+            </div>
+        </div>
 
-        <!-- Comment -->
-        <button class="btn btn-outline-secondary tool-btn" data-tool="comment">
-            <i class="bi bi-chat-left-text"></i>
-        </button>
+            <!-- TOOLBAR -->
+            <div class="btn-toolbar gap-1 justify-content-center p-2 rounded shadow-sm border" id="seatPlannerToolbar" style="background-color: var(--bg-panel); border-color: var(--border-color) !important;">
 
-        <!-- Toggle Grid -->
-        <button class="btn btn-outline-secondary" id="toggleGrid">
-            <i class="bi bi-grid"></i>
-        </button>
+                <!-- Select -->
+                <button class="btn btn-outline-secondary tool-btn active" data-tool="select">
+                    <i class="bi bi-cursor-fill"></i>
+                </button>
 
-        <!-- Clear Button -->
-        <button class="btn btn-outline-danger" id="clearBtn">
-            <i class="bi bi-trash"></i>
-        </button>
+                <!-- Rectangle + Circle Dropdown -->
+                <div class="btn-group">
+                    <button
+                        class="btn btn-outline-secondary tool-btn"
+                        id="shapeMainBtn"
+                        data-tool="rect"
+                    >
+                        <i id="shapeMainIcon" class="bi bi-square"></i>
+                    </button>
 
-        <div class="vr mx-2"></div>
+                    <button
+                        class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"
+                    ></button>
 
-        <!-- Bulk Add -->
-        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bulkAddModal" title="Bulk Add">
-            <i class="bi bi-collection"></i>
-        </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <button class="dropdown-item shape-option" data-tool="rect" data-icon="bi-square">
+                                <i class="bi bi-square me-2"></i> Rectangle
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item shape-option" data-tool="circle" data-icon="bi-circle">
+                                <i class="bi bi-circle me-2"></i> Circle
+                            </button>
+                        </li>
+                    </ul>
+                </div>
 
-        <!-- Save Button -->
-        <button class="btn btn-primary ms-2" id="savePlanBtn">
-            Save
-        </button>
+                <!-- Text -->
+                <button class="btn btn-outline-secondary tool-btn" data-tool="text">
+                    <i class="bi bi-type"></i>
+                </button>
+
+                <!-- Chair -->
+                <button class="btn btn-outline-secondary tool-btn" data-tool="chair">
+                    <i class="bi bi-chair"></i>
+                </button>
+
+                <!-- Comment -->
+                <button class="btn btn-outline-secondary tool-btn" data-tool="comment">
+                    <i class="bi bi-chat-left-text"></i>
+                </button>
+
+                <!-- Toggle Grid -->
+                <button class="btn btn-outline-secondary" id="toggleGrid">
+                    <i class="bi bi-grid"></i>
+                </button>
+
+                <!-- Clear Button -->
+                <button class="btn btn-outline-danger" id="clearBtn">
+                    <i class="bi bi-trash"></i>
+                </button>
+
+                <div class="vr mx-2"></div>
+
+                <!-- Bulk Add -->
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bulkAddModal" title="Bulk Add">
+                    <i class="bi bi-collection"></i>
+                </button>
+
+                <!-- Save Button -->
+                <button class="btn btn-primary ms-2" id="savePlanBtn">
+                    Save
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Bulk Add Modal -->
     <div class="modal fade" id="bulkAddModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
+            <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+                <div class="modal-header" style="border-bottom-color: var(--border-color);">
                     <h6 class="modal-title">Bulk Add</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select class="form-select" id="bulkType">
+                        <label class="form-label" style="color: var(--text-muted);">Type</label>
+                        <select class="form-select" id="bulkType" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                             <option value="chair">Chairs</option>
                             <option value="rect">Tables (Rect)</option>
                             <option value="circle">Tables (Circle)</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="bulkQty" value="10" min="1" max="100">
+                        <label class="form-label" style="color: var(--text-muted);">Quantity</label>
+                        <input type="number" class="form-control" id="bulkQty" value="10" min="1" max="100" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                     </div>
-                    <button type="button" class="btn btn-primary w-100" id="confirmBulkAdd" data-bs-dismiss="modal">Add Items</button>
+                    <button type="button" class="btn btn-primary w-100" id="confirmBulkAdd" data-bs-dismiss="modal" style="background-color: var(--primary); border-color: var(--primary);">Add Items</button>
                 </div>
             </div>
         </div>

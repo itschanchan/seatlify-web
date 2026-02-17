@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard SPA Demo</title>
+    <link rel="icon" href="data:,">
 
     <!-- Bootstrap CSS -->
     <link
@@ -18,9 +19,12 @@
     >
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/typography.css">
+    <link rel="stylesheet" href="../assets/customization/theme.css">
+    <link rel="stylesheet" href="../assets/customization/typography.css">
     <link rel="stylesheet" href="../assets/dashboard.css">
     <link rel="stylesheet" href="../assets/seat-planner.css">
+    <link rel="stylesheet" href="../assets/ticket-styles.css">
+    <link rel="stylesheet" href="../assets/analytics.css">
 
     <style>
         /* Speed Dial / FAB */
@@ -179,6 +183,9 @@
 <!-- SortableJS (Required for Event Manager) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- Simulated Database -->
 <script src="../js/simulated-db.js"></script>
 
@@ -260,11 +267,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     if(target === "tickets") {
                         container.innerHTML = `<div class="demo-panel p-3">Loading Tickets...</div>`;
                         try {
-                            const res = await fetch("../dashboard/tickets.html");
-                            if (res.ok) container.innerHTML = await res.text();
-                            else container.innerHTML = `<p class="text-danger">Failed to load Tickets.</p>`;
+                            const res = await fetch("ticket.html");
+                            if (res.ok) {
+                                container.innerHTML = await res.text();
+                                renderTicketDetails();
+                            }
+                            else container.innerHTML = `<p class="text-danger">Failed to load ticket content.</p>`;
                         } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading Tickets.</p>`;
+                            container.innerHTML = `<p class="text-danger">Error loading ticket content.</p>`;
                         }
                     }
 
@@ -638,6 +648,39 @@ function clearDashboardView() {
 
     const draftAction = document.getElementById('dashboardDraftAction');
     if(draftAction) draftAction.style.display = 'none';
+}
+
+function renderTicketDetails() {
+    const currentId = localStorage.getItem('seatlify_current_event_id');
+    if (!currentId) return;
+
+    const events = MockDB.getEvents();
+    const event = events.find(e => e.event_id == currentId);
+    
+    if (event) {
+        const titleEl = document.getElementById('ticketEventTitle');
+        const dateEl = document.getElementById('ticketEventDate');
+        const timeEl = document.getElementById('ticketEventTime');
+        const venueEl = document.getElementById('ticketEventVenue');
+
+        if (titleEl) titleEl.textContent = event.title;
+        
+        const start = new Date(event.start_datetime);
+        const end = event.end_datetime ? new Date(event.end_datetime) : null;
+        
+        if (dateEl) dateEl.textContent = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        
+        if (timeEl) {
+            const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
+                            (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
+            timeEl.textContent = timeStr;
+        }
+
+        if (venueEl) {
+            const venue = MockDB.getVenueById(event.venue_id);
+            venueEl.textContent = venue ? venue.name : 'Unknown Venue';
+        }
+    }
 }
 </script>
 </body>

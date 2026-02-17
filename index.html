@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seatlify | Home</title>
+    <link rel="icon" href="data:,">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -21,9 +22,16 @@
     <link rel="stylesheet" href="assets/sample-seat-plan.css">
     <link rel="stylesheet" href="assets/display-features.css">
     <link rel="stylesheet" href="assets/footer.css">
+    <style>
+        /* Toggle visibility for placeholder/loading state */
+        .loading .show-when-loaded { display: none !important; }
+        .loading .show-when-loading { display: block !important; }
+        .show-when-loading { display: none; }
+        .show-when-loaded { display: block; }
+    </style>
 </head>
 
-<body style="background-color: var(--color-bg-page);">
+<body class="loading" style="background-color: var(--color-bg-page);">
     <!-- Header & JS -->
     <div id="header"></div>
     <script src="js/loaders.js"></script>
@@ -39,23 +47,39 @@
                     <!-- Image Column -->
                     <div class="col-md-6 text-center text-md-start mb-4 mb-md-0">
                         <div class="img-wrapper">
-                            <img src="https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg" alt="Event Scene" class="img-fluid main-logo">
+                            <div class="show-when-loading placeholder-glow">
+                                <div class="placeholder col-12" style="height:260px; border-radius:6px;"></div>
+                            </div>
+                            <div class="show-when-loaded">
+                                <img src="https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg" alt="Event Scene" class="img-fluid main-logo">
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Content Column -->
                     <div class="col-md-6">
-                        <h1 class="main-title">Turn your event ideas <br>into reality.</h1>
-                        <p class="main-description">Your go-to platform for seat management.</p>
-                        <div class="main-buttons d-flex gap-3">
-                            <button 
-                                class="btn btn-primary"
-                                onclick="window.location.href='dashboard/dashboard.html'"
-                            >
-                                Get Started
-                            </button>
+                        <div class="show-when-loading">
+                            <span class="placeholder col-8" style="height:36px; display:block; margin-bottom:12px;"></span>
+                            <span class="placeholder col-6" style="height:20px; display:block; margin-bottom:18px;"></span>
+                            <div class="d-flex gap-3">
+                                <span class="placeholder col-3 btn btn-primary disabled"></span>
+                                <span class="placeholder col-3 btn btn-outline-primary disabled"></span>
+                            </div>
+                        </div>
 
-                            <button class="btn btn-outline-primary">Book A Demo</button>
+                        <div class="show-when-loaded">
+                            <h1 class="main-title">Turn your event ideas <br>into reality.</h1>
+                            <p class="main-description">Your go-to platform for seat management.</p>
+                            <div class="main-buttons d-flex gap-3">
+                                <button 
+                                    class="btn btn-primary"
+                                    onclick="window.location.href='dashboard/dashboard.html'"
+                                >
+                                    Get Started
+                                </button>
+
+                                <button class="btn btn-outline-primary">Book A Demo</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,9 +88,14 @@
 
         <!-- Features Display-->
         <div class="display-features" id="display-features">
-            <script>
-                loadDisplayFeatures();
-            </script>
+            <div class="show-when-loading placeholder-glow" style="padding:40px;">
+                <div class="placeholder col-12" style="height:200px; border-radius:6px;"></div>
+            </div>
+            <div class="show-when-loaded">
+                <script>
+                    loadDisplayFeatures();
+                </script>
+            </div>
         </div>
 
         <!-- Description Container -->
@@ -80,13 +109,20 @@
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100 text-start shadow-sm border-light">
                             <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
+                                <div class="show-when-loading mb-3">
+                                    <div class="placeholder col-2" style="height:28px; display:inline-block;"></div>
+                                    <div class="placeholder col-6" style="height:20px; display:block; margin-top:8px;"></div>
+                                </div>
+                                <div class="show-when-loaded d-flex align-items-center mb-3">
                                     <i class="bi bi-calendar-check fs-2 text-theme me-3"></i>
                                     <h5 class="card-title mb-0 fw-bold">Registration & Reservation</h5>
                                 </div>
-                                <p class="card-text text-muted">
+                                <p class="card-text text-muted show-when-loaded">
                                     A web-based platform for event registration and seat reservation, tailored for both small and large-scale events.
                                 </p>
+                                <div class="show-when-loading placeholder-glow">
+                                    <div class="placeholder col-10" style="height:56px; border-radius:4px;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -95,13 +131,20 @@
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100 text-start shadow-sm border-light">
                             <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
+                                <div class="show-when-loading mb-3">
+                                    <div class="placeholder col-2" style="height:28px; display:inline-block;"></div>
+                                    <div class="placeholder col-6" style="height:20px; display:block; margin-top:8px;"></div>
+                                </div>
+                                <div class="show-when-loaded d-flex align-items-center mb-3">
                                     <i class="bi bi-megaphone fs-2 text-theme me-3"></i>
                                     <h5 class="card-title mb-0 fw-bold">Promotion & Planning</h5>
                                 </div>
-                                <p class="card-text text-muted">
+                                <p class="card-text text-muted show-when-loaded">
                                     Manage event promotion and seat planning with a fast-paced application, ensuring an orderly and uniform experience.
                                 </p>
+                                <div class="show-when-loading placeholder-glow">
+                                    <div class="placeholder col-10" style="height:56px; border-radius:4px;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -110,13 +153,20 @@
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100 text-start shadow-sm border-light">
                             <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
+                                <div class="show-when-loading mb-3">
+                                    <div class="placeholder col-2" style="height:28px; display:inline-block;"></div>
+                                    <div class="placeholder col-6" style="height:20px; display:block; margin-top:8px;"></div>
+                                </div>
+                                <div class="show-when-loaded d-flex align-items-center mb-3">
                                     <i class="bi bi-grid fs-2 text-theme me-3"></i>
                                     <h5 class="card-title mb-0 fw-bold">Versatile Management</h5>
                                 </div>
-                                <p class="card-text text-muted">
+                                <p class="card-text text-muted show-when-loaded">
                                     All-in-one management for any event, from school functions and parties to fashion shows and live performances.
                                 </p>
+                                <div class="show-when-loading placeholder-glow">
+                                    <div class="placeholder col-10" style="height:56px; border-radius:4px;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -142,5 +192,11 @@
     <button id="scrollTopBtn" title="Go to top">
         <i class="bi bi-arrow-up"></i>
     </button>
+    <script>
+        // Remove the loading class once all resources are loaded
+        window.addEventListener('load', function () {
+            document.body.classList.remove('loading');
+        });
+    </script>
 </body>
 </html>

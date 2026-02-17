@@ -1,0 +1,80 @@
+<div class="analytic-container">
+    <div class="analytic-header-container">
+        <h1 class="analytic-header">Event Analytics</h1>
+    </div>
+
+    <div class="analytic-content-container">
+        <p class="analytic-description">Track your event's performance with our comprehensive analytics dashboard. Monitor ticket sales, attendance, and engagement metrics in real-time to make informed decisions and optimize your event strategy.</p>
+
+        <div class="row g-4">
+            <!-- Ticket Sales Chart -->
+            <div class="col-lg-8">
+                <div class="chart-card">
+                    <h5 class="mb-3" style="color: var(--text-main);">Ticket Sales Over Time</h5>
+                    <canvas id="ticketSalesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Attendee Demographics Chart -->
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="mb-3" style="color: var(--text-main);">Attendee Age Group</h5>
+                    <canvas id="attendeeDemographicsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Ensure this script runs only once the analytics page is loaded
+    (function() {
+        // Chart 1: Ticket Sales (Bar Chart)
+        const salesCtx = document.getElementById('ticketSalesChart');
+        if (salesCtx) {
+            new Chart(salesCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'Tickets Sold',
+                        data: [65, 59, 80, 81, 56, 55],
+                        backgroundColor: 'rgba(220, 53, 69, 0.6)', // Primary color with opacity
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart 2: Attendee Demographics (Doughnut Chart)
+        const demoCtx = document.getElementById('attendeeDemographicsChart');
+        if (demoCtx) {
+            new Chart(demoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['18-24', '25-34', '35-44', '45+'],
+                    datasets: [{
+                        label: 'Attendee Age Group',
+                        data: [300, 50, 100, 80],
+                        backgroundColor: [
+                            'rgba(220, 53, 69, 0.8)',
+                            'rgba(255, 193, 7, 0.8)',
+                            'rgba(13, 110, 253, 0.8)',
+                            'rgba(25, 135, 84, 0.8)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                }
+            });
+        }
+    })();
+</script>

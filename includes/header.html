@@ -1,6 +1,25 @@
 <header id="header">
     <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <div class="container-fluid">
+        <!-- Loading State -->
+        <div class="container-fluid loading-state placeholder-glow">
+            <span class="navbar-brand placeholder col-3 col-md-2"></span>
+            
+            <div class="d-none d-md-flex gap-4 ms-4 me-auto align-items-center">
+                <span class="placeholder" style="width: 60px;"></span>
+                <span class="placeholder" style="width: 60px;"></span>
+                <span class="placeholder" style="width: 60px;"></span>
+                <span class="placeholder" style="width: 60px;"></span>
+            </div>
+
+            <div class="d-none d-md-flex gap-2">
+                <span class="placeholder btn btn-outline-primary disabled" style="width: 80px;"></span>
+                <span class="placeholder btn btn-primary disabled" style="width: 140px;"></span>
+            </div>
+            
+            <span class="navbar-toggler border-0 d-md-none placeholder disabled" style="width: 50px; height: 40px;"></span>
+        </div>
+
+        <div class="container-fluid loaded-state">
             <!-- Logo -->
             <a class="navbar-brand fw-bold" href="index.html">SEATLIFY</a>
             

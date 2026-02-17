@@ -1,0 +1,37 @@
+/* ============================================
+   ANALYTICS STYLES
+   ============================================ */
+
+.analytic-container {
+    padding: 2rem;
+    background-color: var(--bg-panel);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.analytic-header-container {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.analytic-header {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-bold);
+    color: var(--text-main);
+    margin: 0;
+}
+
+.analytic-description {
+    font-size: var(--fs-base);
+    color: var(--text-muted);
+    max-width: 800px;
+    margin-bottom: 2.5rem;
+}
+
+.chart-card {
+    background-color: var(--bg-muted);
+    padding: 1.5rem;
+    border-radius: 8px;
+    height: 100%;
+}

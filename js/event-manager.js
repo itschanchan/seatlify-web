@@ -1,5 +1,6 @@
 let eventManagerInitialized = false;
 let currentEventView = 'table';
+let calendarDate = new Date();
 
 function initEventManager() {
     console.log("Initializing Event Manager");
@@ -35,19 +36,19 @@ function initEventManager() {
     }
 
     // Bind View Toggles
-    const btnList = document.getElementById('btnViewList');
+    const btnCalendar = document.getElementById('btnViewCalendar');
     const btnTable = document.getElementById('btnViewTable');
     const btnSimplified = document.getElementById('btnViewSimplified');
-    if (btnList && btnTable && btnSimplified) {
+    if (btnCalendar && btnTable && btnSimplified) {
         // Clone to strip old listeners
-        const newBtnList = btnList.cloneNode(true);
+        const newBtnCalendar = btnCalendar.cloneNode(true);
         const newBtnTable = btnTable.cloneNode(true);
         const newBtnSimplified = btnSimplified.cloneNode(true);
-        btnList.parentNode.replaceChild(newBtnList, btnList);
+        btnCalendar.parentNode.replaceChild(newBtnCalendar, btnCalendar);
         btnTable.parentNode.replaceChild(newBtnTable, btnTable);
         btnSimplified.parentNode.replaceChild(newBtnSimplified, btnSimplified);
 
-        newBtnList.addEventListener('click', () => setEventView('list'));
+        newBtnCalendar.addEventListener('click', () => setEventView('calendar'));
         newBtnTable.addEventListener('click', () => setEventView('table'));
         newBtnSimplified.addEventListener('click', () => setEventView('simplified'));
     }
@@ -72,15 +73,15 @@ function initEventManager() {
 
 function setEventView(view) {
     currentEventView = view;
-    const btnList = document.getElementById('btnViewList');
+    const btnCalendar = document.getElementById('btnViewCalendar');
     const btnTable = document.getElementById('btnViewTable');
     const btnSimplified = document.getElementById('btnViewSimplified');
 
-    if (view === 'list') {
-        // Active List
-        btnList.classList.add('active');
-        btnList.style.backgroundColor = 'var(--primary)';
-        btnList.style.color = '#fff';
+    if (view === 'calendar') {
+        // Active Calendar
+        btnCalendar.classList.add('active');
+        btnCalendar.style.backgroundColor = 'var(--primary)';
+        btnCalendar.style.color = '#fff';
         // Inactive Table
         btnTable.classList.remove('active');
         btnTable.style.backgroundColor = 'transparent';
@@ -94,9 +95,9 @@ function setEventView(view) {
         btnSimplified.style.backgroundColor = 'var(--primary)';
         btnSimplified.style.color = '#fff';
         // Inactive others
-        btnList.classList.remove('active');
-        btnList.style.backgroundColor = 'transparent';
-        btnList.style.color = 'var(--text-muted)';
+        btnCalendar.classList.remove('active');
+        btnCalendar.style.backgroundColor = 'transparent';
+        btnCalendar.style.color = 'var(--text-muted)';
         btnTable.classList.remove('active');
         btnTable.style.backgroundColor = 'transparent';
         btnTable.style.color = 'var(--text-muted)';
@@ -105,10 +106,10 @@ function setEventView(view) {
         btnTable.classList.add('active');
         btnTable.style.backgroundColor = 'var(--primary)';
         btnTable.style.color = '#fff';
-        // Inactive List
-        btnList.classList.remove('active');
-        btnList.style.backgroundColor = 'transparent';
-        btnList.style.color = 'var(--text-muted)';
+        // Inactive Calendar
+        btnCalendar.classList.remove('active');
+        btnCalendar.style.backgroundColor = 'transparent';
+        btnCalendar.style.color = 'var(--text-muted)';
         btnSimplified.classList.remove('active');
         btnSimplified.style.backgroundColor = 'transparent';
         btnSimplified.style.color = 'var(--text-muted)';
@@ -182,6 +183,8 @@ function renderEventView() {
             grid.appendChild(cardCol);
         });
         container.appendChild(grid);
+    } else if (currentEventView === 'calendar') {
+        renderCalendar(container, events);
     } else { // Table or List view
         const tableWrapper = document.createElement('div');
         tableWrapper.className = 'event-table table-responsive';
@@ -295,6 +298,121 @@ function renderEventView() {
         tableWrapper.appendChild(table);
         container.appendChild(tableWrapper);
     }
+}
+
+function renderCalendar(container, events) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'calendar-wrapper p-3 bg-white rounded shadow-sm border';
+    
+    // Header
+    const header = document.createElement('div');
+    header.className = 'd-flex justify-content-between align-items-center mb-3';
+    
+    const btnPrev = document.createElement('button');
+    btnPrev.className = 'btn btn-outline-secondary btn-sm';
+    btnPrev.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    btnPrev.onclick = () => {
+        calendarDate.setMonth(calendarDate.getMonth() - 1);
+        renderEventView();
+    };
+
+    const title = document.createElement('h4');
+    title.className = 'mb-0 fw-bold';
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    title.textContent = `${monthNames[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
+
+    const btnNext = document.createElement('button');
+    btnNext.className = 'btn btn-outline-secondary btn-sm';
+    btnNext.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    btnNext.onclick = () => {
+        calendarDate.setMonth(calendarDate.getMonth() + 1);
+        renderEventView();
+    };
+
+    header.appendChild(btnPrev);
+    header.appendChild(title);
+    header.appendChild(btnNext);
+    wrapper.appendChild(header);
+
+    // Days Header
+    const daysHeader = document.createElement('div');
+    daysHeader.className = 'row g-0 text-center mb-2';
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+        const col = document.createElement('div');
+        col.className = 'col fw-bold text-muted';
+        col.textContent = day;
+        daysHeader.appendChild(col);
+    });
+    wrapper.appendChild(daysHeader);
+
+    // Grid
+    const grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+    
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    let row = document.createElement('div');
+    row.className = 'row g-0';
+    
+    // Empty cells
+    for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'col p-2 border bg-light';
+        cell.style.minHeight = '100px';
+        row.appendChild(cell);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'col p-2 border position-relative';
+        cell.style.minHeight = '100px';
+        cell.style.backgroundColor = 'var(--bg-panel)';
+        
+        const dayNum = document.createElement('div');
+        dayNum.className = 'fw-bold mb-1';
+        dayNum.textContent = day;
+        cell.appendChild(dayNum);
+
+        const currentDayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        events.forEach(evt => {
+            const evtDate = evt.start_datetime.split('T')[0];
+            if (evtDate === currentDayStr) {
+                const badge = document.createElement('div');
+                badge.className = 'badge bg-primary text-wrap text-start w-100 mb-1';
+                badge.style.cursor = 'pointer';
+                badge.textContent = evt.title;
+                badge.onclick = () => openEditModal(evt.event_id);
+                cell.appendChild(badge);
+            }
+        });
+
+        row.appendChild(cell);
+
+        if ((firstDay + day) % 7 === 0) {
+            grid.appendChild(row);
+            row = document.createElement('div');
+            row.className = 'row g-0';
+        }
+    }
+
+    const remainingCells = (7 - (firstDay + daysInMonth) % 7) % 7;
+    for (let i = 0; i < remainingCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'col p-2 border bg-light';
+        cell.style.minHeight = '100px';
+        row.appendChild(cell);
+    }
+    if (row.children.length > 0) {
+        grid.appendChild(row);
+    }
+
+    wrapper.appendChild(grid);
+    container.appendChild(wrapper);
 }
 
 function openEditModal(eventId) {

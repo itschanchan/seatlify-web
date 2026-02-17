@@ -95,3 +95,11 @@
         text-align: center;
     }
 }
+
+/* Loading State Toggles */
+body.loading .loaded-state {
+    display: none !important;
+}
+body:not(.loading) .loading-state {
+    display: none !important;
+}

@@ -18,6 +18,7 @@ const MAX_ZOOM = 2;
 let canvas, container, grid;
 let currentTool = "select";
 let scale = 1;
+let chartLayoutMode = 'row'; // 'row' or 'table'
 
 let isPanning = false;
 let isCreating = false;
@@ -40,10 +41,13 @@ let selectedSeats = [];
 function initSeatPlanner() {
   console.log("initSeatPlanner() called");
 
-    if (seatPlannerInitialized) return;
+    // Load stats whenever initialized/shown
+    loadCurrentEventStats();
+    renderGuestList();
+
     seatPlannerInitialized = true;
 
-    console.log("Seat planner initialized (lazy)");
+    console.log("Seat planner initialized");
 
     canvas = document.getElementById("canvasInner");
     container = document.querySelector(".seat-planner-container");
@@ -63,6 +67,11 @@ function initSeatPlanner() {
     bindClearButton();
     bindBulkAdd();
     bindSaveButton();
+    bindAutoBuildButton();
+    bindGuestListResizer();
+    bindClearChartButton();
+    bindChartGroupingButtons();
+    bindRowLabelToggle();
 }
 
 /* ==========================
@@ -451,9 +460,248 @@ function bindSaveButton() {
         if(currentEventId && typeof MockDB !== 'undefined') {
             MockDB.updateEvent(currentEventId, { total_seats: seatCount });
             alert(`Plan saved! Total Seats: ${seatCount}`);
+            
+            // Update Counter UI
+            const countEl = document.getElementById('plannerTotalSeats');
+            if(countEl) countEl.textContent = seatCount;
         } else {
             alert("Saved locally (No active event linked).");
         }
+    });
+}
+
+/* ==========================
+   CHART GROUPING
+========================== */
+function bindChartGroupingButtons() {
+    const btnRow = document.getElementById('btnGroupRow');
+    const btnTable = document.getElementById('btnGroupTable');
+    
+    if(btnRow && btnTable) {
+        btnRow.addEventListener('click', () => {
+            chartLayoutMode = 'row';
+            btnRow.classList.add('active');
+            btnTable.classList.remove('active');
+            refreshChart();
+        });
+        
+        btnTable.addEventListener('click', () => {
+            chartLayoutMode = 'table';
+            btnTable.classList.add('active');
+            btnRow.classList.remove('active');
+            refreshChart();
+        });
+    }
+}
+
+function refreshChart() {
+    // Trigger auto-build if data exists
+    document.getElementById('btnAutoBuild')?.click();
+}
+
+/* ==========================
+   CHART VIEW LOGIC
+========================== */
+function bindAutoBuildButton() {
+    const btn = document.getElementById('btnAutoBuild');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        const currentEventId = localStorage.getItem('seatlify_current_event_id');
+        if (!currentEventId) {
+            alert("Please select an event first from the dashboard.");
+            return;
+        }
+
+        const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+        if (!event || !event.total_seats || event.total_seats <= 0) {
+            alert("The current event has no seats defined. Please set the total seats in the Event Manager.");
+            return;
+        }
+
+        renderAutoBuildChart(event.total_seats);
+    });
+}
+
+function renderAutoBuildChart(seatCount) {
+    const container = document.getElementById('chartViewContainer');
+    if (!container) return;
+
+    container.innerHTML = ''; // Clear previous content
+    container.style.textAlign = 'left'; // Reset alignment
+
+    let seatsRendered = 0;
+
+    if (chartLayoutMode === 'table') {
+        // TABLE LAYOUT
+        const seatsPerTable = 10;
+        const numTables = Math.ceil(seatCount / seatsPerTable);
+        
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'd-flex flex-wrap gap-3';
+
+        for (let i = 0; i < numTables; i++) {
+            const tableEl = document.createElement('div');
+            tableEl.className = 'border rounded p-3 text-center shadow-sm';
+            tableEl.style.backgroundColor = 'var(--bg-panel)';
+            tableEl.style.width = '200px';
+
+            const tableLabel = document.createElement('div');
+            tableLabel.className = 'fw-bold mb-2';
+            tableLabel.textContent = `Table ${i + 1}`;
+            tableEl.appendChild(tableLabel);
+
+            const seatsContainer = document.createElement('div');
+            seatsContainer.className = 'd-flex flex-wrap justify-content-center gap-1';
+            
+            const seatsInThisTable = Math.min(seatsPerTable, seatCount - seatsRendered);
+            for (let j = 0; j < seatsInThisTable; j++) {
+                const seatEl = document.createElement('div');
+                seatEl.className = 'chart-seat';
+                seatEl.title = `Table ${i + 1}, Seat ${j + 1}`;
+                seatsContainer.appendChild(seatEl);
+                seatsRendered++;
+            }
+            tableEl.appendChild(seatsContainer);
+            gridContainer.appendChild(tableEl);
+        }
+        container.appendChild(gridContainer);
+
+    } else {
+        // ROW LAYOUT (Default)
+        const showLabels = document.getElementById('toggleRowLabels')?.checked ?? true;
+        const seatsPerRow = 15;
+        const numRows = Math.ceil(seatCount / seatsPerRow);
+
+        for (let i = 0; i < numRows; i++) {
+            const rowEl = document.createElement('div');
+            rowEl.className = 'd-flex align-items-center gap-2 mb-2';
+
+            const rowLabel = document.createElement('div');
+            rowLabel.className = 'fw-bold me-2 chart-row-label';
+            rowLabel.textContent = `Row ${String.fromCharCode(65 + i)}`;
+            rowLabel.style.width = '60px';
+            rowLabel.style.display = showLabels ? 'block' : 'none';
+            rowEl.appendChild(rowLabel);
+
+            const seatsInThisRow = Math.min(seatsPerRow, seatCount - seatsRendered);
+
+            for (let j = 0; j < seatsInThisRow; j++) {
+                const seatEl = document.createElement('div');
+                seatEl.className = 'chart-seat';
+                seatEl.title = `Row ${String.fromCharCode(65 + i)}, Seat ${j + 1}`;
+                rowEl.appendChild(seatEl);
+                seatsRendered++;
+            }
+            container.appendChild(rowEl);
+        }
+    }
+}
+
+function bindClearChartButton() {
+    const btn = document.getElementById('btnClearChart');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        if (confirm("Are you sure do you want to clear everything?")) {
+            const container = document.getElementById('chartViewContainer');
+            if (container) {
+                container.innerHTML = '<div class="text-center text-muted">Click \'Auto Build\' to generate a layout based on event seat count.</div>';
+            }
+        }
+    });
+}
+
+function bindRowLabelToggle() {
+    const toggle = document.getElementById('toggleRowLabels');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', (e) => {
+        const labels = document.querySelectorAll('.chart-row-label');
+        labels.forEach(label => {
+            label.style.display = e.target.checked ? 'block' : 'none';
+        });
+    });
+}
+
+/* ==========================
+   LOAD STATS
+========================== */
+function loadCurrentEventStats() {
+    const currentId = localStorage.getItem('seatlify_current_event_id');
+    if (!currentId || typeof MockDB === 'undefined') return;
+
+    const events = MockDB.getEvents();
+    const event = events.find(e => e.event_id == currentId);
+    const countEl = document.getElementById('plannerTotalSeats');
+    
+    if (countEl && event) {
+        countEl.textContent = event.total_seats || 0;
+    }
+}
+
+/* ==========================
+   GUEST LIST RESIZER
+========================== */
+function bindGuestListResizer() {
+    const resizer = document.getElementById('guestListResizer');
+    const sidebar = document.getElementById('guestListSidebar');
+    if (!resizer || !sidebar) return;
+
+    let startX = 0;
+    let startWidth = 0;
+
+    const onMouseMove = (e) => {
+        const dx = e.clientX - startX;
+        const newWidth = startWidth + dx;
+        // Limits: min 150px, max 600px
+        if (newWidth > 150 && newWidth < 600) {
+            sidebar.style.width = `${newWidth}px`;
+        }
+    };
+
+    const onMouseUp = () => {
+        resizer.classList.remove('active');
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    resizer.addEventListener('mousedown', (e) => {
+        startX = e.clientX;
+        startWidth = parseInt(window.getComputedStyle(sidebar).width, 10);
+        resizer.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        e.preventDefault(); // Prevent text selection
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+/* ==========================
+   GUEST LIST LOGIC
+========================== */
+function renderGuestList() {
+    const container = document.getElementById('chartGuestList');
+    if (!container) return;
+
+    // Mock data for demonstration
+    const guests = [
+        "John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", 
+        "Charlie Davis", "Diana Evans", "Frank Green", "Grace Hall",
+        "Henry Ford", "Ivy Wilson", "Jack White", "Kelly Green"
+    ];
+
+    container.innerHTML = '';
+    guests.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center px-2 py-2 border-0 border-bottom';
+        item.style.backgroundColor = 'transparent';
+        item.style.color = 'var(--text-main)';
+        item.style.borderColor = 'var(--border-color)';
+        item.innerHTML = `<span>${name}</span><i class="bi bi-grip-vertical text-muted" style="cursor: grab;"></i>`;
+        container.appendChild(item);
     });
 }
 

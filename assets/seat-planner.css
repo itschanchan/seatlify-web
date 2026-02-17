@@ -211,3 +211,56 @@ body {
     width: 150px;
   }
 }
+
+/* ===========================
+   Nav Pills Override
+=========================== */
+.seat-planner-nav-container .nav-pills .nav-link {
+    color: var(--color-text-dark) !important;
+}
+
+.seat-planner-nav-container .nav-pills .nav-link.active {
+    background-color: var(--color-primary) !important;
+    color: #ffffff !important;
+}
+
+/* ===========================
+   Chart View
+=========================== */
+.chart-seat {
+    width: 20px;
+    height: 20px;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary-hover);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chart-seat:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* Override for Chart View switch button */
+#toggleRowLabels:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* ===========================
+   Guest List Resizer
+=========================== */
+#guestListResizer {
+    width: 6px;
+    cursor: col-resize;
+    margin: 0 2px;
+    border-radius: 3px;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+}
+
+#guestListResizer:hover,
+#guestListResizer.active {
+    background-color: var(--color-primary);
+}
