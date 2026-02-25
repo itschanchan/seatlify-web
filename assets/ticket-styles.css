@@ -75,3 +75,22 @@
     text-align: right;
     font-size: var(--fs-base);
 }
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 576px) {
+    .ticket-container {
+        padding: 1.5rem;
+        margin: 1rem auto; /* Reduce margin on mobile but keep it centered */
+    }
+
+    .ticket-header {
+        font-size: 1.75rem; /* Adjust font size for smaller screens */
+    }
+
+    .qr-code-square {
+        width: 150px;
+        height: 150px;
+    }
+}

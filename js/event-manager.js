@@ -354,6 +354,8 @@ function renderCalendar(container, events) {
     
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const today = new Date();
     
     let row = document.createElement('div');
     row.className = 'row g-0';
@@ -375,6 +377,20 @@ function renderCalendar(container, events) {
         const dayNum = document.createElement('div');
         dayNum.className = 'fw-bold mb-1';
         dayNum.textContent = day;
+
+        // Check if it's today
+        const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+        if (isToday) {
+            dayNum.style.backgroundColor = 'var(--primary)';
+            dayNum.style.color = 'white';
+            dayNum.style.width = '28px';
+            dayNum.style.height = '28px';
+            dayNum.style.borderRadius = '50%';
+            dayNum.style.display = 'flex';
+            dayNum.style.alignItems = 'center';
+            dayNum.style.justifyContent = 'center';
+        }
+
         cell.appendChild(dayNum);
 
         const currentDayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -416,6 +432,9 @@ function renderCalendar(container, events) {
 }
 
 function openEditModal(eventId) {
+    // Set as the globally active event for other modules like seat planner
+    localStorage.setItem('seatlify_current_event_id', eventId);
+
     const event = MockDB.getEvents().find(e => e.event_id == eventId);
     if (!event) return;
 
@@ -452,101 +471,110 @@ function openEditModal(eventId) {
 
     document.getElementById('editEventStatus').value = event.status;
     document.getElementById('editEventDescription').value = event.description || '';
-
-    // Seat Config
     document.getElementById('editEventTotalSeats').value = event.total_seats || '';
     document.getElementById('editEventTotalTables').value = event.total_tables || '';
     document.getElementById('editSeatLayout').value = event.layout_preference || 'empty';
 
     // Ticket Config
-    const isPaid = event.is_paid || false;
-    if (isPaid) {
-        document.getElementById('editTypePaid').checked = true;
-        document.getElementById('editTicketTiersWrapper').style.display = 'block';
+    const radioFree = document.getElementById('editTypeFree');
+    const radioPaid = document.getElementById('editTypePaid');
+    const tiersWrapper = document.getElementById('editTicketTiersWrapper');
+    const tiersList = document.getElementById('editTiersList');
+
+    if (event.is_paid) {
+        radioPaid.checked = true;
+        tiersWrapper.style.display = 'block';
     } else {
-        document.getElementById('editTypeFree').checked = true;
-        document.getElementById('editTicketTiersWrapper').style.display = 'none';
+        radioFree.checked = true;
+        tiersWrapper.style.display = 'none';
     }
 
     // Populate Tiers
-    const tiersList = document.getElementById('editTiersList');
     tiersList.innerHTML = '';
-    const tickets = event.tickets || [];
-    tickets.forEach(t => addEditTierRow(t));
+    if (event.tickets && event.tickets.length > 0) {
+        event.tickets.forEach(ticket => {
+            addEditTierRow(ticket);
+        });
+    }
 
     // Show Modal
     const modalEl = document.getElementById('editEventModal');
-    let modal = bootstrap.Modal.getInstance(modalEl);
-    if (!modal) {
-        modal = new bootstrap.Modal(modalEl);
-    }
+    const modal = new bootstrap.Modal(modalEl);
     modal.show();
+}
+
+function addEditTierRow(ticket = null) {
+    const list = document.getElementById('editTiersList');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 tier-row';
+    
+    const nameVal = ticket ? ticket.name : '';
+    const priceVal = ticket ? ticket.price : '';
+    const qtyVal = ticket ? ticket.qty : '';
+
+    row.innerHTML = `
+        <div class="col-5">
+            <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name" value="${nameVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+        </div>
+        <div class="col-3">
+            <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" value="${priceVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+        </div>
+        <div class="col-4">
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control tier-qty" placeholder="Qty" value="${qtyVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                <button type="button" class="btn btn-outline-danger btn-remove-tier"><i class="bi bi-x"></i></button>
+            </div>
+        </div>
+    `;
+
+    row.querySelector('.btn-remove-tier').addEventListener('click', () => row.remove());
+    list.appendChild(row);
 }
 
 function saveEventChanges() {
     const id = document.getElementById('editEventId').value;
-    const title = document.getElementById('editEventName').value;
+    const name = document.getElementById('editEventName').value;
     const date = document.getElementById('editEventDate').value;
-    const startTime = document.getElementById('editEventTime').value;
+    const time = document.getElementById('editEventTime').value;
     const endTime = document.getElementById('editEventEndTime').value;
     const venueId = document.getElementById('editEventVenue').value;
     const status = document.getElementById('editEventStatus').value;
     const desc = document.getElementById('editEventDescription').value;
-    
     const totalSeats = document.getElementById('editEventTotalSeats').value;
     const totalTables = document.getElementById('editEventTotalTables').value;
     const layout = document.getElementById('editSeatLayout').value;
-
-    if (!title || !date || !startTime || !venueId) {
-        alert("Please fill in required fields.");
-        return;
+    
+    const isPaid = document.getElementById('editTypePaid').checked;
+    let tickets = [];
+    if (isPaid) {
+        document.querySelectorAll('#editTiersList .tier-row').forEach(row => {
+            const tName = row.querySelector('.tier-name').value;
+            const tPrice = row.querySelector('.tier-price').value;
+            const tQty = row.querySelector('.tier-qty').value;
+            if (tName) tickets.push({ name: tName, price: tPrice, qty: tQty });
+        });
     }
 
-    MockDB.updateEvent(id, {
-        title: title,
-        venue_id: venueId,
-        description: desc,
-        start_datetime: `${date}T${startTime}`,
+    const updateData = {
+        title: name,
+        start_datetime: `${date}T${time}`,
         end_datetime: endTime ? `${date}T${endTime}` : null,
+        venue_id: venueId,
         status: status,
+        description: desc,
         total_seats: totalSeats,
         total_tables: totalTables,
         layout_preference: layout,
-        is_paid: document.getElementById('editTypePaid').checked,
-        tickets: getEditTiersData()
-    });
+        is_paid: isPaid,
+        tickets: tickets
+    };
 
+    MockDB.updateEvent(id, updateData);
+    
     // Hide Modal
     const modalEl = document.getElementById('editEventModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
-    if(modal) modal.hide();
-}
+    if (modal) modal.hide();
 
-function addEditTierRow(data = null) {
-    const list = document.getElementById('editTiersList');
-    const row = document.createElement('div');
-    row.className = 'row g-2 mb-2 edit-tier-row';
-    row.innerHTML = `
-        <div class="col-5">
-            <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name" value="${data ? data.name : ''}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-        </div>
-        <div class="col-3">
-            <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" value="${data ? data.price : ''}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-        </div>
-        <div class="col-4">
-            <input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" value="${data ? data.qty : ''}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-        </div>
-    `;
-    list.appendChild(row);
-}
-
-function getEditTiersData() {
-    const tickets = [];
-    document.querySelectorAll('.edit-tier-row').forEach(row => {
-        const name = row.querySelector('.tier-name').value;
-        const price = row.querySelector('.tier-price').value;
-        const qty = row.querySelector('.tier-qty').value;
-        if(name) tickets.push({ name, price, qty });
-    });
-    return tickets;
+    renderEventView();
 }

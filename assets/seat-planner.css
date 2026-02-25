@@ -216,12 +216,17 @@ body {
    Nav Pills Override
 =========================== */
 .seat-planner-nav-container .nav-pills .nav-link {
-    color: var(--color-text-dark) !important;
+    color: var(--color-primary) !important;
+}
+
+.seat-planner-nav-container .nav-pills .nav-link:not(.active):hover {
+    color: var(--color-primary-hover) !important;
+    background-color: var(--color-primary-light);
 }
 
 .seat-planner-nav-container .nav-pills .nav-link.active {
     background-color: var(--color-primary) !important;
-    color: #ffffff !important;
+    color: var(--color-text-white) !important;
 }
 
 /* ===========================
@@ -263,4 +268,24 @@ body {
 #guestListResizer:hover,
 #guestListResizer.active {
     background-color: var(--color-primary);
+}
+
+/* ===========================
+   Chart View Toggle Buttons
+=========================== */
+#btnGroupRow,
+#btnGroupTable {
+    color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+}
+
+#btnGroupRow:hover,
+#btnGroupTable:hover {
+    background-color: var(--color-primary-light) !important;
+}
+
+#btnGroupRow.active,
+#btnGroupTable.active {
+    background-color: var(--color-primary) !important;
+    color: var(--color-text-white) !important;
 }

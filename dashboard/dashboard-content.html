@@ -4,14 +4,14 @@
     <!-- Search & Navigation Bar -->
     <div class="d-flex flex-column flex-md-row align-items-center mb-4 gap-3 p-3 rounded shadow-sm" style="background-color: var(--bg-panel);">
         <!-- Search Bar -->
-        <div class="input-group" style="max-width: 350px;">
+        <div class="input-group" style="width: 100%; max-width: 350px;">
             <span class="input-group-text border-end-0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
             <input type="text" class="form-control border-start-0 ps-0" placeholder="Search events..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main); box-shadow: none;">
             <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);">Search</button>
         </div>
 
         <!-- Nav Pills -->
-        <ul class="nav nav-pills me-md-auto">
+        <ul class="nav nav-pills w-100 w-md-auto justify-content-center justify-content-md-start me-md-auto">
             <li class="nav-item">
                 <a class="nav-link active" id="tabCurrent" href="#" style="background-color: var(--primary);">Current</a>
             </li>
@@ -21,7 +21,7 @@
         </ul>
 
         <!-- Create Event Button -->
-        <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);" onclick="openCreateEventModal()">
+        <button class="btn btn-primary w-100 w-md-auto" style="background-color: var(--primary); border-color: var(--primary);" onclick="openCreateEventModal()">
             <i class="bi bi-plus-circle me-2"></i>Create New Event
         </button>
     </div>
@@ -46,12 +46,12 @@
                 <div class="card h-100 shadow-sm border-0" style="background-color: var(--bg-panel);">
                     <div class="card-body">
                         <h5 class="card-title mb-3" style="color: var(--text-muted);">Event Details</h5>
-                        <div class="d-flex align-items-center">
-                            <div class="rounded p-3 me-3 text-center" style="min-width: 80px; background-color: var(--bg-muted);">
+                        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-center">
+                            <div class="rounded p-3 me-0 me-sm-3 mb-3 mb-sm-0 text-center w-100 w-sm-auto" style="min-width: 80px; background-color: var(--bg-muted);">
                                 <h3 id="dashboardDateDay" class="mb-0" style="color: var(--primary);">-</h3>
                                 <small id="dashboardDateMonth" class="fw-bold">-</small>
                             </div>
-                            <div>
+                            <div class="text-center text-sm-start w-100">
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <h3 id="dashboardTitle" class="mb-0" style="color: var(--text-main);">Loading...</h3>
                                     <span id="dashboardStatusBadge" class="badge bg-secondary"></span>
@@ -75,7 +75,7 @@
                 <div class="card h-100 shadow-sm border-0 text-white" style="background-color: var(--primary);">
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h5 id="dashboardCountdownTitle" class="card-title opacity-75">Days Until Event</h5>
-                        <h1 id="dashboardCountdownValue" class="display-1 fw-bold mb-0">-</h1>
+                        <h1 id="dashboardCountdownValue" class="display-1 fw-bold mb-0 responsive-font">-</h1>
                         <p id="dashboardCountdownSubtext" class="mb-0">Prepare your checklist!</p>
                     </div>
                 </div>
@@ -84,7 +84,7 @@
 
         <!-- Quick Stats Row -->
         <div class="row g-4 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'seat-planner\']').click()">
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Seats Available</p>
@@ -94,7 +94,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'analytics\']').click()">
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Attendees</p>
@@ -104,7 +104,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'tickets\']').click()">
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Tickets Sold</p>
@@ -114,7 +114,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'finance\']').click()">
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Revenue</p>

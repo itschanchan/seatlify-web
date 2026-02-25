@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
 /* ============================================
    TYPOGRAPHY CUSTOMIZATION
    ============================================ */
@@ -30,8 +32,9 @@ body {
     font-weight: var(--fw-regular);
 }
 
-/* Header / Navbar */
+/* Header / Navbar / Logo */
 .navbar-brand {
+    font-family: 'Montserrat', sans-serif;
     font-size: var(--fs-2xl);
     font-weight: var(--fw-semibold);
 }

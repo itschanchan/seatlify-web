@@ -1,3 +1,47 @@
+<style>
+    /* Basic styling for the analytics page */
+    .analytic-container {
+        padding: 1rem; /* Base padding */
+    }
+
+    .analytic-header-container {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .analytic-header {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .analytic-description {
+        font-size: 1rem;
+        color: var(--text-muted);
+        margin-bottom: 2.5rem;
+        max-width: 800px;
+    }
+
+    .chart-card {
+        background-color: var(--bg-panel);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        height: 100%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .analytic-header {
+            font-size: 1.75rem;
+        }
+        .chart-card {
+            padding: 1rem;
+        }
+    }
+</style>
 <div class="analytic-container">
     <div class="analytic-header-container">
         <h1 class="analytic-header">Event Analytics</h1>
@@ -8,7 +52,7 @@
 
         <div class="row g-4">
             <!-- Ticket Sales Chart -->
-            <div class="col-lg-8">
+            <div class="col-12 col-lg-8">
                 <div class="chart-card">
                     <h5 class="mb-3" style="color: var(--text-main);">Ticket Sales Over Time</h5>
                     <canvas id="ticketSalesChart"></canvas>
@@ -16,7 +60,7 @@
             </div>
 
             <!-- Attendee Demographics Chart -->
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4">
                 <div class="chart-card">
                     <h5 class="mb-3" style="color: var(--text-main);">Attendee Age Group</h5>
                     <canvas id="attendeeDemographicsChart"></canvas>

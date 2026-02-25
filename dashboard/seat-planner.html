@@ -5,10 +5,40 @@
                 linear-gradient(to right, var(--border-color) 1px, transparent 1px),
                 linear-gradient(to bottom, var(--border-color) 1px, transparent 1px) !important;
         }
+        @media (max-width: 767.98px) {
+            /* Top Nav */
+            .seat-planner-nav-container {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            /* Chart View */
+            #pills-chart .flex-md-row {
+                flex-direction: column !important;
+            }
+            #guestListSidebar {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-right: none !important;
+                border-bottom: 1px solid var(--border-color) !important;
+                margin-bottom: 1rem;
+                padding-bottom: 1rem;
+                padding-right: 0 !important;
+            }
+            #guestListResizer { display: none; }
+
+            /* Blueprint View */
+            #seatPlannerToolbar {
+                justify-content: flex-start !important; /* Override center alignment */
+            }
+            .seat-planner-container {
+                height: 50vh !important; /* Adjust canvas height for mobile */
+                min-height: 300px;
+            }
+        }
     </style>
 
     <!-- NAV BAR -->
-    <div class="seat-planner-nav-container mb-3 d-flex justify-content-between align-items-center w-100">
+    <div class="seat-planner-nav-container mb-3 d-flex justify-content-between align-items-center w-100 gap-3">
         <ul class="nav nav-pills" id="seatPlannerTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="pills-chart-tab" data-bs-toggle="pill" data-bs-target="#pills-chart" type="button" role="tab" aria-controls="pills-chart" aria-selected="true">Chart</button>
@@ -30,7 +60,7 @@
         <!-- CHART VIEW -->
         <div class="tab-pane fade show active" id="pills-chart" role="tabpanel" aria-labelledby="pills-chart-tab">
             <div class="p-3 border rounded" style="background-color: var(--bg-panel); color: var(--text-muted); border-color: var(--border-color) !important;">
-                <div class="d-flex h-100">
+                <div class="d-flex flex-column flex-md-row h-100">
                     <!-- Guest List Sidebar -->
                     <div id="guestListSidebar" class="d-flex flex-column border-end pe-2" style="width: 280px; min-width: 200px; max-width: 50%; border-color: var(--border-color) !important;">
                         <h5 class="mb-3" style="color: var(--text-main);">Guest List</h5>
@@ -38,7 +68,7 @@
                             <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control" placeholder="Search..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                         </div>
-                        <div id="chartGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 500px;">
+                        <div id="chartGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
                             <!-- Populated by JS -->
                             <div class="text-center text-muted small mt-5">Loading guests...</div>
                         </div>
@@ -49,38 +79,40 @@
 
                     <!-- Chart Area -->
                     <div class="flex-grow-1 ps-2" style="min-width: 0;">
-                        <div class="d-flex gap-2 justify-content-start align-items-center mb-3">
-                            <button class="btn btn-outline-secondary" id="btnAddRow" style="color: var(--text-main); border-color: var(--border-color);">
-                                <i class="bi bi-layout-three-columns"></i> Add Row
-                            </button>
-                            <button class="btn btn-outline-secondary" id="btnAddSeat" style="color: var(--text-main); border-color: var(--border-color);">
-                                <i class="bi bi-square"></i> Add Seat
-                            </button>
-                            <button class="btn btn-outline-secondary" id="btnAddTable" style="color: var(--text-main); border-color: var(--border-color);">
-                                <i class="bi bi-circle"></i> Add Table
-                            </button>
-                            <div class="vr"></div>
-                            <button class="btn btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
-                                <i class="bi bi-list-ul"></i> Row
-                            </button>
-                            <button class="btn btn-outline-secondary" id="btnGroupTable" title="Group by Table" style="color: var(--text-main); border-color: var(--border-color);">
-                                <i class="bi bi-grid-3x3"></i> Table
-                            </button>
-                            <div class="vr"></div>
-                            <button class="btn btn-primary" id="btnAutoBuild" style="background-color: var(--primary); border-color: var(--primary);">
-                                <i class="bi bi-magic"></i> Auto Build
-                            </button>
-                            <button class="btn btn-outline-danger" id="btnClearChart">
-                                <i class="bi bi-trash"></i> Clear
-                            </button>
-                            <div class="vr mx-2"></div>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="toggleRowLabels" checked style="cursor: pointer;">
-                                <label class="form-check-label" for="toggleRowLabels" style="color: var(--text-main); cursor: pointer;">Row Labels</label>
+                        <div class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center mb-3">
+                            <!-- Left side controls -->
+                            <div class="d-flex gap-2 flex-wrap align-items-center">
+                                <button class="btn btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
+                                    <i class="bi bi-list-ul"></i> <span class="d-none d-sm-inline">Row</span>
+                                </button>
+                                <button class="btn btn-outline-secondary" id="btnGroupTable" title="Group by Table" style="color: var(--text-main); border-color: var(--border-color);">
+                                    <i class="bi bi-grid-3x3"></i> <span class="d-none d-sm-inline">Table</span>
+                                </button>
+                                <div class="vr d-none d-md-block"></div>
+                                <button class="btn btn-primary" id="btnAutoBuild" style="background-color: var(--primary); border-color: var(--primary);">
+                                    <i class="bi bi-magic"></i> <span class="d-none d-sm-inline">Auto Build</span>
+                                </button>
+                                <button class="btn btn-outline-danger" id="btnClearChart">
+                                    <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Clear</span>
+                                </button>
+                                <div class="vr mx-2 d-none d-md-block"></div>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="toggleRowLabels" checked style="cursor: pointer;">
+                                    <label class="form-check-label" for="toggleRowLabels" style="color: var(--text-main); cursor: pointer;">Labels</label>
+                                </div>
+                            </div>
+                            <!-- Right side controls -->
+                            <div class="mt-2 mt-md-0">
+                                <button class="btn btn-primary" id="btnSaveChart">
+                                    <i class="bi bi-save"></i> Save
+                                </button>
+                                <button class="btn btn-outline-secondary" id="btnEditChart" style="display: none;"><i class="bi bi-pencil"></i> Edit</button>
                             </div>
                         </div>
-                        <div id="chartViewContainer" class="p-3 border rounded" style="min-height: 400px; background-color: var(--bg-muted);">
-                            <div class="text-center text-muted">Click 'Auto Build' to generate a layout based on event seat count.</div>
+                        <div id="chartViewContainer" class="p-3 border rounded overflow-auto" style="min-height: 400px; max-height: 600px; background-color: var(--bg-muted);">
+                            <div id="seatPlannerRowContainer" class="d-flex flex-column gap-3">
+                                <div class="text-center text-muted">Click 'Auto Build' to generate a layout based on event seat count.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,7 +140,7 @@
         </div>
 
             <!-- TOOLBAR -->
-            <div class="btn-toolbar gap-1 justify-content-center p-2 rounded shadow-sm border" id="seatPlannerToolbar" style="background-color: var(--bg-panel); border-color: var(--border-color) !important;">
+            <div class="btn-toolbar gap-1 justify-content-center flex-wrap p-2 rounded shadow-sm border" id="seatPlannerToolbar" style="background-color: var(--bg-panel); border-color: var(--border-color) !important;">
 
                 <!-- Select -->
                 <button class="btn btn-outline-secondary tool-btn active" data-tool="select">

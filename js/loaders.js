@@ -169,13 +169,11 @@ function loadFooter() {
    SEAT PLANNER LAZY LOADER
 ========================== */
 
-let seatPlannerLoaded = false;
+let seatPlannerScriptLoaded = false;
 
 async function loadSeatPlanner() {
 
   console.log("Seat Plan tab activated → loading planner");
-
-    if (seatPlannerLoaded) return;
 
     const container = document.getElementById("seat-planner");
     if (!container) return;
@@ -192,11 +190,18 @@ async function loadSeatPlanner() {
         container.querySelectorAll(".dropdown-toggle")
             .forEach(el => new bootstrap.Dropdown(el));
 
-        await loadSeatPlannerScript("../js/seat-planner.js");
+        // Load Fabric.js first (if not already loaded)
+        if (typeof fabric === 'undefined') {
+            await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js");
+        }
+
+        if (!seatPlannerScriptLoaded) {
+            await loadSeatPlannerScript("../js/seat-planner.js");
+            seatPlannerScriptLoaded = true;
+        }
 
         if (typeof initSeatPlanner === "function") {
             initSeatPlanner();
-            seatPlannerLoaded = true;
         }
 
     } catch (err) {

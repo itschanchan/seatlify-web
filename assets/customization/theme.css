@@ -2,6 +2,7 @@
 :root {
     /* --- 1. BRAND COLORS --- */
     --color-primary: #dc3545;
+    --color-logo: #b02a37;
     --color-primary-hover: #bb2d3b;
     --color-primary-light: #f8d7da;
     
@@ -16,6 +17,7 @@
     --color-text-muted: #495057;
     --color-text-white: #ffffff;
     --color-border-light: #e5e7eb;
+
 
     /* --- 3. LAYOUT & SPACING (Global Tokens) --- */
     --navbar-padding-y: 1rem;
