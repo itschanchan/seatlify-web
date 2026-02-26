@@ -1,0 +1,95 @@
+<!-- ============================
+     BOTTOM NAV BAR (For Mobile)
+============================ -->
+<nav class="bottom-nav-bar" id="bottom-nav">
+    <ul class="nav-items">
+        <li class="nav-item">
+            <a class="nav-link active" href="#" data-target="dashboard">
+                <i class="bi bi-columns-gap"></i>
+                <span class="label">Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" data-target="event-manager">
+                <i class="bi bi-calendar3"></i>
+                <span class="label">Events</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" data-target="seat-planner">
+                <i class="bi bi-diagram-3"></i>
+                <span class="label">Seat Planner</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" data-target="tickets">
+                <i class="bi bi-ticket-perforated"></i>
+                <span class="label">Tickets</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" data-target="analytics">
+                <i class="bi bi-graph-up"></i>
+                <span class="label">Analytics</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" data-target="invitations">
+                <i class="bi bi-envelope"></i>
+                <span class="label">Invitations</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<style>
+    .bottom-nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: auto;
+        background-color: var(--bg-panel);
+        border-top: 1px solid var(--border-color);
+        z-index: 1040;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+
+    .bottom-nav-bar .nav-items {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        list-style: none;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    .bottom-nav-bar .nav-item {
+        flex: 1;
+        text-align: center;
+    }
+
+    .bottom-nav-bar .nav-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.7rem;
+        gap: 2px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s ease-in-out;
+    }
+
+    .bottom-nav-bar .nav-link .label {
+        display: block;
+    }
+
+    .bottom-nav-bar .nav-link.active,
+    .bottom-nav-bar .nav-link:hover {
+        color: var(--primary);
+    }
+</style>

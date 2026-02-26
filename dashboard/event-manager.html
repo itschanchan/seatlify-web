@@ -1,4 +1,47 @@
-<div class="container py-4">
+<div class="container-fluid py-4">
+    <style>
+        @media (max-width: 767.98px) {
+            /* Make calendar more compact on mobile */
+            .calendar-wrapper {
+                padding: 0.5rem !important;
+            }
+            .calendar-wrapper h4 {
+                font-size: 1.25rem;
+            }
+            .calendar-grid .col {
+                min-height: 85px !important;
+                padding: 0.25rem !important;
+                font-size: 0.7rem;
+            }
+            .calendar-grid .badge {
+                font-size: 0.6rem;
+                white-space: normal;
+            }
+        }
+        @media (max-width: 991.98px) {
+            /* Make table compact on tablet and mobile */
+            .table-responsive .table {
+                font-size: 0.75rem;
+            }
+            .table-responsive .table th, 
+            .table-responsive .table td {
+                padding: 0.25rem 0.2rem !important;
+            }
+            .table-responsive .btn {
+                padding: 0.1rem 0.3rem;
+                font-size: 0.7rem;
+            }
+            .table-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-end;
+            }
+            .table-actions .btn {
+                margin-right: 0 !important;
+            }
+        }
+    </style>
     <div class="card shadow-sm" style="background-color: var(--bg-panel); border: 1px solid var(--border-color);">
         <div class="card-body">
 

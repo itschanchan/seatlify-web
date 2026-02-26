@@ -81,8 +81,11 @@
    ============================================ */
 @media (max-width: 576px) {
     .ticket-container {
-        padding: 1.5rem;
-        margin: 1rem auto; /* Reduce margin on mobile but keep it centered */
+        margin: 0; /* Remove margin to go edge-to-edge */
+        padding: 2rem 1.5rem; /* Add some vertical padding */
+        border-radius: 0; /* Remove rounding for a full-width block */
+        max-width: 100%; /* Ensure it doesn't exceed screen width */
+        box-shadow: none; /* Remove shadow for a cleaner mobile look */
     }
 
     .ticket-header {

@@ -1,0 +1,151 @@
+<div class="container-fluid py-4">
+    <style>
+        .invitation-preview-wrapper [contenteditable="true"] {
+            outline: 2px dashed transparent;
+            transition: outline 0.2s ease-in-out;
+        }
+        .invitation-preview-wrapper [contenteditable="true"]:hover,
+        .invitation-preview-wrapper [contenteditable="true"]:focus {
+            outline-color: var(--primary);
+            background-color: rgba(var(--primary-rgb), 0.05);
+        }
+    </style>
+    <!-- Editor Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Invitation Designer</h2>
+        <div>
+            <button id="btnPreviewInvitation" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> Preview</button>
+            <button class="btn btn-primary"><i class="bi bi-link-45deg me-1"></i> Save & Get Link</button>
+        </div>
+    </div>
+
+    <!-- Invitation Editor/Preview -->
+    <div id="invitationDesigner" class="invitation-preview-wrapper mx-auto" style="max-width: 800px; background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        
+        <!-- 4. Banner (image upload) -->
+        <div class="invitation-banner position-relative bg-light" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+            <img id="bannerImagePreview" src="https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Upload+Your+Banner" class="img-fluid" style="border-top-left-radius: 12px; border-top-right-radius: 12px; object-fit: cover; width: 100%; height: 300px;">
+            <div class="position-absolute top-0 end-0 p-3">
+                <label for="bannerUpload" class="btn btn-sm btn-light bg-white shadow-sm">
+                    <i class="bi bi-upload me-1"></i> Change Banner
+                </label>
+                <input type="file" id="bannerUpload" class="d-none" accept="image/*">
+            </div>
+        </div>
+
+        <div class="invitation-content p-4 p-md-5">
+            <!-- 1. Header title -->
+            <h1 contenteditable="true" class="invitation-title display-4 mb-3" style="color: var(--text-main);">You're Invited!</h1>
+
+            <!-- 3. Hosted by -->
+            <p contenteditable="true" class="lead" style="color: var(--text-muted);">Hosted by: <span class="fw-bold" style="color: var(--text-main);">Your Organization</span></p>
+
+            <hr class="my-4" style="border-color: var(--border-color);">
+
+            <!-- 5. Description -->
+            <div contenteditable="true" class="invitation-description mb-4 fs-5" style="color: var(--text-main);">
+                <p>Join us for an exclusive event where we will unveil our latest innovations and celebrate a year of success. It's an evening you won't want to miss, filled with networking opportunities, keynote speakers, and live entertainment.</p>
+            </div>
+
+            <!-- 2. Venue -->
+            <div class="card mb-4 border-0" style="background-color: var(--bg-muted);">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: var(--text-main);">When & Where</h5>
+                    <p contenteditable="true" class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>October 26, 2026 at 7:00 PM</p>
+                    <p contenteditable="true" class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>The Grand Auditorium, 123 Main St</p>
+                </div>
+            </div>
+
+            <!-- 7. Fill out form for the guests -->
+            <div class="guest-form-section mt-5 p-4 rounded" style="background-color: var(--bg-muted);">
+                <h4 class="mb-3 text-center" style="color: var(--text-main);">Will you be attending?</h4>
+                <!-- 6. Accept and decline invite button -->
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-4">
+                    <button type="button" class="btn btn-success btn-lg px-4 gap-3">Yes, I'll be there!</button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg px-4">No, I can't make it</button>
+                </div>
+
+                <!-- This form would appear after clicking 'Accept' -->
+                <div class="rsvp-form">
+                    <h5 class="mb-3" style="color: var(--text-main);">Please confirm your details:</h5>
+                    <div class="mb-3">
+                        <label for="guestName" class="form-label" style="color: var(--text-muted);">Full Name</label>
+                        <input type="text" class="form-control" id="guestName" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+                    <div class="mb-3">
+                        <label for="guestEmail" class="form-label" style="color: var(--text-muted);">Email Address</label>
+                        <input type="email" class="form-control" id="guestEmail" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Container for the dynamically loaded modal -->
+<div id="invitationPreviewModalContainer"></div>
+
+<script>
+    // Self-invoking function to avoid polluting the global scope
+    (function() {
+        // --- Banner image upload preview logic ---
+        const bannerUpload = document.getElementById('bannerUpload');
+        const bannerPreview = document.getElementById('bannerImagePreview');
+        if (bannerUpload && bannerPreview) {
+            bannerUpload.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        bannerPreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // --- Preview Modal Logic ---
+        const modalContainer = document.getElementById('invitationPreviewModalContainer');
+        if (modalContainer) {
+            // The path is relative to dashboard.html where this content is injected.
+            fetch('invitations/invitation-preview-modal.html')
+                .then(res => {
+                    if (!res.ok) throw new Error(`Modal file not found at ${res.url}`);
+                    return res.text();
+                })
+                .then(html => {
+                    modalContainer.innerHTML = html;
+                    bindPreviewButton();
+                })
+                .catch(err => console.error("Error loading preview modal:", err));
+        }
+
+        function bindPreviewButton() {
+            const previewBtn = document.getElementById('btnPreviewInvitation');
+            const designer = document.getElementById('invitationDesigner');
+            const modalEl = document.getElementById('invitationPreviewModal');
+            
+            if (!previewBtn || !designer || !modalEl) return;
+
+            const modal = new bootstrap.Modal(modalEl);
+            const previewWrapper = document.getElementById('previewContentWrapper');
+
+            previewBtn.addEventListener('click', () => {
+                const previewNode = designer.cloneNode(true);
+
+                // Clean up the cloned node for a pure preview
+                previewNode.removeAttribute('id'); // Avoid duplicate IDs
+                previewNode.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                    el.removeAttribute('contenteditable');
+                    el.style.outline = 'none';
+                    el.style.backgroundColor = '';
+                });
+                previewNode.querySelector('.position-absolute.top-0.end-0')?.remove();
+
+                previewWrapper.innerHTML = '';
+                previewWrapper.appendChild(previewNode);
+                modal.show();
+            });
+        }
+    })();
+</script>

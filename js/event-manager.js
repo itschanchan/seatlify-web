@@ -150,17 +150,13 @@ function renderEventView() {
             cardCol.className = 'col-12';
             cardCol.innerHTML = `
                 <div class="card shadow-sm border-0" style="background-color: var(--bg-panel);">
-                    <div class="card-body position-relative">
-                        <div class="position-absolute top-0 end-0 p-2">
-                            <button class="btn btn-sm btn-outline-secondary me-1 btn-edit" title="Edit"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger btn-delete" title="Delete"><i class="bi bi-trash"></i></button>
-                        </div>
+                    <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="rounded p-3 me-3 text-center" style="min-width: 80px; background-color: var(--bg-muted);">
                                 <h3 class="mb-0" style="color: var(--primary);">${day}</h3>
                                 <small class="fw-bold">${month}</small>
                             </div>
-                            <div>
+                            <div class="flex-grow-1">
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <h5 class="mb-0" style="color: var(--text-main);">${event.title}</h5>
                                     <span class="badge ${badgeClass}">${statusText}</span>
@@ -168,6 +164,10 @@ function renderEventView() {
                                 <p class="mb-1 text-muted small">${event.description || ''}</p>
                                 <p class="mb-0" style="color: var(--text-muted);"><i class="bi bi-geo-alt me-1"></i> ${venueName}</p>
                                 <p class="mb-0" style="color: var(--text-muted);"><i class="bi bi-clock me-1"></i> ${timeStr}</p>
+                            </div>
+                            <div class="d-flex flex-column gap-2 ms-3">
+                                <button class="btn btn-sm btn-outline-secondary btn-edit" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger btn-delete" title="Delete"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -273,7 +273,7 @@ function renderEventView() {
                     <td style="border-bottom-color: var(--border-color);">
                         <span class="badge ${badgeClass}">${statusText}</span>
                     </td>
-                    <td class="text-end" style="border-bottom-color: var(--border-color);">
+                    <td class="text-end table-actions" style="border-bottom-color: var(--border-color);">
                         <button class="btn btn-sm btn-outline-secondary me-1 btn-edit" style="border-color: var(--border-color); color: var(--text-muted);">
                             <i class="bi bi-pencil"></i>
                         </button>

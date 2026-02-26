@@ -34,15 +34,21 @@
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        .analytic-header {
+        .analytic-container {
+            padding: 0.75rem;
+        }
+        h1.analytic-header {
             font-size: 1.75rem;
+        }
+        p.analytic-description {
+            font-size: 0.9rem;
         }
         .chart-card {
             padding: 1rem;
         }
     }
 </style>
-<div class="analytic-container">
+<div class="container-fluid py-4">
     <div class="analytic-header-container">
         <h1 class="analytic-header">Event Analytics</h1>
     </div>

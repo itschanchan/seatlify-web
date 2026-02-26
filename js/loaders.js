@@ -229,6 +229,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tab) return;
 
     tab.addEventListener("shown.bs.tab", loadSeatPlanner);
+    tab.addEventListener('hide.bs.tab', () => {
+        if (typeof window.saveCurrentPlannerState === 'function') {
+            console.log("Main tab switched away from seat planner, auto-saving...");
+            window.saveCurrentPlannerState();
+        }
+    });
 });
 
 

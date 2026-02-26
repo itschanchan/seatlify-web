@@ -101,6 +101,58 @@
         .speed-dial-container.active .speed-dial-toggle .bi-plus-lg {
             transform: rotate(45deg);
         }
+
+        @media (max-width: 767.98px) {
+            /* Prevent horizontal scroll */
+            body {
+                overflow-x: hidden;
+            }
+
+            /* Main layout adjustments */
+            .dashboard-layout {
+                display: block; 
+            }
+
+            /* Adjust main content to account for the bottom nav bar */
+            main.main-content {
+                margin-left: 0 !important; 
+                padding-bottom: 70px; /* Space for the bottom bar */
+                width: 100% !important;
+                padding-right: 0 !important;
+                padding-left: 0 !important;
+            }
+
+            /* The main content should not be 'expanded' on mobile */
+            main.main-content.expanded {
+                margin-left: 0 !important;
+            }
+            
+            .responsive-font {
+                font-size: 4.5rem !important; /* Adjust from display-1 for mobile */
+            }
+
+            .speed-dial-container {
+                bottom: 85px; /* Positioned above the ~70px bottom nav bar */
+                right: 15px;
+            }
+
+            /* The rules to hide/show nav bars are now handled below with a mobile-first approach */
+        }
+
+        /* --- Mobile First Navigation --- */
+        /* By default (on mobile), show the bottom nav and hide the sidebar */
+        #bottom-nav-container {
+            display: block;
+        }
+        .sidebar-container {
+            display: none;
+        }
+
+        /* On larger screens (desktop), hide the bottom nav and show the sidebar */
+        @media (min-width: 767.98px) {
+            #bottom-nav-container { display: none; }
+            .sidebar-container { display: block; }
+        }
     </style>
 </head>
 <body>
@@ -113,12 +165,17 @@
     <div class="sidebar-container" id="sidebar-container"></div>
 
     <!-- ============================
+         BOTTOM NAV (Injected for Mobile)
+    ============================ -->
+    <div id="bottom-nav-container"></div>
+
+    <!-- ============================
          MAIN CONTENT
     ============================ -->
     <main class="main-content expanded" id="mainContent">
 
         <div class="demo-wrapper">
-            <div class="demo-menu mb-3 d-flex justify-content-between align-items-center">
+            <div class="demo-menu mb-3 d-flex justify-content-between align-items-center px-3">
                 <h1>Dashboard SPA Demo</h1>
                 <button
                     class="btn btn-secondary"
@@ -134,26 +191,6 @@
                     <div class="demo-panel p-3">Loading...</div>
                 </div>
             </div>
-        </div>
-
-        <!-- ============================
-             SPEED DIAL (FAB)
-        ============================ -->
-        <div class="speed-dial-container" id="speedDial">
-            <div class="speed-dial-menu">
-                <a href="#" class="speed-dial-item" title="Add Event" onclick="event.preventDefault(); document.querySelector('[data-target=event-manager]').click()">
-                    <i class="bi bi-calendar-plus"></i>
-                </a>
-                <a href="#" class="speed-dial-item" title="New Seat Plan" onclick="event.preventDefault(); document.querySelector('[data-target=seat-planner]').click()">
-                    <i class="bi bi-diagram-3"></i>
-                </a>
-                <a href="#" class="speed-dial-item" title="Send Invitation" onclick="event.preventDefault(); document.querySelector('[data-target=invitations]').click()">
-                    <i class="bi bi-envelope"></i>
-                </a>
-            </div>
-            <button class="speed-dial-toggle">
-                <i class="bi bi-plus-lg"></i>
-            </button>
         </div>
     </main>
 </div>
@@ -177,6 +214,26 @@
     </div>
 </div>
 
+<!-- ============================
+     SPEED DIAL (FAB)
+============================ -->
+<div class="speed-dial-container" id="speedDial">
+    <div class="speed-dial-menu">
+        <a href="#" class="speed-dial-item" title="Add Event" onclick="event.preventDefault(); document.querySelector('[data-target=event-manager]').click()">
+            <i class="bi bi-calendar-plus"></i>
+        </a>
+        <a href="#" class="speed-dial-item" title="New Seat Plan" onclick="event.preventDefault(); document.querySelector('[data-target=seat-planner]').click()">
+            <i class="bi bi-diagram-3"></i>
+        </a>
+        <a href="#" class="speed-dial-item" title="Send Invitation" onclick="event.preventDefault(); document.querySelector('[data-target=invitations]').click()">
+            <i class="bi bi-envelope"></i>
+        </a>
+    </div>
+    <button class="speed-dial-toggle">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -198,10 +255,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // ----------------------------
     // Load Sidebar once
     // ----------------------------
-    fetch("side-bar-dashboard.html")
+    const sidebarPromise = fetch("side-bar-dashboard.html")
         .then(res => res.text())
         .then(html => {
             document.getElementById("sidebar-container").innerHTML = html;
+        });
+
+    // ----------------------------
+    // Load Bottom Nav for mobile
+    // ----------------------------
+    const bottomNavPromise = fetch("bottom-nav-bar-dashboard.html")
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("bottom-nav-container").innerHTML = html;
+        });
+
+    Promise.all([sidebarPromise, bottomNavPromise]).then(() => {
 
             // Sidebar toggle
             const sidebar = document.getElementById("sidebar");
@@ -219,23 +288,27 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // ----------------------------
-            // Sidebar link click handling
+            // Navigation link click handling (for both sidebar and bottom nav)
             // ----------------------------
-            document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(link => {
                 link.addEventListener('click', async e => {
                     e.preventDefault();
 
-                    // Remove active class from all links
-                    document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
+                    const target = link.dataset.target;
 
-                    const target = link.dataset.target; // e.g. "event-manager" or "seat-planner"
+                    // Remove active class from all links in both navs
+                    document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Add active class to the clicked link's counterparts in BOTH navs
+                    document.querySelectorAll(`.sidebar-nav .nav-link[data-target="${target}"], .bottom-nav-bar .nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
+
+                    localStorage.setItem('seatlify_active_dashboard_tab', target);
                     const container = document.getElementById("dashboard-content");
                     
                     if (target === "dashboard") {
                         container.innerHTML = `<div class="demo-panel p-3">Loading Dashboard...</div>`;
                         try {
-                            const res = await fetch("../dashboard/dashboard-content.html");
+                            const res = await fetch("dashboard-content.html");
                             if (res.ok) {
                                 container.innerHTML = await res.text();
                                 if (typeof initDashboard === 'function') initDashboard();
@@ -281,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if(target === "analytics") {
                         container.innerHTML = `<div class="demo-panel p-3">Loading Analytics...</div>`;
                         try {
-                            const res = await fetch("../dashboard/analytics.html");
+                            const res = await fetch("analytics.html");
                             if (res.ok) container.innerHTML = await res.text();
                             else container.innerHTML = `<p class="text-danger">Failed to load Analytics.</p>`;
                         } catch (err) {
@@ -292,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if(target === "finance") {
                         container.innerHTML = `<div class="demo-panel p-3">Loading Finance...</div>`;
                         try {
-                            const res = await fetch("../dashboard/finance.html");
+                            const res = await fetch("finance.html");
                             if (res.ok) container.innerHTML = await res.text();
                             else container.innerHTML = `<p class="text-danger">Failed to load Finance.</p>`;
                         } catch (err) {
@@ -303,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if(target === "invitations") {
                         container.innerHTML = `<div class="demo-panel p-3">Loading Invitations...</div>`;
                         try {
-                            const res = await fetch("../dashboard/invitations.html");
+                            const res = await fetch("invitations/invitations.html");
                             if (res.ok) container.innerHTML = await res.text();
                             else container.innerHTML = `<p class="text-danger">Failed to load Invitations.</p>`;
                         } catch (err) {
@@ -313,11 +386,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
 
-            // Load default tab: Dashboard
-            const defaultLink = document.querySelector('.sidebar-nav .nav-link[data-target="dashboard"]');
-            if(defaultLink) defaultLink.click();
-        })
-        .catch(err => console.error("Sidebar load failed:", err));
+            // Load last active tab or default to Dashboard
+            const lastActiveTab = localStorage.getItem('seatlify_active_dashboard_tab');
+            let linkToClick = null;
+            if (lastActiveTab) {
+                linkToClick = document.querySelector(`.sidebar-nav .nav-link[data-target="${lastActiveTab}"]`);
+            }
+
+            // Fallback to default if saved link not found or nothing was saved
+            if (!linkToClick) {
+                linkToClick = document.querySelector('.sidebar-nav .nav-link[data-target="dashboard"]');
+            }
+            
+            if (linkToClick) linkToClick.click();
+    }).catch(err => console.error("Navigation UI load failed:", err));
 
     // ----------------------------
     // Lazy load Event Manager
@@ -326,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById("event-manager");
         if (!container) return;
         try {
-            const res = await fetch("../dashboard/event-manager.html");
+            const res = await fetch("event-manager.html");
             container.innerHTML = await res.text();
 
             // Load JS
@@ -355,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById("seat-planner");
         if (!container) return;
         try {
-            const res = await fetch("../dashboard/seat-planner.html");
+            const res = await fetch("seat-planner.html");
             container.innerHTML = await res.text();
 
             // Initialize Bootstrap dropdowns
