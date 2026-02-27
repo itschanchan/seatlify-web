@@ -6,6 +6,25 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <!-- Stepper -->
+                <div class="d-flex justify-content-between mb-4 position-relative mx-3">
+                    <div class="position-absolute top-50 start-0 w-100 translate-middle-y" style="height: 2px; background-color: var(--border-color); z-index: 0;"></div>
+                    <div class="position-absolute top-50 start-0 translate-middle-y" id="stepperProgress" style="height: 2px; background-color: var(--primary); z-index: 0; width: 0%; transition: width 0.3s;"></div>
+                    
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator1">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-primary text-white" style="width: 30px; height: 30px;">1</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Create Event</small>
+                    </div>
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator2">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-secondary text-white" style="width: 30px; height: 30px;">2</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Seats</small>
+                    </div>
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator3">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-secondary text-white" style="width: 30px; height: 30px;">3</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Tickets</small>
+                    </div>
+                </div>
+
                 <form>
                     <!-- Step 1: Event Details -->
                     <div id="step1">

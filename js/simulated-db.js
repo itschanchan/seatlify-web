@@ -84,6 +84,22 @@ const MockDB = {
             localStorage.setItem('seatlify_events', JSON.stringify(events));
             window.dispatchEvent(new CustomEvent('db-events-updated'));
         }
+    },
+
+    // --- API UTILITIES ---
+    generateQRCodeUrl: (data) => {
+        // Generates a QR code image URL using api.qrserver.com
+        return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
+    },
+
+    sendTicketEmail: (email, ticketData) => {
+        return new Promise((resolve) => {
+            console.log(`[Email API] Sending ticket to ${email}...`, ticketData);
+            // Simulate network delay for email sending
+            setTimeout(() => {
+                resolve({ success: true, message: "Email sent successfully" });
+            }, 1500);
+        });
     }
 };
 
@@ -126,10 +142,40 @@ window.openCreateEventModal = async function() {
     const btnCreate = document.getElementById('btnCreate');
     const btnCancel = document.getElementById('btnCancel');
 
+    // Stepper Logic
+    const updateStepper = (step) => {
+        const progress = document.getElementById('stepperProgress');
+        const ind2 = document.getElementById('stepIndicator2')?.querySelector('.step-circle');
+        const ind3 = document.getElementById('stepIndicator3')?.querySelector('.step-circle');
+
+        if (!progress || !ind2 || !ind3) return;
+
+        // Reset
+        ind2.classList.remove('bg-primary');
+        ind2.classList.add('bg-secondary');
+        ind3.classList.remove('bg-primary');
+        ind3.classList.add('bg-secondary');
+
+        if (step === 1) {
+            progress.style.width = '0%';
+        } else if (step === 2) {
+            ind2.classList.remove('bg-secondary');
+            ind2.classList.add('bg-primary');
+            progress.style.width = '50%';
+        } else if (step === 3) {
+            ind2.classList.remove('bg-secondary');
+            ind2.classList.add('bg-primary');
+            ind3.classList.remove('bg-secondary');
+            ind3.classList.add('bg-primary');
+            progress.style.width = '100%';
+        }
+    };
+
     // Reset State
     step1.style.display = 'block';
     step2.style.display = 'none';
     if(step3) step3.style.display = 'none';
+    updateStepper(1);
     btnNext.style.display = 'inline-block';
     btnCreate.style.display = 'none';
     btnBack.style.display = 'none';
@@ -173,21 +219,36 @@ window.openCreateEventModal = async function() {
     }
 
     if(newAddTierBtn) {
+        const list = document.getElementById('tiersList');
+        
+        // Helper to generate row content
+        const getRowContent = (index) => `
+            <div class="col-1 text-center">
+                <span class="text-muted small fw-bold">#${index}</span>
+            </div>
+            <div class="col-4">
+                <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+            </div>
+            <div class="col-3">
+                <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+            </div>
+            <div class="col-4">
+                <input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+            </div>
+        `;
+
+        // Fix initial static row if it lacks the number
+        const firstRow = list.querySelector('.tier-row');
+        if (firstRow && !firstRow.querySelector('.col-1')) {
+            firstRow.className = 'row g-2 mb-2 tier-row align-items-center';
+            firstRow.innerHTML = getRowContent(1);
+        }
+
         newAddTierBtn.addEventListener('click', () => {
-            const list = document.getElementById('tiersList');
+            const rowCount = list.querySelectorAll('.tier-row').length + 1;
             const row = document.createElement('div');
-            row.className = 'row g-2 mb-2 tier-row';
-            row.innerHTML = `
-                <div class="col-5">
-                    <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                </div>
-                <div class="col-3">
-                    <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                </div>
-                <div class="col-4">
-                    <input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                </div>
-            `;
+            row.className = 'row g-2 mb-2 tier-row align-items-center';
+            row.innerHTML = getRowContent(rowCount);
             list.appendChild(row);
         });
     }
@@ -208,12 +269,14 @@ window.openCreateEventModal = async function() {
             // Go to Step 2
             step1.style.display = 'none';
             step2.style.display = 'block';
+            updateStepper(2);
             newBtnBack.style.display = 'inline-block';
             btnCancel.style.display = 'none';
         } else if (step2.style.display !== 'none') {
             // Go to Step 3
             step2.style.display = 'none';
             step3.style.display = 'block';
+            updateStepper(3);
             newBtnNext.style.display = 'none';
             newBtnCreate.style.display = 'inline-block';
         }
@@ -224,11 +287,13 @@ window.openCreateEventModal = async function() {
         if (step2.style.display !== 'none') {
             step2.style.display = 'none';
             step1.style.display = 'block';
+            updateStepper(1);
             newBtnBack.style.display = 'none';
             btnCancel.style.display = 'inline-block';
         } else if (step3.style.display !== 'none') {
             step3.style.display = 'none';
             step2.style.display = 'block';
+            updateStepper(2);
             newBtnNext.style.display = 'inline-block';
             newBtnCreate.style.display = 'none';
         }

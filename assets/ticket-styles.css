@@ -3,14 +3,14 @@
    ============================================ */
 
 .ticket-container {
-    background-color: var(--color-bg-white);
+    background-color: var(--bg-panel);
     border-radius: 20px;
     padding: 2.5rem;
     max-width: 450px;
     margin: 2rem auto; /* Centers the container horizontally */
     text-align: center; /* Centers text content */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    color: var(--color-text-dark);
+    color: var(--text-main);
     font-family: var(--font-family-base);
 }
 
@@ -21,7 +21,7 @@
 .ticket-header {
     font-size: var(--fs-3xl);
     font-weight: var(--fw-bold);
-    color: var(--color-text-dark);
+    color: var(--text-main);
     margin: 0;
 }
 
@@ -32,7 +32,7 @@
 }
 
 .ticket-divider {
-    border-top: 4px dashed var(--color-border-light);
+    border-top: 4px dashed var(--border-color);
     margin-bottom: 1.5rem;
     width: 100%;
 }
@@ -55,7 +55,7 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 0.5rem;
-    border-bottom: 1px dashed var(--color-border-light);
+    border-bottom: 1px dashed var(--border-color);
 }
 
 .ticket-info-row:last-child {
@@ -64,16 +64,31 @@
 
 .ticket-info-label {
     font-weight: var(--fw-semibold);
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     text-align: left;
     font-size: var(--fs-base);
 }
 
 .ticket-info-value {
     font-weight: var(--fw-regular);
-    color: var(--color-text-dark);
+    color: var(--text-main);
     text-align: right;
     font-size: var(--fs-base);
+}
+
+/* ============================================
+   THEME UTILITIES (For Ticket Page)
+   ============================================ */
+.bg-panel-theme {
+    background-color: var(--bg-panel) !important;
+}
+
+.text-main-theme {
+    color: var(--text-main) !important;
+}
+
+.text-muted-theme {
+    color: var(--text-muted) !important;
 }
 
 /* ============================================

@@ -119,7 +119,6 @@ function initSeatPlanner() {
 
     // Load stats whenever initialized/shown
     loadCurrentEventStats();
-    renderGuestList();
 
     seatPlannerInitialized = true;
 
@@ -135,6 +134,13 @@ function initSeatPlanner() {
 
     canvas.style.transformOrigin = "0 0";
 
+    // Restore Chart Edit Mode State
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+    if (currentEventId) {
+        const savedMode = localStorage.getItem(`seatlify_chart_edit_mode_${currentEventId}`);
+        isChartEditMode = savedMode === 'false' ? false : true;
+    }
+
     historyManager.clear();
     bindKeyboardShortcuts();
     bindToolSelection();
@@ -146,7 +152,6 @@ function initSeatPlanner() {
     bindBulkAdd();
     bindSaveButton();
     bindAutoBuildButton();
-    bindGuestListResizer();
     bindEditTotalSeats();
     bindClearChartButton();
     bindChartGroupingButtons();
@@ -172,6 +177,23 @@ function addChartRowButton(container) {
     container.appendChild(addRowBtn);
 }
 
+function setActiveTool(tool) {
+    currentTool = tool;
+    const toolButtons = document.querySelectorAll(".tool-btn");
+    toolButtons.forEach(btn => btn.classList.remove("active"));
+
+    const shapeMainBtn = document.getElementById("shapeMainBtn");
+
+    if (tool === "rect" || tool === "circle") {
+        if(shapeMainBtn) shapeMainBtn.classList.add("active");
+    } else {
+        const targetBtn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
+        if (targetBtn) {
+            targetBtn.classList.add("active");
+        }
+    }
+}
+
 /* ==========================
    TOOL SELECTION (UPDATED)
 ========================== */
@@ -180,20 +202,6 @@ function bindToolSelection() {
   const shapeOptions = document.querySelectorAll(".shape-option");
   const shapeMainBtn = document.getElementById("shapeMainBtn");
   const shapeMainIcon = document.getElementById("shapeMainIcon");
-
-  function setActiveTool(tool) {
-    currentTool = tool;
-
-    toolButtons.forEach(btn => btn.classList.remove("active"));
-
-    if (tool === "rect" || tool === "circle") {
-      shapeMainBtn.classList.add("active");
-    } else {
-      document
-        .querySelector(`.tool-btn[data-tool="${tool}"]`)
-        ?.classList.add("active");
-    }
-  }
 
   toolButtons.forEach(btn => {
     btn.addEventListener("click", () => {
@@ -253,6 +261,9 @@ function bindToolbarDragAndDrop() {
 
             historyManager.saveCurrentState();
             createElementOnCanvas(toolType, x, y);
+            
+            // Switch to select tool after dropping an element
+            setActiveTool('select');
         });
     }
 }
@@ -793,38 +804,70 @@ function initChartSortable() {
     if (container && typeof Sortable !== 'undefined') {
         new Sortable(container, {
             animation: 150,
-            ghostClass: 'bg-light'
+            ghostClass: 'bg-light',
+            draggable: '.shadow-sm'
         });
     }
 }
 
 function saveChartState(silent = false) {
-    const layoutData = [];
     const chartContainer = document.getElementById('seatPlannerRowContainer');
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+
+    if (!currentEventId || typeof MockDB === 'undefined') {
+        alert("Chart layout saved locally (No active event linked).");
+        return;
+    }
+    
+    const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+    if (!event) {
+        if (!silent) alert("Error: Could not find the current event to save to.");
+        return;
+    }
+
+    const newLayoutData = [];
+    let tickets = event.tickets ? JSON.parse(JSON.stringify(event.tickets)) : []; // Deep copy
+
     chartContainer.querySelectorAll('.p-3.border.rounded.shadow-sm').forEach(rowEl => {
-        const label = rowEl.querySelector('.row-label')?.textContent || '';
+        const currentDomLabel = rowEl.querySelector('.row-label')?.textContent.trim() || '';
+        const originalLabel = rowEl.dataset.originalLabel;
         const seats = rowEl.querySelectorAll('.chart-seat').length;
-        if (label) { // If a row/table has a label, it's a valid group to save.
-            layoutData.push({ label: label, seats: seats });
+
+        if (!currentDomLabel) return; // Don't save rows with no label
+
+        if (originalLabel) {
+            // This is an existing row. Its identity is `originalLabel`.
+            newLayoutData.push({ label: originalLabel, seats: seats });
+
+            const ticketIndex = tickets.findIndex(t => t.original_name === originalLabel);
+
+            if (currentDomLabel !== originalLabel) {
+                if (ticketIndex !== -1) {
+                    tickets[ticketIndex].name = currentDomLabel;
+                } else {
+                    tickets.push({ name: currentDomLabel, original_name: originalLabel, price: 0, qty: seats });
+                }
+            } else {
+                if (ticketIndex !== -1 && !tickets[ticketIndex].price) {
+                    tickets.splice(ticketIndex, 1);
+                }
+            }
+        } else {
+            // This is a new row. Its current DOM label becomes its original label.
+            newLayoutData.push({ label: currentDomLabel, seats: seats });
         }
     });
 
-    const currentEventId = localStorage.getItem('seatlify_current_event_id');
-
-    if(currentEventId && typeof MockDB !== 'undefined') {
-        const updatePayload = {};
-        updatePayload[`${chartLayoutMode}_layout_data`] = layoutData;
-        MockDB.updateEvent(currentEventId, updatePayload);
-        
-        if (!silent) {
-            const seatCount = layoutData.reduce((acc, group) => acc + group.seats, 0);
-            alert(`Chart layout saved! Total Seats: ${seatCount}`);
-        }
-        console.log("Chart state saved.");
-        loadCurrentEventStats();
-    } else if (!silent) {
-        alert("Chart layout saved locally (No active event linked).");
+    const updatePayload = { tickets: tickets };
+    updatePayload[`${chartLayoutMode}_layout_data`] = newLayoutData;
+    MockDB.updateEvent(currentEventId, updatePayload);
+    
+    if (!silent) {
+        const seatCount = newLayoutData.reduce((acc, group) => acc + group.seats, 0);
+        alert(`Chart layout saved! Total Seats: ${seatCount}`);
     }
+    console.log("Chart state saved.");
+    loadCurrentEventStats();
 }
 
 function bindChartEditControls() {
@@ -834,32 +877,21 @@ function bindChartEditControls() {
     if (btnSave && btnEdit) {
         btnSave.addEventListener('click', () => {
             saveChartState(false);
-
-            // Toggle button visibility
-            btnSave.style.display = 'none';
-            btnEdit.style.display = 'inline-block';
             isChartEditMode = false;
+            
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if(currentEventId) localStorage.setItem(`seatlify_chart_edit_mode_${currentEventId}`, 'false');
+            
             updateChartEditModeUI();
-
-            const sortableContainer = document.getElementById('seatPlannerRowContainer');
-            const sortableInstance = Sortable.get(sortableContainer);
-            if (sortableInstance) {
-                sortableInstance.option('disabled', true);
-            }
         });
 
         btnEdit.addEventListener('click', () => {
-            // Toggle button visibility
-            btnEdit.style.display = 'none';
-            btnSave.style.display = 'inline-block';
             isChartEditMode = true;
+            
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if(currentEventId) localStorage.setItem(`seatlify_chart_edit_mode_${currentEventId}`, 'true');
+            
             updateChartEditModeUI();
-
-            const sortableContainer = document.getElementById('seatPlannerRowContainer');
-            const sortableInstance = Sortable.get(sortableContainer);
-            if (sortableInstance) {
-                sortableInstance.option('disabled', false);
-            }
         });
     }
 }
@@ -918,14 +950,6 @@ function loadCurrentEventStats() {
     }
 }
 
-function renderGuestList() {
-    const list = document.getElementById('chartGuestList');
-    if (!list) return;
-    
-    // Placeholder for guest list rendering
-    list.innerHTML = '<div class="text-center text-muted small mt-3">No guests loaded.</div>';
-}
-
 function bindAutoBuildButton() {
     const btn = document.getElementById('btnAutoBuild');
     if (btn) {
@@ -950,14 +974,6 @@ function bindAutoBuildButton() {
             }
         });
     }
-}
-
-function bindGuestListResizer() {
-    const resizer = document.getElementById('guestListResizer');
-    const sidebar = document.getElementById('guestListSidebar');
-    if (!resizer || !sidebar) return;
-
-    // Simple drag logic could go here, or leave empty to prevent error
 }
 
 function bindClearChartButton() {
@@ -1054,6 +1070,7 @@ function generateChartLayout(totalSeats = 0) {
         savedLayoutData.forEach(groupData => {
             const groupDiv = document.createElement('div');
             groupDiv.className = 'p-3 border rounded shadow-sm';
+            groupDiv.dataset.originalLabel = groupData.label;
             groupDiv.style.backgroundColor = 'var(--bg-panel)';
             groupDiv.style.borderColor = 'var(--border-color)';
             if (chartLayoutMode === 'table') {
@@ -1061,11 +1078,16 @@ function generateChartLayout(totalSeats = 0) {
                 groupDiv.style.width = '200px';
             }
 
+            // Find if there's a custom ticket name for this group
+            const ticketTier = event.tickets ? event.tickets.find(t => t.original_name === groupData.label) : null;
+            const displayName = ticketTier ? ticketTier.name : groupData.label;
+            const price = ticketTier ? ticketTier.price : 0;
+
             const header = document.createElement('div');
             header.className = 'd-flex justify-content-between align-items-center mb-2';
             header.innerHTML = `
                 <div class="d-flex align-items-center gap-2">
-                    <strong class="row-label" style="color: var(--text-main);">${groupData.label}</strong>
+                    <strong class="row-label" style="color: var(--text-main);">${displayName}</strong>
                     <button class="btn btn-sm btn-link p-0 btn-edit-label" title="Edit Label" style="display: none; color: var(--text-muted);">
                         <i class="bi bi-pencil-square"></i>
                     </button>
@@ -1088,7 +1110,12 @@ function generateChartLayout(totalSeats = 0) {
                 }
                 seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
                 seatEl.textContent = j + 1;
-                seatEl.title = `${groupData.label}, Seat ${j + 1}`;
+                seatEl.dataset.bsToggle = 'popover';
+                seatEl.dataset.bsTrigger = 'hover';
+                seatEl.dataset.bsPlacement = 'top';
+                seatEl.dataset.bsHtml = 'true';
+                seatEl.dataset.bsTitle = `${displayName}, Seat ${j + 1}`;
+                seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
                 seatsDiv.appendChild(seatEl);
             }
             groupDiv.appendChild(seatsDiv);
@@ -1106,6 +1133,10 @@ function generateChartLayout(totalSeats = 0) {
 
             for (let i = 0; i < numTables; i++) {
                 const tableEl = document.createElement('div');
+                const tableLabel = `Table ${i + 1}`;
+                const ticketTier = event && event.tickets ? event.tickets.find(t => t.name === tableLabel) : null;
+                const price = ticketTier ? ticketTier.price : 0;
+
                 tableEl.className = 'border rounded p-3 text-center shadow-sm';
                 tableEl.style.backgroundColor = 'var(--bg-panel)';
                 tableEl.style.width = '200px';
@@ -1114,7 +1145,7 @@ function generateChartLayout(totalSeats = 0) {
                 const tableHeader = document.createElement('div');
                 tableHeader.className = 'd-flex justify-content-center align-items-center gap-2 mb-2';
                 tableHeader.innerHTML = `
-                    <strong class="row-label fw-bold" style="color: var(--text-main);">Table ${i + 1}</strong>
+                    <strong class="row-label fw-bold" style="color: var(--text-main);">${tableLabel}</strong>
                     <button class="btn btn-sm btn-link p-0 btn-edit-label" title="Edit Label" style="display: none; color: var(--text-muted);"><i class="bi bi-pencil-square"></i></button>
                 `;
                 tableEl.appendChild(tableHeader);
@@ -1129,7 +1160,12 @@ function generateChartLayout(totalSeats = 0) {
                     seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded-circle';
                     seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
                     seatEl.textContent = j + 1;
-                    seatEl.title = `Table ${i + 1}, Seat ${j + 1}`;
+                    seatEl.dataset.bsToggle = 'popover';
+                    seatEl.dataset.bsTrigger = 'hover';
+                    seatEl.dataset.bsPlacement = 'top';
+                    seatEl.dataset.bsHtml = 'true';
+                    seatEl.dataset.bsTitle = `${tableLabel}, Seat ${j + 1}`;
+                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
                     seatsContainer.appendChild(seatEl);
                 }
                 seatsRendered += seatsInThisTable;
@@ -1150,6 +1186,9 @@ function generateChartLayout(totalSeats = 0) {
                 const header = document.createElement('div');
                 header.className = 'd-flex justify-content-between align-items-center mb-2';
                 const labelText = `Row ${String.fromCharCode(65 + (i % 26))}${Math.floor(i/26) > 0 ? Math.floor(i/26) : ''}`;
+                const ticketTier = event && event.tickets ? event.tickets.find(t => t.name === labelText) : null;
+                const price = ticketTier ? ticketTier.price : 0;
+
                 header.innerHTML = `
                     <div class="d-flex align-items-center gap-2">
                         <strong class="row-label" style="color: var(--text-main);">${labelText}</strong>
@@ -1168,6 +1207,12 @@ function generateChartLayout(totalSeats = 0) {
                     seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded';
                     seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
                     seatEl.textContent = j + 1;
+                    seatEl.dataset.bsToggle = 'popover';
+                    seatEl.dataset.bsTrigger = 'hover';
+                    seatEl.dataset.bsPlacement = 'top';
+                    seatEl.dataset.bsHtml = 'true';
+                    seatEl.dataset.bsTitle = `${labelText}, Seat ${j + 1}`;
+                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
                     seatsDiv.appendChild(seatEl);
                 }
                 groupDiv.appendChild(seatsDiv);
@@ -1256,6 +1301,35 @@ function updateChartEditModeUI() {
         addBtn.style.display = isChartEditMode ? 'block' : 'none';
     }
 
+    const btnAutoBuild = document.getElementById('btnAutoBuild');
+    if (btnAutoBuild) {
+        btnAutoBuild.disabled = !isChartEditMode;
+    }
+
+    const btnClearChart = document.getElementById('btnClearChart');
+    if (btnClearChart) {
+        btnClearChart.disabled = !isChartEditMode;
+    }
+    
+    // Update Toolbar Buttons (Save/Edit)
+    const btnSave = document.getElementById('btnSaveChart');
+    const btnEdit = document.getElementById('btnEditChart');
+    if (btnSave && btnEdit) {
+        if (isChartEditMode) {
+            btnSave.style.display = 'inline-block';
+            btnEdit.style.display = 'none';
+        } else {
+            btnSave.style.display = 'none';
+            btnEdit.style.display = 'inline-block';
+        }
+    }
+
+    // Update Sortable (Drag & Drop) State
+    const sortableInstance = Sortable.get(container);
+    if (sortableInstance) {
+        sortableInstance.option('disabled', !isChartEditMode);
+    }
+
     const rows = container.querySelectorAll('.p-3.border.rounded.shadow-sm');
     rows.forEach(row => {
         const editLabelBtn = row.querySelector('.btn-edit-label');
@@ -1276,6 +1350,17 @@ function updateChartEditModeUI() {
                     existingBtn.remove();
                 }
             }
+        }
+    });
+
+    // Manage Popovers: Enable in Save mode, Disable in Edit mode
+    const seats = container.querySelectorAll('.chart-seat');
+    seats.forEach(seat => {
+        const popover = bootstrap.Popover.getInstance(seat);
+        if (isChartEditMode) {
+            if (popover) popover.dispose();
+        } else {
+            if (!popover) new bootstrap.Popover(seat);
         }
     });
 }
@@ -1312,15 +1397,39 @@ function createChartAddSeatBtn() {
             : 'd-flex align-items-center justify-content-center border rounded');
         seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
         seatEl.textContent = newSeatNumber;
-        
+
         const rowCard = seatsDiv.closest('.p-3');
+        let popoverTitle = `Seat ${newSeatNumber}`;
+        let price = 0;
+
         if (rowCard) {
             const label = rowCard.querySelector('.row-label')?.textContent || '';
-            seatEl.title = `${label}, Seat ${newSeatNumber}`;
+            const originalLabel = rowCard.dataset.originalLabel;
+            
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (currentEventId && typeof MockDB !== 'undefined') {
+                const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+                if (event && event.tickets) {
+                    const ticket = event.tickets.find(t => 
+                        (originalLabel && t.original_name === originalLabel) || 
+                        t.name === label
+                    );
+                    if (ticket) price = ticket.price;
+                }
+            }
+
+            popoverTitle = `${label}, Seat ${newSeatNumber}`;
             const badge = rowCard.querySelector('.badge');
             if(badge) badge.textContent = `${newSeatNumber} seats`;
         }
-        
+
+        seatEl.dataset.bsToggle = 'popover';
+        seatEl.dataset.bsTrigger = 'hover';
+        seatEl.dataset.bsPlacement = 'top';
+        seatEl.dataset.bsHtml = 'true';
+        seatEl.dataset.bsTitle = popoverTitle;
+        seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+
         seatsDiv.insertBefore(seatEl, this);
 
         // Update main counter

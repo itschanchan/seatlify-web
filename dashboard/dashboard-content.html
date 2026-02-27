@@ -5,6 +5,11 @@
                 max-width: 350px !important;
             }
         }
+        @keyframes scanLine {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
     </style>
     <h2 class="mb-4">Dashboard Overview</h2>
 
@@ -26,6 +31,9 @@
                 <a class="nav-link" id="tabPast" href="#" style="color: var(--text-muted);">Past Events</a>
             </li>
         </ul>
+
+        <!-- Scan QR Button -->
+        <button class="btn btn-outline-secondary w-100 w-md-auto me-md-2" title="Scan QR Code" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR</button>
 
         <!-- Create Event Button -->
         <button class="btn btn-primary w-100 w-md-auto" style="background-color: var(--primary); border-color: var(--primary);" onclick="openCreateEventModal()">
@@ -159,3 +167,27 @@
 
 <!-- Container for the Create Event Modal -->
 <div id="createEventModalContainer"></div>
+
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title"><i class="bi bi-qr-code-scan me-2"></i>Scan Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="ratio ratio-1x1 bg-black mb-3 rounded overflow-hidden position-relative">
+                    <div class="d-flex align-items-center justify-content-center h-100 flex-column">
+                        <i class="bi bi-camera-video display-1 text-secondary mb-3"></i>
+                        <p class="text-muted">Camera feed</p>
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <div class="position-absolute top-50 start-0 w-100 border-top border-danger border-2" style="animation: scanLine 2s infinite linear;"></div>
+                </div>
+                <p class="text-muted small">Point camera at QR code</p>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="simulateScanSuccess()">Simulate Scan</button>
+            </div>
+        </div>
+    </div>
+</div>

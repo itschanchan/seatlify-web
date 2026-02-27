@@ -73,6 +73,24 @@
                 </div>
             </div>
         </div>
+
+        <!-- Guest List Section -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <div class="chart-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0" style="color: var(--text-main);">Guest List</h5>
+                        <div class="input-group" style="max-width: 250px;">
+                            <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Search guests..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                    </div>
+                    <div id="analyticsGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -125,6 +143,13 @@
                     }]
                 }
             });
+        }
+
+        // Render Guest List (Placeholder)
+        const guestListContainer = document.getElementById('analyticsGuestList');
+        if (guestListContainer) {
+            // Placeholder for guest list rendering
+            guestListContainer.innerHTML = '<div class="text-center text-muted small mt-3">No guests loaded.</div>';
         }
     })();
 </script>
