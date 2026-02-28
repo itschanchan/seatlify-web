@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard SPA Demo</title>
+    <title>Seatlify | Dashboard</title>
     <link rel="icon" href="data:,">
 
     <!-- Bootstrap CSS -->
@@ -18,6 +18,9 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
     >
 
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../assets/customization/theme.css">
     <link rel="stylesheet" href="../assets/customization/typography.css">
@@ -26,134 +29,6 @@
     <link rel="stylesheet" href="../assets/ticket-styles.css">
     <link rel="stylesheet" href="../assets/analytics.css">
 
-    <style>
-        /* Speed Dial / FAB */
-        .speed-dial-container {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 1050;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .speed-dial-toggle {
-            width: 60px;
-            height: 60px;
-            background-color: var(--primary);
-            color: var(--bg-panel);
-            border: none;
-            cursor: pointer;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .speed-dial-toggle .bi-plus-lg {
-            transition: transform 0.3s ease;
-        }
-
-        .speed-dial-menu {
-            display: flex;
-            flex-direction: column-reverse;
-            align-items: center;
-            margin-bottom: 15px;
-            list-style: none;
-            padding: 0;
-            transform: scaleY(0);
-            transform-origin: bottom;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-            opacity: 0;
-        }
-
-        .speed-dial-item {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: var(--bg-panel);
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            text-decoration: none;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        .speed-dial-item:hover {
-            background-color: var(--primary);
-            transform: scale(1.1);
-            color: var(--bg-panel);
-        }
-
-        /* Active State */
-        .speed-dial-container.active .speed-dial-menu {
-            transform: scaleY(1);
-            opacity: 1;
-        }
-
-        .speed-dial-container.active .speed-dial-toggle .bi-plus-lg {
-            transform: rotate(45deg);
-        }
-
-        @media (max-width: 767.98px) {
-            /* Prevent horizontal scroll */
-            body {
-                overflow-x: hidden;
-            }
-
-            /* Main layout adjustments */
-            .dashboard-layout {
-                display: block; 
-            }
-
-            /* Adjust main content to account for the bottom nav bar */
-            main.main-content {
-                margin-left: 0 !important; 
-                padding-bottom: 70px; /* Space for the bottom bar */
-                width: 100% !important;
-                padding-right: 0 !important;
-                padding-left: 0 !important;
-            }
-
-            /* The main content should not be 'expanded' on mobile */
-            main.main-content.expanded {
-                margin-left: 0 !important;
-            }
-            
-            .responsive-font {
-                font-size: 4.5rem !important; /* Adjust from display-1 for mobile */
-            }
-
-            .speed-dial-container {
-                bottom: 85px; /* Positioned above the ~70px bottom nav bar */
-                right: 15px;
-            }
-
-            /* The rules to hide/show nav bars are now handled below with a mobile-first approach */
-        }
-
-        /* --- Mobile First Navigation --- */
-        /* By default (on mobile), show the bottom nav and hide the sidebar */
-        #bottom-nav-container {
-            display: block;
-        }
-        .sidebar-container {
-            display: none;
-        }
-
-        /* On larger screens (desktop), hide the bottom nav and show the sidebar */
-        @media (min-width: 767.98px) {
-            #bottom-nav-container { display: none; }
-            .sidebar-container { display: block; }
-        }
-    </style>
 </head>
 <body>
 
@@ -174,17 +49,49 @@
     ============================ -->
     <main class="main-content expanded" id="mainContent">
 
-        <div class="demo-wrapper">
-            <div class="demo-menu mb-3 d-flex justify-content-between align-items-center px-3">
-                <h1>Dashboard SPA Demo</h1>
-                <button
-                    class="btn btn-secondary"
-                    onclick="window.location.href='../index.html'"
-                >
-                    Go Back to Home
-                </button>
-            </div>
+            <!-- Bootstrap Header -->
+            <nav class="navbar navbar-expand navbar-light border-bottom sticky-top" style="background-color: var(--bg-panel); padding-top: 1.25rem; padding-bottom: 1.25rem;">
+                <div class="container-fluid px-4">
+                    <span class="navbar-brand mb-0 h1">
+                        <img src="../assets/images/seatlify_logo.png" alt="Seatlify" class="d-md-none" style="height: 32px; width: auto; object-fit: contain;">
+                    </span>
+                    
+                    <div class="d-flex align-items-center ms-auto gap-3">
+                        <!-- Notification Button -->
+                        <div class="dropdown">
+                            <a href="#" class="text-decoration-none text-secondary position-relative" id="dropdownNotifications" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell fs-5"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                    <span class="visually-hidden">New alerts</span>
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownNotifications">
+                                <li><h6 class="dropdown-header">Notifications</h6></li>
+                                <li><a class="dropdown-item" href="#">New ticket sold</a></li>
+                                <li><a class="dropdown-item" href="#">Event starting soon</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item small text-muted" href="#">Mark all as read</a></li>
+                            </ul>
+                        </div>
 
+                        <!-- Profile Button -->
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center bg-secondary text-white" style="width: 32px; height: 32px;"><i class="bi bi-person-fill"></i></div>
+                                <!-- <strong>User</strong> -->
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
+                                <li><a class="dropdown-item" href="#">Profile</a></li>
+                                <li><a class="dropdown-item" href="#">Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="../index.html">Sign out</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+        <div class="demo-wrapper">
             <div class="demo-content">
                 <div id="dashboard-content">
                     <!-- Default content will load here -->
@@ -219,7 +126,7 @@
 ============================ -->
 <div class="speed-dial-container" id="speedDial">
     <div class="speed-dial-menu">
-        <a href="#" class="speed-dial-item" title="Add Event" onclick="event.preventDefault(); document.querySelector('[data-target=event-manager]').click()">
+        <a href="#" class="speed-dial-item" title="Add Event" onclick="event.preventDefault(); window.openCreateEventModal();">
             <i class="bi bi-calendar-plus"></i>
         </a>
         <a href="#" class="speed-dial-item" title="New Seat Plan" onclick="event.preventDefault(); document.querySelector('[data-target=seat-planner]').click()">
@@ -234,6 +141,100 @@
     </button>
 </div>
 
+<!-- Edit Event Modal (Global) -->
+<div class="modal fade" id="editEventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Edit Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEventForm">
+                    <input type="hidden" id="editEventId">
+                    <div class="mb-3">
+                        <label for="editEventName" class="form-label" style="color: var(--text-muted);">Event Name</label>
+                        <input type="text" class="form-control" id="editEventName" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-3">
+                            <label for="editEventDate" class="form-label" style="color: var(--text-muted);">Date</label>
+                            <input type="text" class="form-control" id="editEventDate" placeholder="Select Date" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <label for="editEventTime" class="form-label" style="color: var(--text-muted);">Start Time</label>
+                            <input type="text" class="form-control" id="editEventTime" placeholder="Select Time" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <label for="editEventEndTime" class="form-label" style="color: var(--text-muted);">End Time</label>
+                            <input type="text" class="form-control" id="editEventEndTime" placeholder="Select Time" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEventVenue" class="form-label" style="color: var(--text-muted);">Venue</label>
+                        <select class="form-select" id="editEventVenue" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEventDescription" class="form-label" style="color: var(--text-muted);">Description</label>
+                        <textarea class="form-control" id="editEventDescription" rows="3" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);"></textarea>
+                    </div>
+
+                    <hr style="border-color: var(--border-color);">
+                    
+                    <!-- Seat Config -->
+                    <h6 class="mb-3" style="color: var(--text-muted);">Seat Configuration</h6>
+                    <div class="row">
+                        <div class="col-6 col-md-6 mb-3">
+                            <label for="editEventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Seats</label>
+                            <input type="number" class="form-control" id="editEventTotalSeats" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="col-6 col-md-6 mb-3">
+                            <label for="editEventTotalTables" class="form-label" style="color: var(--text-muted);">Total Tables</label>
+                            <input type="number" class="form-control" id="editEventTotalTables" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSeatLayout" class="form-label" style="color: var(--text-muted);">Layout Preference</label>
+                        <select class="form-select" id="editSeatLayout" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            <option value="empty">Empty Canvas</option>
+                            <option value="theater">Theater Style</option>
+                            <option value="banquet">Banquet Hall</option>
+                        </select>
+                    </div>
+
+                    <hr style="border-color: var(--border-color);">
+
+                    <!-- Ticket Config -->
+                    <h6 class="mb-3" style="color: var(--text-muted);">Ticket Configuration</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="editEventType" id="editTypeFree" value="free">
+                            <label class="form-check-label" for="editTypeFree" style="color: var(--text-main);">Free Event</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="editEventType" id="editTypePaid" value="paid">
+                            <label class="form-check-label" for="editTypePaid" style="color: var(--text-main);">Paid Event</label>
+                        </div>
+                    </div>
+                    <div id="editTicketTiersWrapper" style="display: none;">
+                        <label class="form-label" style="color: var(--text-muted);">Ticket Tiers</label>
+                        <div id="editTiersList"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="btnEditAddTier" style="border-color: var(--border-color); color: var(--text-muted);">
+                            <i class="bi bi-plus"></i> Add Tier
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveEdit" style="background-color: var(--primary); border-color: var(--primary);">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -243,698 +244,13 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <!-- Simulated Database -->
 <script src="../js/simulated-db.js"></script>
 
-<!-- ============================
-     SPA Dashboard Loader
-============================ -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    // ----------------------------
-    // Load Sidebar once
-    // ----------------------------
-    const sidebarPromise = fetch("side-bar-dashboard.html")
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById("sidebar-container").innerHTML = html;
-        });
-
-    // ----------------------------
-    // Load Bottom Nav for mobile
-    // ----------------------------
-    const bottomNavPromise = fetch("bottom-nav-bar-dashboard.html")
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById("bottom-nav-container").innerHTML = html;
-        });
-
-    Promise.all([sidebarPromise, bottomNavPromise]).then(() => {
-
-            // Sidebar toggle
-            const sidebar = document.getElementById("sidebar");
-            const mainContent = document.getElementById("mainContent");
-            const toggleBtn = document.getElementById("sidebarToggle");
-
-            // Initialize sidebar as collapsed
-            if (sidebar) sidebar.classList.add("collapsed");
-
-            if (toggleBtn) {
-                toggleBtn.addEventListener("click", () => {
-                    sidebar.classList.toggle("collapsed");
-                    mainContent.classList.toggle("expanded");
-                });
-            }
-
-            // ----------------------------
-            // Navigation link click handling (for both sidebar and bottom nav)
-            // ----------------------------
-            document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(link => {
-                link.addEventListener('click', async e => {
-                    e.preventDefault();
-
-                    const target = link.dataset.target;
-
-                    // Remove active class from all links in both navs
-                    document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(l => l.classList.remove('active'));
-                    
-                    // Add active class to the clicked link's counterparts in BOTH navs
-                    document.querySelectorAll(`.sidebar-nav .nav-link[data-target="${target}"], .bottom-nav-bar .nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
-
-                    localStorage.setItem('seatlify_active_dashboard_tab', target);
-                    const container = document.getElementById("dashboard-content");
-                    
-                    if (target === "dashboard") {
-                        container.innerHTML = `<div class="demo-panel p-3">Loading Dashboard...</div>`;
-                        try {
-                            const res = await fetch("dashboard-content.html");
-                            if (res.ok) {
-                                container.innerHTML = await res.text();
-                                if (typeof initDashboard === 'function') initDashboard();
-                            }
-                            else container.innerHTML = `<p class="text-danger">Failed to load Dashboard.</p>`;
-                        } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading Dashboard.</p>`;
-                        }
-                    }
-
-                    // Load content dynamically based on target
-                    if(target === "event-manager") {
-                        const em = document.getElementById("event-manager");
-                        if(!em || !em.dataset.loaded) {
-                            container.innerHTML = `<div id="event-manager" class="demo-panel p-3">Loading Event Manager...</div>`;
-                            await loadEventManager();
-                        }
-                    }
-
-                    if(target === "seat-planner") {
-                        if(!document.getElementById("seat-planner")?.dataset.loaded) {
-                            container.innerHTML = `<div id="seat-planner" class="demo-panel p-3">Loading Seat Planner...</div>`;
-                            await loadSeatPlanner();
-                        } else {
-                            container.innerHTML = document.getElementById("seat-planner").outerHTML;
-                        }
-                    }
-
-                    if(target === "tickets") {
-                        container.innerHTML = `<div class="demo-panel p-3">Loading Tickets...</div>`;
-                        try {
-                            const res = await fetch("ticket.html");
-                            if (res.ok) {
-                                container.innerHTML = await res.text();
-                                renderTicketDetails();
-                            }
-                            else container.innerHTML = `<p class="text-danger">Failed to load ticket content.</p>`;
-                        } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading ticket content.</p>`;
-                        }
-                    }
-
-                    if(target === "analytics") {
-                        container.innerHTML = `<div class="demo-panel p-3">Loading Analytics...</div>`;
-                        try {
-                            const res = await fetch("analytics.html");
-                            if (res.ok) container.innerHTML = await res.text();
-                            else container.innerHTML = `<p class="text-danger">Failed to load Analytics.</p>`;
-                        } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading Analytics.</p>`;
-                        }
-                    }
-
-                    if(target === "finance") {
-                        container.innerHTML = `<div class="demo-panel p-3">Loading Finance...</div>`;
-                        try {
-                            const res = await fetch("finance.html");
-                            if (res.ok) container.innerHTML = await res.text();
-                            else container.innerHTML = `<p class="text-danger">Failed to load Finance.</p>`;
-                        } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading Finance.</p>`;
-                        }
-                    }
-
-                    if(target === "invitations") {
-                        container.innerHTML = `<div class="demo-panel p-3">Loading Invitations...</div>`;
-                        try {
-                            const res = await fetch("invitations/invitations.html");
-                            if (res.ok) {
-                                container.innerHTML = await res.text();
-                                // The script inside invitations.html needs to be executed manually after being injected.
-                                const scriptTag = container.querySelector('script');
-                                if (scriptTag) {
-                                    const newScript = document.createElement('script');
-                                    newScript.textContent = scriptTag.textContent;
-                                    scriptTag.parentNode.replaceChild(newScript, scriptTag);
-                                }
-                            } else container.innerHTML = `<p class="text-danger">Failed to load Invitations.</p>`;
-                        } catch (err) {
-                            container.innerHTML = `<p class="text-danger">Error loading Invitations.</p>`;
-                        }
-                    }
-                });
-            });
-
-            // Load last active tab or default to Dashboard
-            const lastActiveTab = localStorage.getItem('seatlify_active_dashboard_tab');
-            let linkToClick = null;
-            if (lastActiveTab) {
-                linkToClick = document.querySelector(`.sidebar-nav .nav-link[data-target="${lastActiveTab}"]`);
-            }
-
-            // Fallback to default if saved link not found or nothing was saved
-            if (!linkToClick) {
-                linkToClick = document.querySelector('.sidebar-nav .nav-link[data-target="dashboard"]');
-            }
-            
-            if (linkToClick) linkToClick.click();
-    }).catch(err => console.error("Navigation UI load failed:", err));
-
-    // ----------------------------
-    // Lazy load Event Manager
-    // ----------------------------
-    async function loadEventManager() {
-        const container = document.getElementById("event-manager");
-        if (!container) return;
-        try {
-            const res = await fetch("event-manager.html");
-            container.innerHTML = await res.text();
-
-            // Load JS
-            if(!document.querySelector(`script[src="../js/event-manager.js"]`)) {
-                const s = document.createElement("script");
-                s.src = "../js/event-manager.js";
-                s.onload = () => {
-                    if(typeof initEventManager === "function") initEventManager();
-                    container.dataset.loaded = true;
-                };
-                document.body.appendChild(s);
-            } else {
-                container.dataset.loaded = true;
-                if(typeof initEventManager === "function") initEventManager();
-            }
-        } catch(err) {
-            console.error(err);
-            container.innerHTML = `<p class="text-danger">Failed to load Event Manager.</p>`;
-        }
-    }
-
-    // ----------------------------
-    // Lazy load Seat Planner
-    // ----------------------------
-    async function loadSeatPlanner() {
-        const container = document.getElementById("seat-planner");
-        if (!container) return;
-        try {
-            const res = await fetch("seat-planner.html");
-            container.innerHTML = await res.text();
-
-            // Initialize Bootstrap dropdowns
-            container.querySelectorAll(".dropdown-toggle")
-                .forEach(el => new bootstrap.Dropdown(el));
-
-            // Load JS
-            if(!document.querySelector(`script[src="../js/seat-planner.js"]`)) {
-                const s = document.createElement("script");
-                s.src = "../js/seat-planner.js";
-                s.onload = () => {
-                    if(typeof initSeatPlanner === "function") initSeatPlanner();
-                    container.dataset.loaded = true;
-                };
-                document.body.appendChild(s);
-            } else {
-                container.dataset.loaded = true;
-                if(typeof initSeatPlanner === "function") initSeatPlanner();
-            }
-        } catch(err) {
-            console.error(err);
-            container.innerHTML = `<p class="text-danger">Failed to load Seat Planner.</p>`;
-        }
-    }
-
-    // ----------------------------
-    // Speed Dial Handler
-    // ----------------------------
-    const speedDialContainer = document.getElementById('speedDial');
-    if (speedDialContainer) {
-        const speedDialToggle = speedDialContainer.querySelector('.speed-dial-toggle');
-        speedDialToggle.addEventListener('click', () => {
-            speedDialContainer.classList.toggle('active');
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!speedDialContainer.contains(e.target) && speedDialContainer.classList.contains('active')) {
-                speedDialContainer.classList.remove('active');
-            }
-        });
-    }
-});
-
-// ==========================================
-// DASHBOARD LOGIC (Simulated Data Binding)
-// ==========================================
-let dashboardFilter = 'current'; // 'current' or 'past'
-
-function initDashboard() {
-    // Bind Tabs
-    const tabCurrent = document.getElementById('tabCurrent');
-    const tabPast = document.getElementById('tabPast');
-
-    if (tabCurrent && tabPast) {
-        tabCurrent.addEventListener('click', (e) => {
-            e.preventDefault();
-            setDashboardFilter('current');
-        });
-        tabPast.addEventListener('click', (e) => {
-            e.preventDefault();
-            setDashboardFilter('past');
-        });
-    }
-
-    // Initial Load
-    setDashboardFilter('current');
-
-    // Listen for DB updates to refresh dropdown
-    window.addEventListener('db-events-updated', () => setDashboardFilter(dashboardFilter));
-}
-
-function setDashboardFilter(filter) {
-    dashboardFilter = filter;
-    
-    // Update UI Tabs
-    const tabCurrent = document.getElementById('tabCurrent');
-    const tabPast = document.getElementById('tabPast');
-    if (tabCurrent && tabPast) {
-        if (filter === 'current') {
-            tabCurrent.classList.add('active');
-            tabCurrent.style.backgroundColor = 'var(--primary)';
-            tabCurrent.style.color = '#fff';
-            
-            tabPast.classList.remove('active');
-            tabPast.style.backgroundColor = 'transparent';
-            tabPast.style.color = 'var(--text-muted)';
-        } else {
-            tabPast.classList.add('active');
-            tabPast.style.backgroundColor = 'var(--primary)';
-            tabPast.style.color = '#fff';
-
-            tabCurrent.classList.remove('active');
-            tabCurrent.style.backgroundColor = 'transparent';
-            tabCurrent.style.color = 'var(--text-muted)';
-        }
-    }
-
-    renderEventDropdown();
-    
-    // Select first event of the filtered list
-    const events = getFilteredEvents();
-    if (events.length > 0) {
-        renderDashboardEvent(events[0].event_id);
-    } else {
-        clearDashboardView();
-    }
-}
-
-function getFilteredEvents() {
-    const allEvents = MockDB.getEvents();
-    if (dashboardFilter === 'current') {
-        return allEvents.filter(e => e.status === 'draft' || e.status === 'published');
-    } else {
-        return allEvents.filter(e => e.status === 'completed' || e.status === 'cancelled');
-    }
-}
-
-function renderEventDropdown() {
-    const events = getFilteredEvents();
-    const list = document.getElementById('dashboardEventDropdownList');
-    if (!list) return;
-
-    list.innerHTML = '<li><h6 class="dropdown-header">Switch Event</h6></li>';
-    if (events.length === 0) {
-        list.innerHTML += '<li><span class="dropdown-item text-muted">No events found</span></li>';
-        return;
-    }
-
-    events.forEach(evt => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.className = 'dropdown-item';
-        a.href = '#';
-        a.textContent = evt.title;
-        a.onclick = (e) => {
-            e.preventDefault();
-            renderDashboardEvent(evt.event_id);
-        };
-        li.appendChild(a);
-        list.appendChild(li);
-    });
-}
-
-function renderDashboardEvent(id) {
-    const events = MockDB.getEvents();
-    const event = events.find(e => e.event_id == id);
-    if(!event) return;
-    
-    // Store current ID for other modules (like Seat Planner)
-    localStorage.setItem('seatlify_current_event_id', id);
-
-    // Update Dropdown Label
-    const dropdownBtn = document.getElementById('dashboardSelectedEvent');
-    if(dropdownBtn) dropdownBtn.textContent = event.title;
-
-    // Update Details
-    document.getElementById('dashboardTitle').textContent = event.title;
-    
-    // Status Badge
-    const statusBadge = document.getElementById('dashboardStatusBadge');
-    if (statusBadge) {
-        statusBadge.textContent = event.status.charAt(0).toUpperCase() + event.status.slice(1);
-        let badgeClass = 'bg-secondary';
-        if (event.status === 'published') badgeClass = 'bg-success';
-        if (event.status === 'draft') badgeClass = 'bg-warning text-dark';
-        if (event.status === 'cancelled') badgeClass = 'bg-danger';
-        statusBadge.className = `badge ${badgeClass}`;
-    }
-
-    document.getElementById('dashboardDescription').textContent = event.description || '';
-
-    const venue = MockDB.getVenueById(event.venue_id);
-    document.getElementById('dashboardVenue').innerHTML = `<i class="bi bi-geo-alt me-1"></i> ${venue ? venue.name : 'Unknown Venue'}`;
-
-    // Update Seats Available
-    const seatsEl = document.getElementById('dashboardSeatsAvailable');
-    if (seatsEl) seatsEl.textContent = event.total_seats || 0;
-
-    // Update Attendees
-    const attendeesEl = document.getElementById('dashboardAttendees');
-    if (attendeesEl) attendeesEl.textContent = event.attendees || 0;
-
-    // Update Tickets Sold
-    const ticketsEl = document.getElementById('dashboardTicketsSold');
-    if (ticketsEl) {
-        if (event.is_paid) {
-            ticketsEl.textContent = "0"; // Placeholder for actual sales
-        } else {
-            ticketsEl.textContent = "Free";
-        }
-    }
-
-    // Update Revenue
-    const revenueEl = document.getElementById('dashboardRevenue');
-    if (revenueEl) {
-        if (event.is_paid) {
-            revenueEl.textContent = "₱0"; // Placeholder for actual revenue
-        } else {
-            revenueEl.textContent = "No Revenue";
-        }
-    }
-
-    // Date & Time
-    const start = new Date(event.start_datetime);
-    const end = event.end_datetime ? new Date(event.end_datetime) : null;
-    
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    document.getElementById('dashboardDateDay').textContent = start.getDate();
-    document.getElementById('dashboardDateMonth').textContent = months[start.getMonth()];
-
-    const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
-                    (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
-    document.getElementById('dashboardTime').innerHTML = `<i class="bi bi-clock me-1"></i> ${timeStr}`;
-
-    // Countdown Logic
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Normalize to midnight for accurate day calculation
-    const eventDate = new Date(start);
-    eventDate.setHours(0, 0, 0, 0);
-
-    const diffTime = eventDate - now;
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    const countVal = document.getElementById('dashboardCountdownValue');
-    const countTitle = document.getElementById('dashboardCountdownTitle');
-    const countSub = document.getElementById('dashboardCountdownSubtext');
-
-    if (countVal) {
-        if (diffDays > 0) {
-            countVal.textContent = diffDays;
-            if (countTitle) countTitle.textContent = "Days Until Event";
-            if (countSub) countSub.textContent = "Prepare your checklist!";
-        } else if (diffDays === 0) {
-            countVal.textContent = "Today";
-            if (countTitle) countTitle.textContent = "Event is Happening";
-            if (countSub) countSub.textContent = "Good luck!";
-        } else {
-            countVal.textContent = Math.abs(diffDays);
-            if (countTitle) countTitle.textContent = "Days Since Event";
-            if (countSub) countSub.textContent = "Event completed.";
-        }
-    }
-
-    // Draft Action Logic
-    const draftAction = document.getElementById('dashboardDraftAction');
-    if (draftAction) {
-        if (event.status === 'draft') {
-            draftAction.style.display = 'block';
-            const btnPublish = document.getElementById('btnPublishNow');
-            if (btnPublish) {
-                // Clone to strip old listeners
-                const newBtn = btnPublish.cloneNode(true);
-                btnPublish.parentNode.replaceChild(newBtn, btnPublish);
-                
-                newBtn.addEventListener('click', () => {
-                    if (confirm(`Publish "${event.title}" now?`)) {
-                        MockDB.updateEvent(event.event_id, { status: 'published' });
-                        renderDashboardEvent(event.event_id); // Refresh view
-                    }
-                });
-            }
-        } else {
-            draftAction.style.display = 'none';
-        }
-    }
-}
-
-function clearDashboardView() {
-    const dropdownBtn = document.getElementById('dashboardSelectedEvent');
-    if(dropdownBtn) dropdownBtn.textContent = "No Events Found";
-
-    document.getElementById('dashboardTitle').textContent = "-";
-    const statusBadge = document.getElementById('dashboardStatusBadge');
-    if(statusBadge) { statusBadge.textContent = ""; statusBadge.className = "badge"; }
-    
-    document.getElementById('dashboardDescription').textContent = "No events in this category.";
-    document.getElementById('dashboardVenue').innerHTML = `<i class="bi bi-geo-alt me-1"></i> -`;
-    document.getElementById('dashboardTime').innerHTML = `<i class="bi bi-clock me-1"></i> -`;
-    document.getElementById('dashboardDateDay').textContent = "-";
-    document.getElementById('dashboardDateMonth').textContent = "-";
-    
-    document.getElementById('dashboardSeatsAvailable').textContent = "0";
-    document.getElementById('dashboardAttendees').textContent = "0";
-    document.getElementById('dashboardTicketsSold').textContent = "0";
-    document.getElementById('dashboardRevenue').textContent = "₱0";
-    
-    document.getElementById('dashboardCountdownValue').textContent = "-";
-    document.getElementById('dashboardCountdownSubtext').textContent = "-";
-
-    const draftAction = document.getElementById('dashboardDraftAction');
-    if(draftAction) draftAction.style.display = 'none';
-}
-
-function renderTicketDetails() {
-    const currentId = localStorage.getItem('seatlify_current_event_id');
-    if (!currentId) return;
-
-    const events = MockDB.getEvents();
-    const event = events.find(e => e.event_id == currentId);
-    
-    if (event) {
-        // Update Ticket Configuration Total Seats
-        const configTotalSeatsEl = document.getElementById('ticketConfigTotalSeats');
-        if (configTotalSeatsEl) {
-            configTotalSeatsEl.textContent = event.total_seats || 0;
-        }
-
-        const titleEl = document.getElementById('ticketEventTitle');
-        const dateEl = document.getElementById('ticketEventDate');
-        const timeEl = document.getElementById('ticketEventTime');
-        const venueEl = document.getElementById('ticketEventVenue');
-
-        if (titleEl) titleEl.textContent = event.title;
-        
-        const start = new Date(event.start_datetime);
-        const end = event.end_datetime ? new Date(event.end_datetime) : null;
-        
-        if (dateEl) dateEl.textContent = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        
-        if (timeEl) {
-            const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
-                            (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
-            timeEl.textContent = timeStr;
-        }
-
-        if (venueEl) {
-            const venue = MockDB.getVenueById(event.venue_id);
-            venueEl.textContent = venue ? venue.name : 'Unknown Venue';
-        }
-
-        // --- QR Code API Integration ---
-        const qrContainer = document.querySelector('.qr-code-container');
-        if (qrContainer) {
-            // Create a data string for the QR code
-            const qrData = `EVENT:${event.event_id}|TICKET:GUEST-001|SEAT:A-12`;
-            const qrUrl = MockDB.generateQRCodeUrl(qrData);
-            
-            qrContainer.innerHTML = `<img src="${qrUrl}" alt="Ticket QR Code" class="img-fluid" style="border-radius: 8px; max-width: 100%;">`;
-        }
-
-        // --- Email API Integration ---
-        const btnSendEmail = document.getElementById('btnSendTestEmail');
-        if (btnSendEmail) {
-            // Clone to remove old listeners
-            const newBtn = btnSendEmail.cloneNode(true);
-            btnSendEmail.parentNode.replaceChild(newBtn, btnSendEmail);
-            
-            newBtn.addEventListener('click', () => {
-                const email = prompt("Enter guest email address:", "guest@example.com");
-                if (email) {
-                    const originalText = newBtn.innerHTML;
-                    newBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
-                    newBtn.disabled = true;
-
-                    MockDB.sendTicketEmail(email, { event: event.title, date: event.start_datetime })
-                        .then(() => {
-                            alert(`Ticket successfully emailed to ${email}!`);
-                            newBtn.innerHTML = originalText;
-                            newBtn.disabled = false;
-                        });
-                }
-            });
-        }
-
-        // Render Inline Ticket Editor
-        renderTicketTiersEditor(event);
-    }
-}
-
-function renderTicketTiersEditor(event) {
-    const container = document.getElementById('ticketTierRowsContainer');
-    const btnSave = document.getElementById('btnSaveTicketTiers');
-    const btnEdit = document.getElementById('btnEditTicketTiers');
-    
-    if (!container || !btnSave || !btnEdit) { return; }
-
-    container.innerHTML = '';
-
-    // Clone buttons at the start to avoid stale references
-    const newBtnEdit = btnEdit.cloneNode(true);
-    btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
-    const newBtnSave = btnSave.cloneNode(true);
-    btnSave.parentNode.replaceChild(newBtnSave, btnSave);
-
-    // Set initial state on the new buttons
-    newBtnSave.style.display = 'none';
-    newBtnEdit.style.display = 'inline-block';
-
-    // Combine row and table data
-    let layoutData = [];
-    if (event.row_layout_data) layoutData = layoutData.concat(event.row_layout_data);
-    if (event.table_layout_data) layoutData = layoutData.concat(event.table_layout_data);
-
-    if (layoutData.length === 0) {
-        container.innerHTML = '<div class="text-center text-muted-theme p-5 border rounded" style="background-color: var(--bg-muted);">No seat layout found. Please configure and save the Seat Planner Chart first.</div>';
-        newBtnSave.disabled = true;
-        newBtnEdit.disabled = true;
-    } else {
-        const table = document.createElement('table');
-        table.className = 'table table-hover align-middle';
-        table.innerHTML = `
-            <thead style="background-color: var(--bg-muted);">
-                <tr>
-                    <th class="text-main-theme" style="border-bottom-color: var(--border-color);">Row</th>
-                    <th class="text-main-theme" style="width: 200px; border-bottom-color: var(--border-color);">Price</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        `;
-        const tbody = table.querySelector('tbody');
-
-        layoutData.forEach((group) => {
-            // Check if a ticket tier already exists for this group
-            const existingTier = event.tickets ? event.tickets.find(t => (t.original_name === group.label) || (t.name === group.label)) : null;
-            const price = existingTier ? existingTier.price : '';
-            const displayName = existingTier ? existingTier.name : group.label;
-
-            const tr = document.createElement('tr');
-            tr.className = 'tier-row-item';
-            tr.innerHTML = `
-                <td style="border-bottom-color: var(--border-color);">
-                    <div class="d-flex flex-column">
-                        <input type="text" class="form-control bg-panel-theme text-main-theme border-secondary tier-name-input fw-bold" 
-                            value="${displayName}" placeholder="Tier Name" data-original-name="${group.label}" disabled>
-                        <small class="text-muted-theme">${group.seats} Seats</small>
-                    </div>
-                </td>
-                <td style="border-bottom-color: var(--border-color);">
-                    <div class="input-group" style="max-width: 180px;">
-                        <span class="input-group-text bg-panel-theme text-muted-theme border-secondary">₱</span>
-                        <input type="number" class="form-control bg-panel-theme text-main-theme border-secondary tier-price-input" 
-                            placeholder="Price" value="${price}" data-seats="${group.seats}" disabled>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        container.appendChild(table);
-        newBtnSave.disabled = false;
-        newBtnEdit.disabled = false;
-    }
-
-    // Bind Edit
-    newBtnEdit.addEventListener('click', () => {
-        container.querySelectorAll('input').forEach(input => input.disabled = false);
-        newBtnEdit.style.display = 'none';
-        newBtnSave.style.display = 'inline-block';
-    });
-
-    // Bind Save
-    newBtnSave.addEventListener('click', () => {
-        const rows = container.querySelectorAll('.tier-row-item');
-        let newTickets = [];
-        
-        rows.forEach(row => {
-            const nameInput = row.querySelector('.tier-name-input');
-            const priceInput = row.querySelector('.tier-price-input');
-            
-            if (nameInput && priceInput && nameInput.value) {
-                const price = priceInput.value;
-                const name = nameInput.value;
-                if (price && price > 0 && name) {
-                    newTickets.push({
-                        name: name,
-                        original_name: nameInput.dataset.originalName,
-                        price: parseInt(price),
-                        qty: parseInt(priceInput.dataset.seats)
-                    });
-                }
-            }
-        });
-
-        // Update DB
-        MockDB.updateEvent(event.event_id, { tickets: newTickets, is_paid: true });
-        
-        alert('Ticket prices saved successfully!');
-        renderTicketDetails(); // Refresh UI if needed
-    });
-}
-
-window.simulateScanSuccess = function() {
-    const modalEl = document.getElementById('qrScannerModal');
-    if(modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if(modal) modal.hide();
-    }
-    alert("Ticket Scanned Successfully!\nAttendee: John Doe\nSeat: A-12\nStatus: Checked In");
-};
-</script>
+<!-- Dashboard Loader (SPA Logic) -->
+<script src="../js/dashboard-loader.js"></script>
 </body>
 </html>

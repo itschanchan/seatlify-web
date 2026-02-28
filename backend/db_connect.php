@@ -4,11 +4,15 @@ $username = "root";
 $password = "";
 $dbname = "seatlify_db";
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+try {
+    $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    if ($conn->connect_error) {
+        throw new Exception("Database connection failed");
+    }
+
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
 }
+
 ?>

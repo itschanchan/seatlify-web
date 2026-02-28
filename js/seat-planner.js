@@ -114,15 +114,23 @@ function saveCurrentPlannerState() {
 /* ==========================================================
    INIT (CALLED MANUALLY)
 ========================================================== */
-function initSeatPlanner() {
-  console.log("initSeatPlanner() called");
+export function initSeatPlanner() {
+    console.log("initSeatPlanner() called");
 
     // Load stats whenever initialized/shown
     loadCurrentEventStats();
 
-    seatPlannerInitialized = true;
+    // Global listeners should only be bound once.
+    if (!seatPlannerInitialized) {
+        console.log("Binding global listeners for seat planner.");
+        bindKeyboardShortcuts();
+        // Expose the save function to the window scope and add listeners for auto-saving
+        window.saveCurrentPlannerState = saveCurrentPlannerState;
+        window.addEventListener('beforeunload', window.saveCurrentPlannerState);
+    }
 
-    console.log("Seat planner initialized");
+    seatPlannerInitialized = true;
+    console.log("Seat planner DOM re-initialization");
 
     canvas = document.getElementById("canvasInner");
     container = document.querySelector(".seat-planner-container");
@@ -142,7 +150,6 @@ function initSeatPlanner() {
     }
 
     historyManager.clear();
-    bindKeyboardShortcuts();
     bindToolSelection();
     bindToolbarDragAndDrop();
     bindMouseEvents();
@@ -160,10 +167,6 @@ function initSeatPlanner() {
     bindChartEditControls();
     bindTabSwitchers();
     refreshChartLayout();
-
-    // Expose the save function to the window scope and add listeners for auto-saving
-    window.saveCurrentPlannerState = saveCurrentPlannerState;
-    window.addEventListener('beforeunload', window.saveCurrentPlannerState);
 }
 
 function addChartRowButton(container) {
@@ -345,6 +348,7 @@ function bindKeyboardShortcuts() {
 /* ==========================
    MOUSE EVENTS
 ========================== */
+
 function bindMouseEvents() {
   const surface = canvas.parentElement;
 
@@ -455,6 +459,7 @@ function onCanvasClick(e) {
 /* ==========================
    DRAGGING
 ========================== */
+
 function makeDraggable(el) {
   let offsetX = 0,
       offsetY = 0;
@@ -500,6 +505,7 @@ function makeDraggable(el) {
 /* ==========================
    RESIZING & SELECTION
 ========================== */
+
 function addResizers(el) {
   const positions = ["tl", "tr", "bl", "br"];
   positions.forEach(pos => {
@@ -597,6 +603,7 @@ function deselectAll() {
 /* ==========================
    GRID
 ========================== */
+
 function bindGridToggle() {
   document.getElementById("toggleGrid").onclick = () => {
     container.classList.toggle("grid-background");
@@ -606,6 +613,7 @@ function bindGridToggle() {
 /* ==========================
    ZOOM
 ========================== */
+
 function bindZoomControls() {
   document.getElementById("zoomIn").onclick = () => {
     scale = Math.min(scale + 0.1, MAX_ZOOM);
@@ -635,6 +643,7 @@ function applyZoom() {
 /* ==========================
    CLEAR
 ========================== */
+
 function bindClearButton() {
   document.getElementById("clearBtn").onclick = () => {
     if (confirm("Are you sure you want to clear the canvas?")) {
@@ -649,6 +658,7 @@ function bindClearButton() {
 /* ==========================
    BULK ADD & SAVE
 ========================== */
+
 function bindBulkAdd() {
     const confirmBtn = document.getElementById('confirmBulkAdd');
     if(!confirmBtn) return;
@@ -1116,6 +1126,7 @@ function generateChartLayout(totalSeats = 0) {
                 seatEl.dataset.bsHtml = 'true';
                 seatEl.dataset.bsTitle = `${displayName}, Seat ${j + 1}`;
                 seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                seatEl.dataset.bsContainer = 'body';
                 seatsDiv.appendChild(seatEl);
             }
             groupDiv.appendChild(seatsDiv);
@@ -1166,6 +1177,7 @@ function generateChartLayout(totalSeats = 0) {
                     seatEl.dataset.bsHtml = 'true';
                     seatEl.dataset.bsTitle = `${tableLabel}, Seat ${j + 1}`;
                     seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                    seatEl.dataset.bsContainer = 'body';
                     seatsContainer.appendChild(seatEl);
                 }
                 seatsRendered += seatsInThisTable;
@@ -1213,6 +1225,7 @@ function generateChartLayout(totalSeats = 0) {
                     seatEl.dataset.bsHtml = 'true';
                     seatEl.dataset.bsTitle = `${labelText}, Seat ${j + 1}`;
                     seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                    seatEl.dataset.bsContainer = 'body';
                     seatsDiv.appendChild(seatEl);
                 }
                 groupDiv.appendChild(seatsDiv);
@@ -1353,15 +1366,11 @@ function updateChartEditModeUI() {
         }
     });
 
-    // Manage Popovers: Enable in Save mode, Disable in Edit mode
+    // Manage Popovers: Ensure they are initialized (even in edit mode)
     const seats = container.querySelectorAll('.chart-seat');
     seats.forEach(seat => {
         const popover = bootstrap.Popover.getInstance(seat);
-        if (isChartEditMode) {
-            if (popover) popover.dispose();
-        } else {
-            if (!popover) new bootstrap.Popover(seat);
-        }
+        if (!popover) new bootstrap.Popover(seat, { container: 'body' });
     });
 }
 
@@ -1429,8 +1438,10 @@ function createChartAddSeatBtn() {
         seatEl.dataset.bsHtml = 'true';
         seatEl.dataset.bsTitle = popoverTitle;
         seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+        seatEl.dataset.bsContainer = 'body';
 
         seatsDiv.insertBefore(seatEl, this);
+        new bootstrap.Popover(seatEl, { container: 'body' });
 
         // Update main counter
         loadCurrentEventStats();

@@ -71,16 +71,24 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-left: auto;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 /* Hide labels when collapsed */
 .sidebar.collapsed .label,
-.sidebar.collapsed .logo-text {
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .sidebar-title {
     display: none;
 }
 
 .sidebar.collapsed .sidebar-header {
     justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    transform: rotate(180deg);
+    margin-left: 0;
 }
 
 .sidebar.collapsed .sidebar-nav .nav-link {
@@ -160,4 +168,134 @@ body {
 
 .create-event-link {
     color: var(--primary);
+}
+
+/* ============================
+   SPEED DIAL / FAB
+============================ */
+.speed-dial-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.speed-dial-toggle {
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary);
+    color: var(--bg-panel);
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+}
+
+.speed-dial-toggle .bi-plus-lg {
+    transition: transform 0.3s ease;
+}
+
+.speed-dial-menu {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    margin-bottom: 15px;
+    list-style: none;
+    padding: 0;
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+    opacity: 0;
+}
+
+.speed-dial-item {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--bg-panel);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.speed-dial-item:hover {
+    background-color: var(--primary);
+    transform: scale(1.1);
+    color: var(--bg-panel);
+}
+
+/* Active State */
+.speed-dial-container.active .speed-dial-menu {
+    transform: scaleY(1);
+    opacity: 1;
+}
+
+.speed-dial-container.active .speed-dial-toggle .bi-plus-lg {
+    transform: rotate(45deg);
+}
+
+/* ============================
+   RESPONSIVE ADJUSTMENTS
+============================ */
+@media (max-width: 767.98px) {
+    /* Prevent horizontal scroll */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Main layout adjustments */
+    .dashboard-layout {
+        display: block; 
+    }
+
+    /* Adjust main content to account for the bottom nav bar */
+    main.main-content {
+        margin-left: 0 !important; 
+        padding-bottom: 70px; /* Space for the bottom bar */
+        width: 100% !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    /* The main content should not be 'expanded' on mobile */
+    main.main-content.expanded {
+        margin-left: 0 !important;
+    }
+    
+    .responsive-font {
+        font-size: 4.5rem !important; /* Adjust from display-1 for mobile */
+    }
+
+    .speed-dial-container {
+        bottom: 85px; /* Positioned above the ~70px bottom nav bar */
+        right: 15px;
+    }
+}
+
+/* --- Mobile First Navigation --- */
+/* By default (on mobile), show the bottom nav and hide the sidebar */
+#bottom-nav-container {
+    display: block;
+}
+.sidebar-container {
+    display: none;
+}
+
+/* On larger screens (desktop), hide the bottom nav and show the sidebar */
+@media (min-width: 767.98px) {
+    #bottom-nav-container { display: none; }
+    .sidebar-container { display: block; }
 }

@@ -120,6 +120,27 @@ window.openCreateEventModal = async function() {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 
+    // Initialize Flatpickr for date/time inputs
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#eventDate", {
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+        });
+        flatpickr("#eventTime", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: false
+        });
+        flatpickr("#eventEndTime", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: false
+        });
+    }
+
     // Populate Venues Dropdown
     const venueSelect = document.getElementById('eventVenue');
     if (venueSelect) {
@@ -141,6 +162,28 @@ window.openCreateEventModal = async function() {
     const btnBack = document.getElementById('btnBack');
     const btnCreate = document.getElementById('btnCreate');
     const btnCancel = document.getElementById('btnCancel');
+
+    // --- SEAT COUNTER LOGIC ---
+    const updateTierSeatCounter = () => {
+        const totalSeatsInput = document.getElementById('eventTotalSeats');
+        const counterEl = document.getElementById('tierSeatCounter');
+        if (!totalSeatsInput || !counterEl) return;
+
+        const totalSeats = parseInt(totalSeatsInput.value) || 0;
+        let allocatedSeats = 0;
+        document.querySelectorAll('#tiersList .tier-qty').forEach(input => {
+            allocatedSeats += parseInt(input.value) || 0;
+        });
+
+        counterEl.textContent = `Allocated: ${allocatedSeats} / ${totalSeats}`;
+        if (allocatedSeats > totalSeats) {
+            counterEl.classList.add('text-danger');
+            counterEl.classList.remove('text-muted');
+        } else {
+            counterEl.classList.remove('text-danger');
+            counterEl.classList.add('text-muted');
+        }
+    };
 
     // Stepper Logic
     const updateStepper = (step) => {
@@ -207,9 +250,19 @@ window.openCreateEventModal = async function() {
     const newAddTierBtn = replaceEl('addTierBtn');
     const tiersContainer = document.getElementById('ticketTiersContainer');
 
+    // Add listener for seat total changes
+    const totalSeatsInputForCounter = document.getElementById('eventTotalSeats');
+    if (totalSeatsInputForCounter) {
+        totalSeatsInputForCounter.addEventListener('input', updateTierSeatCounter);
+    }
+
     const toggleTiers = () => {
-        if(newTypePaid && newTypePaid.checked) tiersContainer.style.display = 'block';
-        else tiersContainer.style.display = 'none';
+        if(newTypePaid && newTypePaid.checked) {
+            tiersContainer.style.display = 'block';
+            updateTierSeatCounter(); // Update when shown
+        } else {
+            tiersContainer.style.display = 'none';
+        }
     };
 
     if(newTypeFree && newTypePaid) {
@@ -251,6 +304,13 @@ window.openCreateEventModal = async function() {
             row.innerHTML = getRowContent(rowCount);
             list.appendChild(row);
         });
+
+        // Add event listener for quantity changes using delegation
+        list.addEventListener('input', (e) => {
+            if (e.target.classList.contains('tier-qty')) {
+                updateTierSeatCounter();
+            }
+        });
     }
 
     // Next Button Click
@@ -279,6 +339,7 @@ window.openCreateEventModal = async function() {
             updateStepper(3);
             newBtnNext.style.display = 'none';
             newBtnCreate.style.display = 'inline-block';
+            updateTierSeatCounter();
         }
     });
 
@@ -315,13 +376,24 @@ window.openCreateEventModal = async function() {
         // Ticket Data
         const isPaid = document.getElementById('typePaid').checked;
         let tickets = [];
+        let rowLayoutData = [];
+
         if (isPaid) {
             document.querySelectorAll('.tier-row').forEach(row => {
                 const name = row.querySelector('.tier-name').value;
                 const price = row.querySelector('.tier-price').value;
                 const qty = row.querySelector('.tier-qty').value;
-                if(name) tickets.push({ name, price, qty });
+                if(name) {
+                    tickets.push({ name, original_name: name, price, qty });
+                    rowLayoutData.push({ label: name, seats: parseInt(qty) || 0 });
+                }
             });
+
+            const totalTicketQty = tickets.reduce((sum, t) => sum + parseInt(t.qty || 0), 0);
+            if (parseInt(totalSeats) !== totalTicketQty) {
+                alert(`Total ticket quantity (${totalTicketQty}) must equal Total Seats (${totalSeats}).`);
+                return;
+            }
         }
 
         MockDB.addEvent({
@@ -335,7 +407,8 @@ window.openCreateEventModal = async function() {
             total_seats: totalSeats,
             total_tables: totalTables,
             is_paid: isPaid,
-            tickets: tickets
+            tickets: tickets,
+            row_layout_data: rowLayoutData
         });
 
         modal.hide();

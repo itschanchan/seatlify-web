@@ -238,50 +238,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-/* ==========================
-   EVENT MANAGER LAZY LOADER
-========================== */
-
-let eventManagerLoaded = false;
-
-async function loadEventManager() {
-
-    console.log("Website tab activated → loading event manager");
-
-    if (eventManagerLoaded) return;
-
-    const container = document.getElementById("event-manager");
-    if (!container) return;
-
-    try {
-        console.log("Loading event manager HTML…");
-
-        const res = await fetch("../dashboard/event-manager.html");
-        if (!res.ok) throw new Error("Event manager HTML not found");
-
-        container.innerHTML = await res.text();
-
-        await loadScriptOnce("../js/event-manager.js");
-
-        if (typeof initEventManager === "function") {
-            initEventManager();
-            eventManagerLoaded = true;
-        }
-
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = `<p class="text-danger">Failed to load event manager.</p>`;
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const tab = document.getElementById("website-tab");
-    if (!tab) return;
-
-    tab.addEventListener("shown.bs.tab", loadEventManager);
-});
-
-
 function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${src}"]`)) return resolve();
