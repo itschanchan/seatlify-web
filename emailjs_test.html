@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmailJS Integration</title>
+    
+    <!-- 1. Install EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script type="text/javascript">
+        (function() {
+            // 2. Initialize EmailJS with your Public Key
+            // Replace 'YOUR_PUBLIC_KEY' with the key from your Account dashboard
+            emailjs.init('NPeF-dURRp7hqBu-y');
+        })();
+    </script>
+</head>
+<body>
+    <h2>Send an Email</h2>
+    <!-- 3. Create a Form matching your Template Variables -->
+    <form id="contact-form">
+        <label>Name</label>
+        <input type="text" name="user_name" placeholder="John Doe" required>
+        <br><br>
+        <label>Email</label>
+        <input type="email" name="user_email" placeholder="john@example.com" required>
+        <br><br>
+        <label>Message</label>
+        <textarea name="message" placeholder="Your message here..." required></textarea>
+        <br><br>
+        <button type="submit">Send Email</button>
+    </form>
+
+    <script type="text/javascript">
+        document.getElementById('contact-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // 4. Send the form data
+            // Replace these with your actual Service ID and Template ID
+            const serviceID = 'YOUR_SERVICE_ID';
+            const templateID = 'YOUR_TEMPLATE_ID';
+
+            emailjs.sendForm(serviceID, templateID, this)
+                .then(function() {
+                    alert('Email sent successfully!');
+                }, function(error) {
+                    alert('Failed to send email. Check console for details.');
+                    console.log('FAILED...', error);
+                });
+        });
+    </script>
+</body>
+</html>

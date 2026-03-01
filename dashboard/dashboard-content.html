@@ -62,10 +62,10 @@
     </div>
 
     <div class="dashboard-wrapper">
-        <div class="d-flex align-items-center mb-3">
-            <h4 class="mb-0 me-2" style="color: var(--text-muted);">Managing:</h4>
-            <div class="dropdown me-3">
-                <button id="dashboardSelectedEvent" class="btn btn-link fw-bold text-decoration-none dropdown-toggle p-0 fs-4" style="color: var(--text-main);" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="d-flex align-items-center mb-3" style="max-width: 100%;">
+            <h4 class="mb-0 me-2 flex-shrink-0" style="color: var(--text-muted);">Managing:</h4>
+            <div class="dropdown me-3 flex-grow-1" style="min-width: 0;">
+                <button id="dashboardSelectedEvent" class="btn btn-link fw-bold text-decoration-none dropdown-toggle p-0 fs-4 w-100 text-start" style="color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Select Event
                 </button>
                 <ul id="dashboardEventDropdownList" class="dropdown-menu" style="background-color: var(--bg-panel); border-color: var(--border-color);">

@@ -74,8 +74,18 @@ function renderTicketDetails() {
                     newBtn.disabled = true;
 
                     MockDB.sendTicketEmail(email, { event: event.title, date: event.start_datetime })
-                        .then(() => {
-                            alert(`Ticket successfully emailed to ${email}!`);
+                        .then(response => {
+                            if (response && response.success) {
+                                alert(`Ticket successfully emailed to ${email}!`);
+                            } else {
+                                alert(`Failed to send email. ${response ? response.message : 'Unknown error.'}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Email sending error:', error);
+                            alert('An error occurred while trying to send the email.');
+                        })
+                        .finally(() => {
                             newBtn.innerHTML = originalText;
                             newBtn.disabled = false;
                         });

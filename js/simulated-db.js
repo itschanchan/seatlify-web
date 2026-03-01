@@ -87,20 +87,20 @@ const MockDB = {
     },
 
     // --- API UTILITIES ---
-    generateQRCodeUrl: (data) => {
-        // Generates a QR code image URL using api.qrserver.com
-        return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
-    },
-
     sendTicketEmail: (email, ticketData) => {
-        return new Promise((resolve) => {
-            console.log(`[Email API] Sending ticket to ${email}...`, ticketData);
-            // Simulate network delay for email sending
-            setTimeout(() => {
-                resolve({ success: true, message: "Email sent successfully" });
-            }, 1500);
-        });
-    }
+        // This now calls our backend endpoint to securely send the email
+        return fetch('../backend/send_email.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                to: email,
+                eventTitle: ticketData.event,
+                eventDate: ticketData.date
+            })
+        }).then(response => response.json());
+    },
 };
 
 // Initialize on load

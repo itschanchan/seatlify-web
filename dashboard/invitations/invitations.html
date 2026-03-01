@@ -204,6 +204,14 @@
                         <i class="bi bi-clipboard"></i> Copy
                     </button>
                 </div>
+                <hr class="my-3" style="border-color: var(--border-color);">
+                <label class="form-label text-muted">Send via Email</label>
+                <div class="input-group">
+                    <input type="email" class="form-control" id="inviteEmailInput" placeholder="guest@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    <button class="btn btn-outline-primary" type="button" id="btnSendInvite">
+                        <i class="bi bi-send"></i> Send
+                    </button>
+                </div>
                 <div class="alert alert-success py-2 d-none" id="copySuccessAlert">
                     <small><i class="bi bi-check-circle me-1"></i> Link copied to clipboard!</small>
                 </div>
@@ -218,6 +226,40 @@
 <script>
     // Self-invoking function to avoid polluting the global scope
     (function() {
+        /**
+         * Invitation Service
+         * Handles sending invitation emails via the backend.
+         */
+        const InvitationService = {
+            sendInvite: async (email, eventTitle, eventDate, link) => {
+                if (!email || !link) {
+                    return { success: false, message: "Missing email or link." };
+                }
+
+                try {
+                    // Call the existing backend script
+                    const response = await fetch('../../backend/send_email.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            to: email,
+                            eventTitle: eventTitle,
+                            eventDate: eventDate,
+                            link: link,
+                            type: 'invitation' // Specify type to change email content
+                        })
+                    });
+
+                    return await response.json();
+                } catch (error) {
+                    console.error("Invitation Email Error:", error);
+                    return { success: false, message: "Network error occurred." };
+                }
+            }
+        };
+
         const historyManager = {
             undoStack: [],
             redoStack: [],
@@ -658,8 +700,9 @@
                 // Generate Link
                 const uniqueId = Math.random().toString(36).substring(7);
                 // Use current path to find the viewer file and add query params
-                const path = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-                const link = `${path}public-view-invitation.html?event=${eventId}&share=${uniqueId}`;
+                const currentUrl = window.location.href;
+                const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+                const link = `${baseUrl}invitations/public-view-invitation.html?event=${eventId}&share=${uniqueId}`;
                 
                 shareInput.value = link;
                 if(copyAlert) copyAlert.classList.add('d-none');
@@ -674,6 +717,41 @@
                         if(copyAlert) copyAlert.classList.remove('d-none');
                         setTimeout(() => { if(copyAlert) copyAlert.classList.add('d-none'); }, 3000);
                     });
+                });
+            }
+
+            // --- Send Email Logic ---
+            const btnSendInvite = document.getElementById('btnSendInvite');
+            if (btnSendInvite) {
+                btnSendInvite.addEventListener('click', async () => {
+                    const email = document.getElementById('inviteEmailInput').value;
+                    const link = shareInput.value;
+                    
+                    if (!email || !link) {
+                        alert("Please enter an email address.");
+                        return;
+                    }
+
+                    const eventId = localStorage.getItem('seatlify_current_event_id');
+                    const event = MockDB.getEvents().find(e => e.event_id == eventId);
+                    const title = event ? event.title : 'Event';
+                    const date = event ? event.start_datetime : '';
+
+                    const originalText = btnSendInvite.innerHTML;
+                    btnSendInvite.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                    btnSendInvite.disabled = true;
+
+                    const res = await InvitationService.sendInvite(email, title, date, link);
+                    
+                    btnSendInvite.innerHTML = originalText;
+                    btnSendInvite.disabled = false;
+
+                    if (res.success) {
+                        alert("Invitation sent successfully!");
+                        document.getElementById('inviteEmailInput').value = '';
+                    } else {
+                        alert("Failed to send: " + res.message);
+                    }
                 });
             }
         }

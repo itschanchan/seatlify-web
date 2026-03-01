@@ -7,37 +7,44 @@
         .nav-pills .nav-link {
             color: var(--text-muted);
         }
+        @media (max-width: 767.98px) {
+            /* Responsive table is now handled by the .table-responsive class */
+            .ticket-actions {
+                flex-direction: column;
+            }
+            .ticket-actions .btn {
+                width: 100%;
+            }
+        }
     </style>
-    <!-- Navigation -->
-    <ul class="nav nav-pills mb-4" id="ticketTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pills-set-tickets-tab" data-bs-toggle="pill" data-bs-target="#pills-set-tickets" type="button" role="tab" aria-controls="pills-set-tickets" aria-selected="true">Set Tickets</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-design-ticket-tab" data-bs-toggle="pill" data-bs-target="#pills-design-ticket" type="button" role="tab" aria-controls="pills-design-ticket" aria-selected="false">Design Ticket</button>
-        </li>
-    </ul>
+
 
     <div class="tab-content" id="ticketTabsContent">
         <!-- Set Tickets Tab -->
         <div class="tab-pane fade show active" id="pills-set-tickets" role="tabpanel" aria-labelledby="pills-set-tickets-tab">
-            <div class="card shadow-sm border-0 bg-panel-theme">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="card-title mb-0 text-main-theme">Ticket Configuration</h5>
-                        <div class="text-muted-theme">
-                            Total Capacity: <strong id="ticketConfigTotalSeats" class="text-main-theme">0</strong>
-                        </div>
-                    </div>
-                    
-                    <div id="ticketTierRowsContainer" class="d-flex flex-column gap-3 mb-4">
-                        <!-- Rows will be injected here -->
-                    </div>
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary" id="btnEditTicketTiers"><i class="bi bi-pencil-square me-1"></i> Edit</button>
-                        <button type="button" class="btn btn-primary" id="btnSaveTicketTiers" style="display: none;"><i class="bi bi-save me-1"></i> Save Configuration</button>
-                    </div>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
+                <h5 class="card-title mb-0 text-main-theme">Ticket Configuration</h5>
+                <div class="text-muted-theme">
+                    Total Capacity: <strong id="ticketConfigTotalSeats" class="text-main-theme">0</strong>
                 </div>
+            </div>
+
+        <!-- Navigation -->
+        <ul class="nav nav-pills mb-4" id="ticketTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-set-tickets-tab" data-bs-toggle="pill" data-bs-target="#pills-set-tickets" type="button" role="tab" aria-controls="pills-set-tickets" aria-selected="true">Set Tickets</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-design-ticket-tab" data-bs-toggle="pill" data-bs-target="#pills-design-ticket" type="button" role="tab" aria-controls="pills-design-ticket" aria-selected="false">Design Ticket</button>
+            </li>
+        </ul>
+            
+            <div id="ticketTierRowsContainer" class="table-responsive mb-4">
+                <!-- Rows will be injected here -->
+            </div>
+            <div class="d-flex justify-content-end gap-2 ticket-actions">
+                <button type="button" class="btn btn-outline-secondary" id="btnEditTicketTiers"><i class="bi bi-pencil-square me-1"></i> Edit</button>
+                <button type="button" class="btn btn-primary" id="btnSaveTicketTiers" style="display: none;"><i class="bi bi-save me-1"></i> Save Configuration</button>
             </div>
         </div>
 

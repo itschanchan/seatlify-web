@@ -15,7 +15,18 @@
 
     <!-- Mock DB -->
     <script src="../../js/simulated-db.js"></script>
-
+    
+    <!-- 1. Install EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script type="text/javascript">
+        (function() {
+            // 2. Initialize EmailJS with your Public Key
+            // Replace 'YOUR_PUBLIC_KEY' with the key from your Account dashboard
+            emailjs.init('NPeF-dURRp7hqBu-y');
+        })();
+    </script>
+    
     <style>
         body {
             background-color: #f4f6f8;
@@ -516,72 +527,86 @@
 
         // Simulate Sending
         const btn = document.querySelector('#rsvpForm button.btn-primary');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
-        btn.disabled = true;
+        let originalText = 'Confirm RSVP';
+        if (btn) {
+            originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+            btn.disabled = true;
+        }
 
-        // Get structured seat data
-        const seatRow = seatInput.dataset.row;
-        const seatColumn = seatInput.dataset.column;
-        const seatPrice = seatInput.dataset.price || 0;
+        try {
+            // Get structured seat data
+            const seatRow = seatInput.dataset.row;
+            const seatColumn = seatInput.dataset.column;
+            const seatPrice = seatInput.dataset.price || 0;
 
-        // Generate Ticket HTML for display AND email
-        const ticketHtml = generateTicketHtml(currentEvent, name, seatDisplay);
+            // Generate QR Code URL
+            const qrData = `EVENT:${currentEvent.event_id}|GUEST:${name}|SEAT:${seatDisplay}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
-        // Prepare data for backend
-        const payload = {
-            event_id: currentEvent.event_id,
-            guest_name: name,
-            guest_email: email,
-            guest_age: document.getElementById('guestAge').value,
-            seat_row: seatRow,
-            seat_column: seatColumn,
-            price: seatPrice,
-            ticket_html: ticketHtml // Pass generated HTML to backend
-        };
+            // Generate Ticket HTML for display AND email
+            const ticketHtml = generateTicketHtml(currentEvent, name, seatDisplay, qrUrl);
 
-        // Call PHP Backend
-        fetch('../../backend/rsvp_process.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            // Prepare data for EmailJS
+            const templateParams = {
+                to_name: name,
+                to_email: email,
+                qr_code_url: qrUrl, // Pass the URL explicitly for the template
+                event_title: currentEvent.title,
+                event_date: new Date(currentEvent.start_datetime).toLocaleString(),
+                seat_info: seatDisplay,
+                ticket_html: ticketHtml
+            };
 
-            if (data.success) {
-                // Show Success Modal
-                const modalEl = document.getElementById('ticketSuccessModal');
-                const modalBody = modalEl.querySelector('.modal-body');
-                modalBody.innerHTML = `
-                    <div class="text-center mb-4">
-                        <i class="bi bi-check-circle-fill text-success display-1"></i>
-                        <h4 class="mt-3">RSVP Confirmed!</h4>
-                        <p class="text-muted">A copy of this ticket has been sent to <strong>${email}</strong></p>
-                    </div>
-                    ${ticketHtml}
-                `;
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            } else {
-                alert('Reservation Failed: ' + data.message);
-            }
-        })
-        .catch((error) => {
+            // Replace these with your actual Service ID and Template ID from EmailJS
+            const serviceID = 'service_ryl56ps';
+            const templateID = 'template_5i46vh8';
+
+            emailjs.send(serviceID, templateID, templateParams)
+                .then(() => {
+                    if (btn) {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+
+                    // Show Success Modal
+                    const modalEl = document.getElementById('ticketSuccessModal');
+                    const modalBody = modalEl.querySelector('.modal-body');
+                    modalBody.innerHTML = `
+                        <div class="text-center mb-4">
+                            <i class="bi bi-check-circle-fill text-success display-1"></i>
+                            <h4 class="mt-3">RSVP Confirmed!</h4>
+                            <p class="text-muted">A copy of this ticket has been sent to <strong>${email}</strong></p>
+                        </div>
+                        ${ticketHtml}
+                    `;
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                })
+                .catch((error) => {
+                    console.error('FAILED...', error);
+                    alert('Reservation Failed: ' + (error.text || JSON.stringify(error)));
+                    if (btn) {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                });
+        } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while processing your reservation.');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        });
+            alert('An error occurred: ' + error.message);
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
     }
 
-    function generateTicketHtml(event, guestName, seatInfo) {
-        const qrData = `EVENT:${event.event_id}|GUEST:${guestName}|SEAT:${seatInfo}`;
-        const qrUrl = MockDB.generateQRCodeUrl(qrData);
+    function generateTicketHtml(event, guestName, seatInfo, providedQrUrl) {
+        let qrUrl = providedQrUrl;
+        if (!qrUrl) {
+            const qrData = `EVENT:${event.event_id}|GUEST:${guestName}|SEAT:${seatInfo}`;
+            qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+        }
         
         const start = new Date(event.start_datetime);
         const dateStr = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
