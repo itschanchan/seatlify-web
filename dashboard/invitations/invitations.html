@@ -101,7 +101,7 @@
                 <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
                 
                 <!-- 1. Header title -->
-                <h1 id="invDesignTitle" class="invitation-title display-4 mb-3" style="color: var(--text-main);">You're Invited!</h1>
+                <h1 id="invDesignTitle" contenteditable="true" class="invitation-title display-4 mb-3" style="color: var(--text-main);">Event Title</h1>
 
                 <!-- 3. Hosted by -->
                 <p id="invDesignHost" contenteditable="true" class="lead" style="color: var(--text-muted);">Hosted by: <span class="fw-bold" style="color: var(--text-main);">Your Organization</span></p>
@@ -226,6 +226,15 @@
 <script>
     // Self-invoking function to avoid polluting the global scope
     (function() {
+        let currentEventData = null; // Store the fetched event data
+
+        // Helper for API URLs to support Live Server (Port 5500)
+        const getApiUrl = (endpoint) => {
+            const isLiveServer = window.location.port === '5500';
+            const base = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
+            return `${base}/${endpoint}`;
+        };
+
         /**
          * Invitation Service
          * Handles sending invitation emails via the backend.
@@ -238,7 +247,7 @@
 
                 try {
                     // Call the existing backend script
-                    const response = await fetch('../../backend/send_email.php', {
+                    const response = await fetch(getApiUrl('send_email.php'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -391,7 +400,7 @@
             }
         });
 
-        function createNewSection(type) {
+        function createNewSection(type, data = null) {
             const div = document.createElement('div');
             div.className = 'invitation-section p-4 p-md-5';
             div.dataset.section = type + '_' + Date.now();
@@ -404,27 +413,53 @@
             const deleteBtn = `<button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 text-danger btn-delete-section shadow-sm" style="z-index: 10;"><i class="bi bi-trash"></i></button>`;
 
             let content = '';
+            
+            // Helper to get event data safely
+            const eventTitle = currentEventData ? currentEventData.title : 'Event Title';
+            const eventDate = currentEventData ? new Date(currentEventData.start_datetime).toLocaleString() : 'Date & Time';
+            const eventVenue = currentEventData ? (currentEventData.venue_name || 'Unknown Venue') : 'Location';
 
             switch(type) {
-                case 'header':
+                case 'banner':
+                    const bannerSrc = (data && data.image) ? data.image : 'https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Upload+Your+Banner';
+                    div.className = 'invitation-section'; 
                     content = `
-                        <h1 contenteditable="true" class="display-4 mb-3" style="color: var(--text-main);">Header Title</h1>
-                        <p contenteditable="true" class="lead" style="color: var(--text-muted);">Subtitle or Host Name</p>
+                        <div class="invitation-banner position-relative bg-light">
+                            <img id="bannerImagePreview" src="${bannerSrc}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
+                            <div class="position-absolute top-0 end-0 p-3">
+                                <label for="bannerUpload" class="btn btn-sm btn-light bg-white shadow-sm">
+                                    <i class="bi bi-upload me-1"></i> Change Banner
+                                </label>
+                                <input type="file" id="bannerUpload" class="d-none" accept="image/*">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'header':
+                    const title = (data && data.title) ? data.title : eventTitle;
+                    const host = (data && data.host) ? data.host : 'Subtitle or Host Name';
+                    const desc = (data && data.description) ? data.description : '<p>Description text goes here.</p>';
+                    content = `
+                        <h1 contenteditable="true" class="invitation-title display-4 mb-3" style="color: var(--text-main);">${title}</h1>
+                        <p contenteditable="true" class="lead" style="color: var(--text-muted);">${host}</p>
                         <hr class="my-4" style="border-color: var(--border-color);">
-                        <div contenteditable="true" class="fs-5" style="color: var(--text-main);"><p>Description text goes here.</p></div>
+                        <div contenteditable="true" class="invitation-description fs-5" style="color: var(--text-main);">${desc}</div>
                     `;
                     break;
                 case 'section':
+                    const secTitle = (data && data.title) ? data.title : 'New Section';
+                    const secContent = (data && data.content) ? data.content : '<p>Add your content here.</p>';
                     content = `
-                        <h3 contenteditable="true" style="color: var(--text-main);">New Section</h3>
-                        <div contenteditable="true" style="color: var(--text-main);"><p>Add your content here.</p></div>
+                        <h3 contenteditable="true" style="color: var(--text-main);">${secTitle}</h3>
+                        <div contenteditable="true" style="color: var(--text-main);">${secContent}</div>
                     `;
                     break;
                 case 'image':
+                    const imgSrc = (data && data.image) ? data.image : 'https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Image';
                     div.className = 'invitation-section'; // Reset padding for image
                     content = `
                         <div class="position-relative bg-light" style="min-height: 200px;">
-                            <img src="https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Image" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;">
+                            <img src="${imgSrc}" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;">
                         </div>
                     `;
                     break;
@@ -433,27 +468,81 @@
                         <div class="card border-0" style="background-color: var(--bg-muted);">
                             <div class="card-body">
                                 <h5 class="card-title" style="color: var(--text-main);">Event Details</h5>
-                                <p contenteditable="true" class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>Date & Time</p>
-                                <p contenteditable="true" class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>Location</p>
+                                <p class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>${eventDate}</p>
+                                <p class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>${eventVenue}</p>
                             </div>
                         </div>
                     `;
                     break;
                 case 'form':
+                    const label = (data && data.label) ? data.label : 'Label';
                     content = `
                         <div class="mb-3">
-                            <label class="form-label" contenteditable="true" style="color: var(--text-muted);">Label</label>
+                            <label class="form-label" contenteditable="true" style="color: var(--text-muted);">${label}</label>
                             <input type="text" class="form-control" disabled placeholder="Input field">
                         </div>
                     `;
                     break;
                 case 'question':
+                    const question = (data && data.question) ? data.question : 'Question?';
                     content = `
                         <div class="text-center">
-                            <h4 contenteditable="true" class="mb-3" style="color: var(--text-main);">Question?</h4>
+                            <h4 contenteditable="true" class="mb-3" style="color: var(--text-main);">${question}</h4>
                             <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
                                 <button class="btn btn-success">Yes</button>
                                 <button class="btn btn-secondary">No</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rsvp_question':
+                    content = `
+                        <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
+                            <h4 class="mb-3 text-center" style="color: var(--text-main);">Will you be attending?</h4>
+                            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-0">
+                                <button type="button" class="btn btn-success btn-lg px-4 gap-3">Yes, I'll be there!</button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg px-4">No, I can't make it</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rsvp_form':
+                    const pref = (data && data.viewPreference) ? data.viewPreference : 'chart';
+                    const labelMap = { 'chart': 'Chart View', 'table': 'Table View', 'map': 'Map View' };
+                    const btnLabel = labelMap[pref] || 'Chart View';
+                    
+                    content = `
+                        <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
+                            <div class="rsvp-form">
+                                <h5 class="mb-3" style="color: var(--text-main);">Please confirm your details:</h5>
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: var(--text-muted);">Full Name</label>
+                                    <input type="text" class="form-control" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: var(--text-muted);">Email Address</label>
+                                    <input type="email" class="form-control" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: var(--text-muted);">Age</label>
+                                    <input type="number" class="form-control" placeholder="Enter your age" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: var(--text-muted);">Seat Reservation</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="No seat selected" readonly style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                        <button class="btn btn-outline-primary dropdown-toggle btn-seat-view-config" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-grid-3x3"></i> Reserve Seat (${btnLabel})
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><h6 class="dropdown-header">Guest View Preference</h6></li>
+                                            <li><a class="dropdown-item ${pref==='chart'?'active':''}" href="#" data-view="chart">Chart View</a></li>
+                                            <li><a class="dropdown-item ${pref==='table'?'active':''}" href="#" data-view="table">Table View</a></li>
+                                            <li><a class="dropdown-item ${pref==='map'?'active':''}" href="#" data-view="map">Map View</a></li>
+                                        </ul>
+                                    </div>
+                                    <input type="hidden" class="seat-view-preference" value="${pref}">
+                                </div>
                             </div>
                         </div>
                     `;
@@ -467,6 +556,25 @@
                 historyManager.saveState();
                 div.remove();
             });
+            
+            // Re-bind banner upload if applicable
+            if (type === 'banner') {
+                const uploadInput = div.querySelector('#bannerUpload');
+                const preview = div.querySelector('#bannerImagePreview');
+                if (uploadInput && preview) {
+                    uploadInput.addEventListener('change', function() {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                preview.src = e.target.result;
+                                historyManager.saveState();
+                            }
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            }
 
             // Bind Dropdown Logic for Seat View
             if (type === 'rsvp_form') {
@@ -511,59 +619,44 @@
 
         // --- Load Data Logic ---
         const currentEventId = localStorage.getItem('seatlify_current_event_id');
-        if (currentEventId && typeof MockDB !== 'undefined') {
-            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
-            if (event) {
-                const titleEl = document.getElementById('invDesignTitle');
-                const hostEl = document.getElementById('invDesignHost');
-                const descEl = document.getElementById('invDesignDesc');
-                const timeEl = document.getElementById('invDesignTime');
-                const venueEl = document.getElementById('invDesignVenue');
-
-                // Always load non-editable fields from live event data
-                if(titleEl) titleEl.textContent = event.title;
+        if (currentEventId) {
+            // Fetch from Backend instead of MockDB
+            fetch(getApiUrl(`get_event_public.php?event_id=${currentEventId}`))
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !data.event) return;
                 
-                const start = new Date(event.start_datetime);
-                if(timeEl) timeEl.innerHTML = `<i class="bi bi-calendar3 me-2"></i>${start.toLocaleString()}`;
-                
-                const venue = MockDB.getVenueById(event.venue_id);
-                if(venueEl) venueEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i>${venue ? venue.name : 'Unknown Venue'}`;
+                const event = data.event;
+                currentEventData = event; // Store for later use (sending emails)
 
-                // Load editable fields (Host, Description) from config if available
-                if (event.invitation_config) {
-                    if (hostEl) hostEl.innerHTML = event.invitation_config.host;
-                    if (descEl) descEl.innerHTML = event.invitation_config.description;
+                // Check if we have a saved config to restore
+                if (event.invitation_config && event.invitation_config.sections && event.invitation_config.sections.length > 0) {
+                    const container = document.getElementById('invitationSectionsContainer');
+                    container.innerHTML = ''; // Clear default layout
                     
-                    // Restore sections is handled by re-creating them from the saved config
-                    // But since we are just loading the *initial* HTML structure here (which might be default),
-                    // we rely on the fact that the user might have saved a layout.
-                    // NOTE: The current implementation of `invitations.html` initializes with default HTML.
-                    // To fully restore the saved layout in the designer, we would need to clear `invitationSectionsContainer`
-                    // and rebuild it from `event.invitation_config.sections`. 
-                    // For now, we are just updating the default fields. 
-                    // If the user saved a specific seat view in the default rsvp_form, we can try to update it.
-                    const defaultRsvp = document.querySelector('[data-section="rsvp_form"]');
-                    if (defaultRsvp && event.invitation_config.sections) {
-                        const rsvpConfig = event.invitation_config.sections.find(s => s.type === 'rsvp_form');
-                        if (rsvpConfig && rsvpConfig.viewPreference) {
-                            const hiddenInput = defaultRsvp.querySelector('.seat-view-preference');
-                            const btn = defaultRsvp.querySelector('.btn-seat-view-config');
-                            const item = defaultRsvp.querySelector(`.dropdown-item[data-view="${rsvpConfig.viewPreference}"]`);
-                            
-                            if (hiddenInput) hiddenInput.value = rsvpConfig.viewPreference;
-                            if (btn && item) btn.innerHTML = `<i class="bi bi-grid-3x3"></i> Reserve Seat (${item.textContent})`;
-                            if (item) {
-                                defaultRsvp.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                                item.classList.add('active');
-                            }
-                        }
-                    }
+                    event.invitation_config.sections.forEach(sectionData => {
+                        createNewSection(sectionData.type, sectionData);
+                    });
                 } else {
-                    // Default population for editable fields
+                    // Fallback: Populate default fields if no custom config exists
+                    const titleEl = document.getElementById('invDesignTitle');
+                    const hostEl = document.getElementById('invDesignHost');
+                    const descEl = document.getElementById('invDesignDesc');
+                    const timeEl = document.getElementById('invDesignTime');
+                    const venueEl = document.getElementById('invDesignVenue');
+
+                    if(titleEl) titleEl.textContent = event.title;
+                    
+                    const start = new Date(event.start_datetime);
+                    if(timeEl) timeEl.innerHTML = `<i class="bi bi-calendar3 me-2"></i>${start.toLocaleString()}`;
+                    
+                    const venueName = event.venue_name || 'Unknown Venue';
+                    if(venueEl) venueEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i>${venueName}`;
+
                     if(descEl) descEl.innerHTML = `<p>${event.description || 'Join us for this event!'}</p>`;
-                    // Host defaults to static text in HTML, or could be fetched from org data
                 }
-            }
+            })
+            .catch(err => console.error("Error loading event data:", err));
         }
 
 
@@ -672,6 +765,7 @@
                     if (type === 'banner' || type === 'image') {
                         data.image = sec.querySelector('img').src;
                     } else if (type === 'header') {
+                        data.title = sec.querySelector('h1').innerHTML;
                         data.host = sec.querySelector('.lead').innerHTML;
                         data.description = sec.querySelector('.invitation-description').innerHTML;
                     } else if (type === 'section') {
@@ -695,18 +789,38 @@
                     host: document.getElementById('invDesignHost')?.innerHTML || '', 
                     sections: sections
                 };
-                MockDB.updateEvent(eventId, { invitation_config: config });
 
-                // Generate Link
-                const uniqueId = Math.random().toString(36).substring(7);
-                // Use current path to find the viewer file and add query params
-                const currentUrl = window.location.href;
-                const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
-                const link = `${baseUrl}invitations/public-view-invitation.html?event=${eventId}&share=${uniqueId}`;
-                
-                shareInput.value = link;
-                if(copyAlert) copyAlert.classList.add('d-none');
-                shareModal.show();
+                // Save to Backend
+                fetch(getApiUrl('save_invitation_config.php'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_id: eventId, config: config })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // Generate Link
+                        const uniqueId = Math.random().toString(36).substring(7);
+                        
+                        // Dynamic Link Generation (Relative to current location)
+                        let baseUrl = window.location.href.split('?')[0];
+                        baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+                        if (!baseUrl.endsWith('/invitations/')) {
+                            baseUrl += 'invitations/';
+                        }
+                        const link = `${baseUrl}public-view-invitation.html?event=${eventId}&share=${uniqueId}`;
+                        
+                        shareInput.value = link;
+                        if(copyAlert) copyAlert.classList.add('d-none');
+                        shareModal.show();
+                    } else {
+                        alert("Failed to save configuration: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Network error while saving.");
+                });
             });
 
             if (btnCopy) {
@@ -732,10 +846,9 @@
                         return;
                     }
 
-                    const eventId = localStorage.getItem('seatlify_current_event_id');
-                    const event = MockDB.getEvents().find(e => e.event_id == eventId);
-                    const title = event ? event.title : 'Event';
-                    const date = event ? event.start_datetime : '';
+                    // Use the data fetched from backend
+                    const title = currentEventData ? currentEventData.title : 'Event';
+                    const date = currentEventData ? currentEventData.start_datetime : '';
 
                     const originalText = btnSendInvite.innerHTML;
                     btnSendInvite.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';

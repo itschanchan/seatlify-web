@@ -91,6 +91,19 @@ $tables = [
         created_by BIGINT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        -- Fields for seat planner and invitations, often from mock DB
+        attendees INT,
+        layout_preference VARCHAR(50),
+        total_seats INT,
+        total_tables INT,
+        is_paid BOOLEAN DEFAULT FALSE,
+        invitation_config JSON,
+        blueprint_layout JSON,
+        tickets JSON,
+        row_layout_data JSON,
+        table_layout_data JSON,
+
         FOREIGN KEY (organization_id) REFERENCES organizations(organization_id),
         FOREIGN KEY (venue_id) REFERENCES venues(venue_id),
         FOREIGN KEY (created_by) REFERENCES users(user_id)

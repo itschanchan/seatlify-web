@@ -147,7 +147,7 @@
                         </div>
 
                         <div class="d-grid mt-4">
-                            <button class="btn btn-primary btn-lg">Confirm RSVP</button>
+                            <button class="btn btn-primary btn-lg" type="button" onclick="confirmRsvp(this)">Confirm RSVP</button>
                         </div>
                     </div>
                 </div>
@@ -198,23 +198,51 @@
         const eventId = urlParams.get('event');
 
         if (eventId) {
+            // Determine API Base URL (Handle Live Server vs Apache)
+            const isLiveServer = window.location.port === '5500';
+            const apiBase = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
+
             // FETCH from Backend instead of MockDB
-            fetch(`../../backend/get_event_public.php?event_id=${eventId}`)
+            fetch(`${apiBase}/get_event_public.php?event_id=${eventId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.event) {
                         currentEvent = data.event;
                         renderEventPage(currentEvent);
                     } else {
-                        console.error('Event not found:', data.message);
-                        document.body.innerHTML = '<div class="container text-center mt-5"><h3>Event not found</h3></div>';
+                        console.warn('Backend error:', data.message);
+                        loadFromLocalStorage(eventId);
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching event:', error);
+                    console.error('Network error:', error);
+                    loadFromLocalStorage(eventId);
                 });
         }
     });
+
+    function loadFromLocalStorage(eventId) {
+        console.log("Attempting to load from LocalStorage...");
+        // Try to find event in localStorage (checking common keys)
+        const storedEvents = localStorage.getItem('seatlify_events') || localStorage.getItem('events');
+        if (storedEvents) {
+            try {
+                const events = JSON.parse(storedEvents);
+                // Loose comparison for ID (string vs number)
+                const event = events.find(e => e.id == eventId || e.event_id == eventId);
+                if (event) {
+                    currentEvent = event;
+                    renderEventPage(currentEvent);
+                    return;
+                }
+            } catch (e) {
+                console.error("Error parsing local storage events", e);
+            }
+        }
+        
+        // If we reach here, both backend and local storage failed
+        document.body.innerHTML = '<div class="container text-center mt-5"><h3>Event not found</h3><p class="text-muted">Could not load event data from server or local storage.</p></div>';
+    }
 
     function renderEventPage(event) {
         // Check for custom sections configuration
@@ -337,7 +365,7 @@
                                 </div>
                             </div>
                             <div class="d-grid mt-4">
-                                <button class="btn btn-primary btn-lg" onclick="confirmRsvp()">Confirm RSVP</button>
+                                <button class="btn btn-primary btn-lg" type="button" onclick="confirmRsvp(this)">Confirm RSVP</button>
                             </div>
                         </div>
                     </div>
@@ -522,12 +550,22 @@
         modal.hide();
     }
 
-    function confirmRsvp() {
-        const nameInput = document.getElementById('guestName');
-        const emailInput = document.getElementById('guestEmail');
-        const seatInput = document.getElementById('selectedSeatDisplay');
+    function confirmRsvp(btnElement) {
+        console.log("Confirm RSVP clicked");
         
-        if (!nameInput || !emailInput || !seatInput) return;
+        // Use the button to find the specific form container (handles duplicate IDs if multiple forms exist)
+        // Fallback to document if btnElement is missing
+        const context = btnElement ? btnElement.closest('.invitation-section') : document;
+        
+        // Use querySelector to find elements within this specific section
+        const nameInput = context.querySelector('#guestName') || document.getElementById('guestName');
+        const emailInput = context.querySelector('#guestEmail') || document.getElementById('guestEmail');
+        const seatInput = context.querySelector('#selectedSeatDisplay') || document.getElementById('selectedSeatDisplay');
+        
+        if (!nameInput || !emailInput || !seatInput) {
+            alert("Error: Could not find form inputs. Please refresh the page.");
+            return;
+        }
         
         const name = nameInput.value;
         const email = emailInput.value;
@@ -539,12 +577,19 @@
         }
 
         // Simulate Sending
-        const btn = document.querySelector('#rsvpForm button.btn-primary');
+        const btn = btnElement || document.querySelector('#rsvpForm button.btn-primary');
         let originalText = 'Confirm RSVP';
         if (btn) {
             originalText = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
             btn.disabled = true;
+        }
+
+        // Check if EmailJS is loaded
+        if (typeof emailjs === 'undefined') {
+            alert("Email service is not loaded. Please check your internet connection.");
+            if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+            return;
         }
 
         try {

@@ -18,6 +18,15 @@
         }
     </style>
 
+    <!-- Navigation -->
+    <ul class="nav nav-pills mb-4" id="ticketTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pills-set-tickets-tab" data-bs-toggle="pill" data-bs-target="#pills-set-tickets" type="button" role="tab" aria-controls="pills-set-tickets" aria-selected="true">Set Tickets</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-design-ticket-tab" data-bs-toggle="pill" data-bs-target="#pills-design-ticket" type="button" role="tab" aria-controls="pills-design-ticket" aria-selected="false">Design Ticket</button>
+        </li>
+    </ul>
 
     <div class="tab-content" id="ticketTabsContent">
         <!-- Set Tickets Tab -->
@@ -28,16 +37,6 @@
                     Total Capacity: <strong id="ticketConfigTotalSeats" class="text-main-theme">0</strong>
                 </div>
             </div>
-
-        <!-- Navigation -->
-        <ul class="nav nav-pills mb-4" id="ticketTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-set-tickets-tab" data-bs-toggle="pill" data-bs-target="#pills-set-tickets" type="button" role="tab" aria-controls="pills-set-tickets" aria-selected="true">Set Tickets</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-design-ticket-tab" data-bs-toggle="pill" data-bs-target="#pills-design-ticket" type="button" role="tab" aria-controls="pills-design-ticket" aria-selected="false">Design Ticket</button>
-            </li>
-        </ul>
             
             <div id="ticketTierRowsContainer" class="table-responsive mb-4">
                 <!-- Rows will be injected here -->
@@ -93,3 +92,110 @@
         </div>
     </div>
 </div>
+
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<script>
+    (function() {
+        // 1. Initialize EmailJS
+        // Using the key found in your public-view-invitation.html
+        if (typeof emailjs !== 'undefined') {
+            emailjs.init('NPeF-dURRp7hqBu-y');
+        }
+
+        const eventId = localStorage.getItem('seatlify_current_event_id');
+        let currentEventData = null;
+
+        // 2. Fetch Event Data
+        if (eventId) {
+            // Determine API Base URL (Handle Live Server vs Apache)
+            const isLiveServer = window.location.port === '5500';
+            const apiBase = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
+
+            fetch(`${apiBase}/get_event_public.php?event_id=${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.event) {
+                        currentEventData = data.event;
+                        populateTicketPreview(data.event);
+                    }
+                })
+                .catch(err => console.error('Error loading event for ticket:', err));
+        }
+
+        function populateTicketPreview(event) {
+            const titleEl = document.getElementById('ticketEventTitle');
+            const dateEl = document.getElementById('ticketEventDate');
+            const timeEl = document.getElementById('ticketEventTime');
+            const venueEl = document.getElementById('ticketEventVenue');
+
+            if (titleEl) titleEl.textContent = event.title;
+            
+            const start = new Date(event.start_datetime);
+            if (dateEl) dateEl.textContent = start.toLocaleDateString();
+            if (timeEl) timeEl.textContent = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const venueName = event.venue_name || 'Unknown Venue';
+            if (venueEl) venueEl.textContent = venueName;
+
+            // Also populate the QR code preview in the "Design Ticket" tab
+            const qrContainer = document.querySelector('#pills-design-ticket .qr-code-container');
+            if (qrContainer) {
+                const qrData = `EVENT:${event.event_id}|PREVIEW`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+                // Replace the placeholder square with the actual QR image
+                qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code Preview" class="img-fluid rounded" style="max-width: 150px;">`;
+            }
+        }
+
+        // 3. Handle "Email Ticket" Button
+        const btnEmail = document.getElementById('btnSendTestEmail');
+        if (btnEmail) {
+            btnEmail.addEventListener('click', function() {
+                if (!currentEventData) {
+                    alert('No event data loaded. Please select an event first.');
+                    return;
+                }
+
+                const email = prompt("Enter email address to send test ticket to:");
+                if (!email) return;
+
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+                this.disabled = true;
+
+                // Generate QR URL for the test
+                const qrData = `EVENT:${currentEventData.event_id}|TEST_TICKET`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+
+                // Prepare params for EmailJS
+                const templateParams = {
+                    to_name: "Test User",
+                    to_email: email,
+                    qr_code_url: qrUrl,
+                    event_title: currentEventData.title,
+                    event_date: new Date(currentEventData.start_datetime).toLocaleString(),
+                    seat_info: "Section A, Row 5, Seat 12 (Test)",
+                    ticket_html: "<h1>Test Ticket</h1><p>This is a test ticket sent from the dashboard.</p>"
+                };
+
+                const serviceID = 'service_ryl56ps';
+                const templateID = 'template_5i46vh8';
+
+                emailjs.send(serviceID, templateID, templateParams)
+                    .then(() => {
+                        alert('Test ticket sent successfully!');
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    })
+                    .catch((err) => {
+                        console.error('EmailJS Error:', err);
+                        alert('Failed to send email: ' + JSON.stringify(err));
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    });
+            });
+        }
+    })();
+</script>

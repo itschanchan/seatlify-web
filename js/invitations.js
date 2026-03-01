@@ -29,6 +29,25 @@ const InvitationService = {
             console.error("Invitation Email Error:", error);
             return { success: false, message: "Network error occurred." };
         }
+    },
+
+    saveConfig: async (eventId, config) => {
+        try {
+            const response = await fetch('../../backend/save_invitation_config.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    event_id: eventId,
+                    config: config
+                })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Save Config Error:", error);
+            return { success: false, message: "Network error occurred." };
+        }
     }
 };
 

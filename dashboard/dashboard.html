@@ -249,6 +249,12 @@
 
 <!-- Simulated Database -->
 <script src="../js/simulated-db.js"></script>
+<script>
+    // Polyfill for missing QR code function in MockDB to prevent tickets.js errors
+    if (typeof MockDB !== 'undefined' && typeof MockDB.generateQRCodeUrl === 'undefined') {
+        MockDB.generateQRCodeUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data)}`;
+    }
+</script>
 
 <!-- Dashboard Loader (SPA Logic) -->
 <script src="../js/dashboard-loader.js"></script>
