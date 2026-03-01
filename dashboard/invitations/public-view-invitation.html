@@ -198,33 +198,46 @@
         const eventId = urlParams.get('event');
 
         if (eventId) {
-            const events = MockDB.getEvents();
-            currentEvent = events.find(e => e.event_id == eventId);
-            
-            if (currentEvent) {
-                // Check for custom sections configuration
-                if (currentEvent.invitation_config && currentEvent.invitation_config.sections) {
-                    const container = document.getElementById('publicInvitationSections');
-                    if (container) {
-                        container.innerHTML = ''; // Force clear default layout
+            // FETCH from Backend instead of MockDB
+            fetch(`../../backend/get_event_public.php?event_id=${eventId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.event) {
+                        currentEvent = data.event;
+                        renderEventPage(currentEvent);
+                    } else {
+                        console.error('Event not found:', data.message);
+                        document.body.innerHTML = '<div class="container text-center mt-5"><h3>Event not found</h3></div>';
                     }
-
-                    currentEvent.invitation_config.sections.forEach(sectionData => {
-                        container.appendChild(renderSection(sectionData, currentEvent));
-                    });
-                } else {
-                    // Fallback to default layout if no config exists
-                    // (The default HTML is already in the DOM, just populate it)
-                    document.getElementById('invitationTitle').textContent = currentEvent.title;
-                    const start = new Date(currentEvent.start_datetime);
-                    document.getElementById('invitationTime').innerHTML = `<i class="bi bi-calendar3 me-2"></i> ${start.toLocaleString()}`;
-                    const venue = MockDB.getVenueById(currentEvent.venue_id);
-                    document.getElementById('invitationVenue').innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> ${venue ? venue.name : 'Unknown Venue'}`;
-                    document.getElementById('invitationDescription').textContent = currentEvent.description || 'No description provided.';
-                }
-            }
+                })
+                .catch(error => {
+                    console.error('Error fetching event:', error);
+                });
         }
     });
+
+    function renderEventPage(event) {
+        // Check for custom sections configuration
+        if (event.invitation_config && event.invitation_config.sections) {
+            const container = document.getElementById('publicInvitationSections');
+            if (container) {
+                container.innerHTML = ''; // Force clear default layout
+            }
+
+            event.invitation_config.sections.forEach(sectionData => {
+                container.appendChild(renderSection(sectionData, event));
+            });
+        } else {
+            // Fallback to default layout if no config exists
+            document.getElementById('invitationTitle').textContent = event.title;
+            const start = new Date(event.start_datetime);
+            document.getElementById('invitationTime').innerHTML = `<i class="bi bi-calendar3 me-2"></i> ${start.toLocaleString()}`;
+            // Use venue_name from backend response
+            const venueName = event.venue_name || 'Unknown Venue';
+            document.getElementById('invitationVenue').innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> ${venueName}`;
+            document.getElementById('invitationDescription').textContent = event.description || 'No description provided.';
+        }
+    }
 
     function renderSection(data, event) {
         const div = document.createElement('div');
@@ -256,13 +269,13 @@
                 break;
             case 'details':
                 const start = new Date(event.start_datetime);
-                const venue = MockDB.getVenueById(event.venue_id);
+                const venueName = event.venue_name || 'Unknown Venue';
                 div.innerHTML = `
                     <div class="card mb-4 border-0 bg-light">
                         <div class="card-body">
                             <h5 class="card-title text-dark">When & Where</h5>
                             <p class="card-text mb-0 text-dark"><i class="bi bi-calendar3 me-2"></i>${start.toLocaleString()}</p>
-                            <p class="card-text text-dark"><i class="bi bi-geo-alt-fill me-2"></i>${venue ? venue.name : 'Unknown Venue'}</p>
+                            <p class="card-text text-dark"><i class="bi bi-geo-alt-fill me-2"></i>${venueName}</p>
                         </div>
                     </div>
                 `;
@@ -611,8 +624,7 @@
         const start = new Date(event.start_datetime);
         const dateStr = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const venue = MockDB.getVenueById(event.venue_id);
-        const venueName = venue ? venue.name : 'Unknown Venue';
+        const venueName = event.venue_name || 'Unknown Venue';
 
         return `
             <div class="ticket-container mx-auto" style="max-width: 100%; padding: 1.5rem; box-shadow: none; border: 1px solid var(--border-color);">
