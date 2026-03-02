@@ -31,29 +31,37 @@
         }
     </style>
     
-    <h2 class="mb-4">Dashboard Overview</h2>
+    <h2 class="mb-4 fw-bold">Dashboard Overview</h2>
 
+    <div id="dashboardEmptyState" class="text-center py-5" style="display: none;">
+        <div class="mb-4">
+            <i class="bi bi-calendar-plus display-1 text-muted"></i>
+        </div>
+        <h3 class="text-muted">Add a new event</h3>
+        <p class="text-muted mb-4">There are no events in the system.</p>
+        <button class="btn btn-primary btn-lg" onclick="openCreateEventModal()">
+            <i class="bi bi-plus-circle me-2"></i>Create New Event
+        </button>
+    </div>
+
+    <div id="dashboardMainContent">
     <!-- Search & Navigation Bar -->
     <div class="d-flex flex-column flex-md-row align-items-center mb-4 gap-3 p-3 rounded shadow-sm" style="background-color: var(--bg-panel);">
         <!-- Search Bar -->
-        <div class="input-group search-bar-responsive" style="width: 100%;">
+        <div class="input-group search-bar-responsive" style="width: 100%; max-width: 800px;">
             <span class="input-group-text border-end-0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
             <input type="text" class="form-control border-start-0 ps-0" placeholder="Search events..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main); box-shadow: none;">
             <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);">Search</button>
         </div>
 
-        <!-- Nav Pills -->
-        <ul class="nav nav-pills w-100 w-md-auto justify-content-center justify-content-md-start me-md-auto">
-            <li class="nav-item">
-                <a class="nav-link active" id="tabCurrent" href="#" style="background-color: var(--primary);">Current</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="tabPast" href="#" style="color: var(--text-muted);">Past Events</a>
-            </li>
-        </ul>
-
         <!-- Scan QR Button -->
-        <button class="btn btn-outline-secondary w-100 w-md-auto me-md-2" title="Scan QR Code" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR</button>
+        <button class="btn btn-outline-secondary w-50 w-md-auto me-md-2" title="Scan QR Code" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR</button>
+
+        <!-- Simulate Sale Button -->
+        <button class="btn btn-outline-success w-50 w-md-auto me-md-2" id="btnSimulateSale" title="Simulate Ticket Sale"><i class="bi bi-cart-plus me-2"></i>Simulate Sale</button>
+
+        <!-- Reset Sale Button -->
+        <button class="btn btn-outline-warning w-50 w-md-auto me-md-2" id="btnResetSale" title="Reset Simulated Sales"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset Sales</button>
 
         <!-- Create Event Button -->
         <button class="btn btn-primary w-100 w-md-auto" style="background-color: var(--primary); border-color: var(--primary);" onclick="openCreateEventModal()">
@@ -64,6 +72,8 @@
     <div class="dashboard-wrapper">
         <div class="d-flex align-items-center mb-3" style="max-width: 100%;">
             <h4 class="mb-0 me-2 flex-shrink-0" style="color: var(--text-muted);">Managing:</h4>
+            
+            <!-- Select Even Dropdown -->
             <div class="dropdown me-3 flex-grow-1" style="min-width: 0;">
                 <button id="dashboardSelectedEvent" class="btn btn-link fw-bold text-decoration-none dropdown-toggle p-0 fs-4 w-100 text-start" style="color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Select Event
@@ -72,6 +82,16 @@
                     <!-- Populated by JS -->
                 </ul>
             </div>
+
+            <!-- Current and Past Events Nav Pill -->
+            <ul class="nav nav-pills ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tabCurrent" href="#" style="background-color: var(--primary);">Current</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tabPast" href="#" style="color: var(--text-muted);">Past Events</a>
+                </li>
+            </ul>
         </div>
 
         <!-- Event Details & Countdown Row -->
@@ -138,9 +158,9 @@
             <div class="col-12 col-sm-6 col-md-3">
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'analytics\']').click()">
                     <div class="card-body">
-                        <p class="mb-1" style="color: var(--text-muted);">Attendees</p>
+                        <p class="mb-1" style="color: var(--text-muted);">Checked-in Guests</p>
                         <h3 id="dashboardAttendees" class="mb-0" style="color: var(--text-main);">0</h3>
-                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> 5% new</small>
+                        <small id="dashboardAttendeesPercentage" class="text-muted">0% of total</small>
                     </div>
                 </div>
             </div>
@@ -150,7 +170,7 @@
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Tickets Sold</p>
                         <h3 id="dashboardTicketsSold" class="mb-0" style="color: var(--text-main);">0</h3>
-                        <small style="color: var(--text-muted);">Target: 1000</small>
+                        <small id="dashboardTicketsTarget" style="color: var(--text-muted);">Target: 0</small>
                     </div>
                 </div>
             </div>
@@ -159,8 +179,8 @@
                 <div class="card shadow-sm border-0 h-100 press-card" style="background-color: var(--bg-panel);" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'finance\']').click()">
                     <div class="card-body">
                         <p class="mb-1" style="color: var(--text-muted);">Revenue</p>
-                        <h3 id="dashboardRevenue" class="mb-0" style="color: var(--text-main);">₱450k</h3>
-                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> 8% increase</small>
+                        <h3 id="dashboardRevenue" class="mb-0" style="color: var(--text-main);">₱0</h3>
+                        <small class="text-success" style="display: none;"><i class="bi bi-arrow-up-short"></i> 8% increase</small>
                     </div>
                 </div>
             </div>
@@ -212,18 +232,18 @@
                 <!-- Ticket Sales Chart -->
                 <div class="col-12 col-lg-8">
                     <div class="chart-card">
-                        <h5 class="mb-3" style="color: var(--text-main);">Ticket Sales Over Time</h5>
+                        <h5 class="mb-3" style="color: var(--text-main);">Event Overview</h5>
                         <canvas id="ticketSalesChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Attendee Demographics Chart -->
-                <div class="col-12 col-lg-4">
+                <!-- <div class="col-12 col-lg-4">
                     <div class="chart-card">
                         <h5 class="mb-3" style="color: var(--text-main);">Attendee Age Group</h5>
                         <canvas id="attendeeDemographicsChart"></canvas>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <!-- Guest List Section -->
@@ -234,7 +254,7 @@
                             <h5 class="mb-0" style="color: var(--text-main);">Guest List</h5>
                             <div class="input-group" style="max-width: 250px;">
                                 <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control" placeholder="Search guests..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                <input type="text" id="guestListSearch" class="form-control" placeholder="Search guests..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                             </div>
                         </div>
                         <div id="analyticsGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
@@ -244,6 +264,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 

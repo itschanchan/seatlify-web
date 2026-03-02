@@ -48,12 +48,22 @@
             object-fit: cover;
         }
         .seat-btn {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .seat-available {
-            background-color: #fff;
-            border-color: #6c757d;
+            background-color: #d1e7dd;
+            border-color: #198754;
+            color: #0f5132;
+        }
+        .seat-available:hover {
+            background-color: #198754;
+            color: #fff;
         }
         .seat-reserved {
             background-color: #dc3545;
@@ -432,7 +442,7 @@
         const legend = document.createElement('div');
         legend.className = 'd-flex gap-3 mb-3 justify-content-center w-100';
         legend.innerHTML = `
-            <div class="d-flex align-items-center gap-1"><div class="border rounded" style="width:15px; height:15px; background:#fff; border-color:#6c757d;"></div> <small>Available</small></div>
+            <div class="d-flex align-items-center gap-1"><div class="border rounded" style="width:15px; height:15px; background:#d1e7dd; border-color:#198754;"></div> <small>Available</small></div>
             <div class="d-flex align-items-center gap-1"><div class="border rounded" style="width:15px; height:15px; background:#dc3545; opacity:0.6;"></div> <small>Reserved</small></div>
             <div class="d-flex align-items-center gap-1"><div class="border rounded" style="width:15px; height:15px; background:#e9ecef;"></div> <small>Unavailable</small></div>
         `;
@@ -520,16 +530,31 @@
                         </div>
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
                             ${Array.from({length: group.seats}, (_, i) => {
-                                // All seats available
-                                const statusClass = 'seat-available';
-                                const clickHandler = `onclick="selectSeat('${displayLabel}', ${i+1}, ${ticketPrice}, '${group.label}')"`;
-                                return `<button class="btn btn-outline-secondary seat-btn ${statusClass}" ${clickHandler} title="Seat ${i+1}">${i+1}</button>`;
+                                // Check if seat is reserved
+                                const isReserved = MockDB.isSeatReserved(currentEvent.event_id, group.label, i + 1);
+
+                                const statusClass = isReserved ? 'seat-reserved' : 'seat-available';
+                                const clickHandler = isReserved ? '' : `onclick="selectSeat('${displayLabel}', ${i+1}, ${ticketPrice}, '${group.label}')"`;
+                                const disabledAttr = isReserved ? 'disabled' : '';
+                                const popoverStatus = isReserved ? 'Reserved' : 'Available';
+                                const popoverContent = `Status: ${popoverStatus}<br>Price: ₱${ticketPrice}<br>Row: ${displayLabel}<br>Seat: ${i+1}`;
+                                return `<button class="btn seat-btn ${statusClass}" ${clickHandler} ${disabledAttr}
+                                    data-bs-toggle="popover" 
+                                    data-bs-trigger="hover" 
+                                    data-bs-placement="top" 
+                                    data-bs-html="true" 
+                                    data-bs-title="Seat Details" 
+                                    data-bs-content="${popoverContent}">${i+1}</button>`;
                             }).join('')}
                         </div>
                     </div>
                 `;
                 container.appendChild(groupDiv);
             });
+
+            // Initialize Popovers
+            const popoverTriggerList = container.querySelectorAll('[data-bs-toggle="popover"]');
+            [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
         }
     }
 
@@ -598,6 +623,23 @@
             const seatColumn = seatInput.dataset.column;
             const seatPrice = seatInput.dataset.price || 0;
 
+            // Reserve the seat first.
+            const guestInfo = {
+                name: name,
+                email: email,
+                age: context.querySelector('#guestAge')?.value || ''
+            };
+            const reservationResult = MockDB.reserveSeat(currentEvent.event_id, seatRow, seatColumn, guestInfo);
+            if (!reservationResult.success) {
+                alert(`Reservation failed: ${reservationResult.message}`);
+                if (btn) { 
+                    btn.innerHTML = originalText; 
+                    btn.disabled = false; 
+                }
+                renderSeats(document.querySelector('.btn-outline-primary[onclick^="openSeatModal"]').onclick.toString().includes('map') ? 'map' : 'chart'); // Refresh seat view
+                return; // Stop if seat is already taken
+            }
+
             // Generate QR Code URL
             const qrData = `EVENT:${currentEvent.event_id}|GUEST:${name}|SEAT:${seatDisplay}`;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
@@ -605,15 +647,21 @@
             // Generate Ticket HTML for display AND email
             const ticketHtml = generateTicketHtml(currentEvent, name, seatDisplay, qrUrl);
 
-            // Prepare data for EmailJS
+            // Prepare data for EmailJS template
+            const startDate = new Date(currentEvent.start_datetime);
+            const endDate = currentEvent.end_datetime ? new Date(currentEvent.end_datetime) : null;
+
             const templateParams = {
-                to_name: name,
+                attendee_name: name,
                 to_email: email,
-                qr_code_url: qrUrl, // Pass the URL explicitly for the template
-                event_title: currentEvent.title,
-                event_date: new Date(currentEvent.start_datetime).toLocaleString(),
-                seat_info: seatDisplay,
-                ticket_html: ticketHtml
+                qr_code_url: qrUrl,
+                event_name: currentEvent.title,
+                event_date: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                event_start_time: startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                event_end_time: endDate ? endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
+                event_venue: currentEvent.venue_name || 'Unknown Venue',
+                seat_label: seatDisplay
+                // ticket_id: ... (add if you have ticket_id)
             };
 
             // Replace these with your actual Service ID and Template ID from EmailJS

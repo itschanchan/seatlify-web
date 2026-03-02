@@ -778,7 +778,7 @@ function bindEditTotalSeats() {
             
             const newTotal = prompt("Enter total expected capacity:", currentTotal);
             if (newTotal !== null && !isNaN(newTotal) && newTotal.trim() !== "") {
-                MockDB.updateEvent(currentEventId, { attendees: parseInt(newTotal) });
+                MockDB.updateEvent(currentEventId, { total_seats: parseInt(newTotal) });
                 loadCurrentEventStats();
             }
         });
@@ -932,7 +932,7 @@ function loadCurrentEventStats() {
     if (countEl && currentEventId && typeof MockDB !== 'undefined') {
         const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
         if (event) {
-            const total = event.attendees || 0;
+            const total = parseInt(event.total_seats) || 0;
             countEl.dataset.total = total;
 
             // Determine active tab
@@ -969,7 +969,7 @@ function bindAutoBuildButton() {
 
             if (currentEventId && typeof MockDB !== 'undefined') {
                 const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
-                if (event) totalSeats = parseInt(event.attendees) || 0;
+                if (event) totalSeats = parseInt(event.total_seats) || 0;
             }
 
             if (totalSeats === 0) {
@@ -1114,18 +1114,53 @@ function generateChartLayout(totalSeats = 0) {
 
             for (let j = 0; j < groupData.seats; j++) {
                 const seatEl = document.createElement('div');
+                const seatNumber = j + 1;
                 seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded';
                 if (chartLayoutMode === 'table') {
                     seatEl.classList.add('rounded-circle');
                 }
-                seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
-                seatEl.textContent = j + 1;
+                seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer;';
+                seatEl.textContent = seatNumber;
+
+                const isReserved = MockDB.isSeatReserved(currentEventId, groupData.label, seatNumber);
+                let popoverStatus = 'Available';
+                if (isReserved) {
+                    seatEl.style.backgroundColor = 'var(--bs-danger)';
+                    seatEl.style.color = 'white';
+                    popoverStatus = 'Reserved';
+                    seatEl.onclick = () => {
+                        if (confirm(`Make seat ${displayName}-${seatNumber} available again? This will remove the guest reservation.`)) {
+                            MockDB.unreserveSeat(currentEventId, groupData.label, seatNumber);
+                            generateChartLayout(); // Re-render this view
+                        }
+                    };
+                } else {
+                    seatEl.style.backgroundColor = 'var(--bg-muted)';
+                    seatEl.style.color = 'var(--text-main)';
+                    seatEl.onclick = () => {
+                        if (isChartEditMode) {
+                            alert("Exit edit mode to reserve seats.");
+                            return;
+                        }
+                        const guestName = prompt(`Reserve seat ${displayName}-${seatNumber} for:`, "Guest Name");
+                        if (guestName) {
+                            const guestEmail = prompt(`Enter email for ${guestName}:`, `${guestName.toLowerCase().replace(/\s/g, '.')}@example.com`);
+                            if (guestEmail) {
+                                MockDB.reserveSeat(currentEventId, groupData.label, seatNumber, {
+                                    name: guestName,
+                                    email: guestEmail
+                                });
+                                generateChartLayout(); // Re-render this view to show the seat as reserved
+                            }
+                        }
+                    };
+                }
                 seatEl.dataset.bsToggle = 'popover';
                 seatEl.dataset.bsTrigger = 'hover';
                 seatEl.dataset.bsPlacement = 'top';
                 seatEl.dataset.bsHtml = 'true';
-                seatEl.dataset.bsTitle = `${displayName}, Seat ${j + 1}`;
-                seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                seatEl.dataset.bsTitle = `${displayName}, Seat ${seatNumber}`;
+                seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: ${popoverStatus}`;
                 seatEl.dataset.bsContainer = 'body';
                 seatsDiv.appendChild(seatEl);
             }
@@ -1167,16 +1202,48 @@ function generateChartLayout(totalSeats = 0) {
                 
                 const seatsInThisTable = Math.min(seatsPerTable, totalSeats - seatsRendered);
                 for (let j = 0; j < seatsInThisTable; j++) {
+                    const seatNumber = j + 1;
                     const seatEl = document.createElement('div');
                     seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded-circle';
-                    seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
-                    seatEl.textContent = j + 1;
+                    seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer;';
+                    seatEl.textContent = seatNumber;
+
+                    const isReserved = MockDB.isSeatReserved(currentEventId, tableLabel, seatNumber);
+                    let popoverStatus = 'Available';
+                    if (isReserved) {
+                        seatEl.style.backgroundColor = 'var(--bs-danger)';
+                        seatEl.style.color = 'white';
+                        popoverStatus = 'Reserved';
+                        seatEl.onclick = () => {
+                            if (confirm(`Make seat ${tableLabel}-${seatNumber} available again? This will remove the guest reservation.`)) {
+                                MockDB.unreserveSeat(currentEventId, tableLabel, seatNumber);
+                                generateChartLayout(); // Re-render this view
+                            }
+                        };
+                    } else {
+                        seatEl.style.backgroundColor = 'var(--bg-muted)';
+                        seatEl.style.color = 'var(--text-main)';
+                        seatEl.onclick = () => {
+                            if (isChartEditMode) {
+                                alert("Exit edit mode to reserve seats.");
+                                return;
+                            }
+                            const guestName = prompt(`Reserve seat ${tableLabel}-${seatNumber} for:`, "Guest Name");
+                            if (guestName) {
+                                const guestEmail = prompt(`Enter email for ${guestName}:`, `${guestName.toLowerCase().replace(/\s/g, '.')}@example.com`);
+                                if (guestEmail) {
+                                    MockDB.reserveSeat(currentEventId, tableLabel, seatNumber, { name: guestName, email: guestEmail });
+                                    generateChartLayout(); // Re-render this view to show the seat as reserved
+                                }
+                            }
+                        };
+                    }
                     seatEl.dataset.bsToggle = 'popover';
                     seatEl.dataset.bsTrigger = 'hover';
                     seatEl.dataset.bsPlacement = 'top';
                     seatEl.dataset.bsHtml = 'true';
-                    seatEl.dataset.bsTitle = `${tableLabel}, Seat ${j + 1}`;
-                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                    seatEl.dataset.bsTitle = `${tableLabel}, Seat ${seatNumber}`;
+                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: ${popoverStatus}`;
                     seatEl.dataset.bsContainer = 'body';
                     seatsContainer.appendChild(seatEl);
                 }
@@ -1215,16 +1282,48 @@ function generateChartLayout(totalSeats = 0) {
                 seatsDiv.className = 'd-flex flex-wrap gap-2';
                 const seatsInThisGroup = Math.min(seatsPerGroup, totalSeats - (i * seatsPerGroup));
                 for (let j = 0; j < seatsInThisGroup; j++) {
+                    const seatNumber = j + 1;
                     const seatEl = document.createElement('div');
                     seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded';
-                    seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
-                    seatEl.textContent = j + 1;
+                    seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer;';
+                    seatEl.textContent = seatNumber;
+
+                    const isReserved = MockDB.isSeatReserved(currentEventId, labelText, seatNumber);
+                    let popoverStatus = 'Available';
+                    if (isReserved) {
+                        seatEl.style.backgroundColor = 'var(--bs-danger)';
+                        seatEl.style.color = 'white';
+                        popoverStatus = 'Reserved';
+                        seatEl.onclick = () => {
+                            if (confirm(`Make seat ${labelText}-${seatNumber} available again? This will remove the guest reservation.`)) {
+                                MockDB.unreserveSeat(currentEventId, labelText, seatNumber);
+                                generateChartLayout(); // Re-render this view
+                            }
+                        };
+                    } else {
+                        seatEl.style.backgroundColor = 'var(--bg-muted)';
+                        seatEl.style.color = 'var(--text-main)';
+                        seatEl.onclick = () => {
+                            if (isChartEditMode) {
+                                alert("Exit edit mode to reserve seats.");
+                                return;
+                            }
+                            const guestName = prompt(`Reserve seat ${labelText}-${seatNumber} for:`, "Guest Name");
+                            if (guestName) {
+                                const guestEmail = prompt(`Enter email for ${guestName}:`, `${guestName.toLowerCase().replace(/\s/g, '.')}@example.com`);
+                                if (guestEmail) {
+                                    MockDB.reserveSeat(currentEventId, labelText, seatNumber, { name: guestName, email: guestEmail });
+                                    generateChartLayout(); // Re-render this view to show the seat as reserved
+                                }
+                            }
+                        };
+                    }
                     seatEl.dataset.bsToggle = 'popover';
                     seatEl.dataset.bsTrigger = 'hover';
                     seatEl.dataset.bsPlacement = 'top';
                     seatEl.dataset.bsHtml = 'true';
-                    seatEl.dataset.bsTitle = `${labelText}, Seat ${j + 1}`;
-                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: Available`;
+                    seatEl.dataset.bsTitle = `${labelText}, Seat ${seatNumber}`;
+                    seatEl.dataset.bsContent = `Price: ₱${price}<br>Status: ${popoverStatus}`;
                     seatEl.dataset.bsContainer = 'body';
                     seatsDiv.appendChild(seatEl);
                 }

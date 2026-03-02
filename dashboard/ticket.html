@@ -7,6 +7,15 @@
         .nav-pills .nav-link {
             color: var(--text-muted);
         }
+        #ticketTierRowsContainer .table {
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .tier-name-input {
+            max-width: 250px;
+        }
         @media (max-width: 767.98px) {
             /* Responsive table is now handled by the .table-responsive class */
             .ticket-actions {
@@ -17,6 +26,9 @@
             }
         }
     </style>
+
+    <h2 class="mb-4 fw-bold">Tickets</h2>
+
 
     <!-- Navigation -->
     <ul class="nav nav-pills mb-4" id="ticketTabs" role="tablist">
@@ -31,20 +43,22 @@
     <div class="tab-content" id="ticketTabsContent">
         <!-- Set Tickets Tab -->
         <div class="tab-pane fade show active" id="pills-set-tickets" role="tabpanel" aria-labelledby="pills-set-tickets-tab">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                 <h5 class="card-title mb-0 text-main-theme">Ticket Configuration</h5>
-                <div class="text-muted-theme">
-                    Total Capacity: <strong id="ticketConfigTotalSeats" class="text-main-theme">0</strong>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="text-muted-theme me-2">
+                        Total Capacity: <strong id="ticketConfigTotalSeats" class="text-main-theme">0</strong>
+                    </div>
+                    <div id="ticketCapacityWarning" class="text-danger small fw-bold me-2" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Exceeds Capacity!</div>
+                    <button type="button" class="btn btn-outline-secondary" id="btnEditTicketTiers"><i class="bi bi-pencil-square me-1"></i> Edit</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveTicketTiers" style="display: none;"><i class="bi bi-save me-1"></i> Save Configuration</button>
                 </div>
             </div>
             
-            <div id="ticketTierRowsContainer" class="table-responsive mb-4">
+            <div id="ticketTierRowsContainer" class="table-responsive mb-4 d-flex justify-content-center">
                 <!-- Rows will be injected here -->
             </div>
-            <div class="d-flex justify-content-end gap-2 ticket-actions">
-                <button type="button" class="btn btn-outline-secondary" id="btnEditTicketTiers"><i class="bi bi-pencil-square me-1"></i> Edit</button>
-                <button type="button" class="btn btn-primary" id="btnSaveTicketTiers" style="display: none;"><i class="bi bi-save me-1"></i> Save Configuration</button>
-            </div>
+            <button type="button" class="btn btn-outline-primary w-100" id="btnTicketAddRow" style="display: none;"><i class="bi bi-plus-lg me-1"></i> Add Row</button>
         </div>
 
         <!-- Design Ticket Tab -->
@@ -169,15 +183,22 @@
                 const qrData = `EVENT:${currentEventData.event_id}|TEST_TICKET`;
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
+                // Format Dates
+                const startDate = new Date(currentEventData.start_datetime);
+                const endDate = currentEventData.end_datetime ? new Date(currentEventData.end_datetime) : null;
+                
                 // Prepare params for EmailJS
                 const templateParams = {
-                    to_name: "Test User",
-                    to_email: email,
+                    to_email: email, // Required for sending
+                    attendee_name: "Test User",
+                    ticket_id: `TEST-${Date.now()}`,
                     qr_code_url: qrUrl,
-                    event_title: currentEventData.title,
-                    event_date: new Date(currentEventData.start_datetime).toLocaleString(),
-                    seat_info: "Section A, Row 5, Seat 12 (Test)",
-                    ticket_html: "<h1>Test Ticket</h1><p>This is a test ticket sent from the dashboard.</p>"
+                    event_name: currentEventData.title,
+                    event_date: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                    event_start_time: startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    event_end_time: endDate ? endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
+                    event_venue: currentEventData.venue_name || 'Unknown Venue',
+                    seat_label: "Section A, Row 5, Seat 12 (Test)"
                 };
 
                 const serviceID = 'service_ryl56ps';

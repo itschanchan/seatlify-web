@@ -1,6 +1,8 @@
 // ==========================================
 // DASHBOARD LOGIC (Simulated Data Binding)
 // ==========================================
+let notificationsInitialized = false;
+let dashboardInitialized = false;
 let dashboardFilter = 'current'; // 'current' or 'past'
 
 export function initDashboard() {
@@ -20,10 +22,65 @@ export function initDashboard() {
     }
 
     // Initial Load
-    setDashboardFilter('current');
+    // Initialize EmailJS
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init('NPeF-dURRp7hqBu-y'); // Public key from ticket.html
+    }
 
-    // Listen for DB updates to refresh dropdown
-    window.addEventListener('db-events-updated', () => setDashboardFilter(dashboardFilter));
+    updateDashboardVisibility();
+    initNotifications();
+
+    const btnSimulateSale = document.getElementById('btnSimulateSale');
+    if (btnSimulateSale) {
+        btnSimulateSale.addEventListener('click', () => {
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (currentEventId) {
+                MockDB.sellTicket(currentEventId, 1);
+            } else {
+                alert("Please select an event first to simulate a sale.");
+            }
+        });
+    }
+
+    const btnResetSale = document.getElementById('btnResetSale');
+    if (btnResetSale) {
+        btnResetSale.addEventListener('click', () => {
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (currentEventId) {
+                if (confirm("Are you sure you want to reset all simulated sales and guest data for this event? This cannot be undone.")) {
+                    MockDB.resetSales(currentEventId);
+                }
+            } else {
+                alert("Please select an event first to reset sales.");
+            }
+        });
+    }
+    
+    if (!dashboardInitialized) {
+        // Listen for DB updates to refresh the view in real-time
+        window.addEventListener('db-events-updated', () => {
+            updateDashboardVisibility(); // Handles the empty state
+            renderEventDropdown(); // Refreshes the list of events in the dropdown
+
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            const events = getFilteredEvents(); // Gets events based on the current filter ('current' or 'past')
+
+            // Check if the currently selected event still exists and is in the current filtered view
+            const eventInList = events.find(e => e.event_id == currentEventId);
+
+            if (eventInList) {
+                // If the current event is still valid for this view, re-render it to show the latest data (e.g., new guest)
+                renderDashboardEvent(currentEventId);
+            } else if (events.length > 0) {
+                // If the current event is no longer valid (e.g., moved to 'past' tab) or none was selected, render the first event from the new list
+                renderDashboardEvent(events[0].event_id);
+            } else {
+                // If there are no events at all in this filtered view, clear the dashboard details
+                clearDashboardView();
+            }
+        });
+        dashboardInitialized = true;
+    }
 
     // Initialize the event manager views (table, calendar, etc.) for the "All Events" section
     initEventManager();
@@ -38,12 +95,20 @@ export function initDashboard() {
         window.dashboardSalesChart = new Chart(salesCtx, {
             type: 'bar',
             data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                labels: ['Capacity', 'Sold', 'Checked-in'],
                 datasets: [{
-                    label: 'Tickets Sold',
-                    data: [65, 59, 80, 81, 56, 55],
-                    backgroundColor: 'rgba(220, 53, 69, 0.6)', // Primary color with opacity
-                    borderColor: 'rgba(220, 53, 69, 1)',
+                    label: 'Event Stats',
+                    data: [0, 0, 0],
+                    backgroundColor: [
+                        'rgba(108, 117, 125, 0.6)',
+                        'rgba(13, 110, 253, 0.6)',
+                        'rgba(25, 135, 84, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(108, 117, 125, 1)',
+                        'rgba(13, 110, 253, 1)',
+                        'rgba(25, 135, 84, 1)'
+                    ],
                     borderWidth: 1
                 }]
             },
@@ -52,6 +117,11 @@ export function initDashboard() {
                 scales: {
                     y: {
                         beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
@@ -82,11 +152,113 @@ export function initDashboard() {
         });
     }
 
-    // Render Guest List (Placeholder)
-    const guestListContainer = document.getElementById('analyticsGuestList');
-    if (guestListContainer) {
-        // Placeholder for guest list rendering
-        guestListContainer.innerHTML = '<div class="text-center text-muted small mt-3">No guests loaded.</div>';
+    const guestListSearch = document.getElementById('guestListSearch');
+    if (guestListSearch) {
+        guestListSearch.addEventListener('input', () => {
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (currentEventId) {
+                const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+                if (event) renderGuestList(event);
+            }
+        });
+    }
+
+    // Determine initial filter based on last selected event to persist view
+    const lastEventId = localStorage.getItem('seatlify_current_event_id');
+    let initialFilter = 'current';
+    if (lastEventId && typeof MockDB !== 'undefined') {
+        const allEvents = MockDB.getEvents();
+        const lastEvent = allEvents.find(e => e.event_id == lastEventId);
+        if (lastEvent && (lastEvent.status === 'completed' || lastEvent.status === 'cancelled')) {
+            initialFilter = 'past';
+        }
+    }
+    setDashboardFilter(initialFilter);
+}
+
+function initNotifications() {
+    renderNotifications();
+
+    if (notificationsInitialized) return;
+
+    window.addEventListener('db-notifications-updated', renderNotifications);
+
+    // Use event delegation for the dynamically added "mark read" button
+    const dropdownMenu = document.getElementById('notificationDropdownMenu');
+    if (dropdownMenu) {
+        dropdownMenu.addEventListener('click', (e) => {
+            const markReadButton = e.target.closest('#markNotificationsAsRead');
+            if (markReadButton) {
+                e.preventDefault();
+                MockDB.markAllNotificationsAsRead();
+            }
+        });
+    }
+    notificationsInitialized = true;
+}
+
+function renderNotifications() {
+    const notifications = MockDB.getUnreadNotifications();
+    const dropdown = document.getElementById('notificationDropdownMenu');
+    const badge = document.getElementById('notificationBadge');
+
+    if (!dropdown || !badge) return;
+
+    // Update badge
+    if (notifications.length > 0) {
+        badge.style.display = 'block';
+        badge.textContent = notifications.length > 9 ? '9+' : notifications.length;
+    } else {
+        badge.style.display = 'none';
+    }
+
+    // Update dropdown
+    dropdown.innerHTML = '<li><h6 class="dropdown-header">Notifications</h6></li>';
+    if (notifications.length === 0) {
+        dropdown.innerHTML += '<li><a class="dropdown-item text-muted" href="#">No new notifications</a></li>';
+    } else {
+        notifications.forEach(notif => {
+            const icon = getNotificationIcon(notif.type);
+            dropdown.innerHTML += `
+                <li>
+                    <a class="dropdown-item d-flex align-items-start gap-3 p-2" href="#">
+                        <i class="${icon} mt-1"></i>
+                        <div>
+                            <p class="mb-0 small" style="white-space: normal;">${notif.message}</p>
+                            <small class="text-muted">${new Date(notif.timestamp).toLocaleDateString()}</small>
+                        </div>
+                    </a>
+                </li>
+            `;
+        });
+    }
+
+    dropdown.innerHTML += '<li><hr class="dropdown-divider my-1"></li>';
+    dropdown.innerHTML += '<li><a class="dropdown-item small text-center text-muted" href="#" id="markNotificationsAsRead">Mark all as read</a></li>';
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'ticket_sold': return 'bi bi-ticket-perforated-fill text-success';
+        case 'event_created': return 'bi bi-calendar-plus text-primary';
+        case 'event_published': return 'bi bi-megaphone-fill text-info';
+        case 'event_cancelled': return 'bi bi-x-circle-fill text-danger';
+        case 'event_deleted': return 'bi bi-trash-fill text-muted';
+        default: return 'bi bi-bell';
+    }
+}
+
+function updateDashboardVisibility() {
+    const events = MockDB.getEvents();
+    const emptyState = document.getElementById('dashboardEmptyState');
+    const mainContent = document.getElementById('dashboardMainContent');
+
+    if (events.length === 0) {
+        if (emptyState) emptyState.style.display = 'block';
+        if (mainContent) mainContent.style.display = 'none';
+    } else {
+        if (emptyState) emptyState.style.display = 'none';
+        if (mainContent) mainContent.style.display = 'block';
     }
 }
 
@@ -118,9 +290,14 @@ function setDashboardFilter(filter) {
 
     renderEventDropdown();
     
-    // Select first event of the filtered list
+    // Select event logic: Prefer stored event if valid for current filter
     const events = getFilteredEvents();
-    if (events.length > 0) {
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+    const eventInList = events.find(e => e.event_id == currentEventId);
+
+    if (eventInList) {
+        renderDashboardEvent(currentEventId);
+    } else if (events.length > 0) {
         renderDashboardEvent(events[0].event_id);
     } else {
         clearDashboardView();
@@ -175,7 +352,8 @@ function renderDashboardEvent(id) {
     if(dropdownBtn) dropdownBtn.textContent = event.title;
 
     // Update Details
-    document.getElementById('dashboardTitle').textContent = event.title;
+    const titleEl = document.getElementById('dashboardTitle');
+    if (titleEl) titleEl.textContent = event.title;
     
     // Status Badge
     const statusBadge = document.getElementById('dashboardStatusBadge');
@@ -188,26 +366,65 @@ function renderDashboardEvent(id) {
         statusBadge.className = `badge ${badgeClass}`;
     }
 
-    document.getElementById('dashboardDescription').textContent = event.description || '';
+    const descEl = document.getElementById('dashboardDescription');
+    if (descEl) descEl.textContent = event.description || '';
 
-    const venue = MockDB.getVenueById(event.venue_id);
-    document.getElementById('dashboardVenue').innerHTML = `<i class="bi bi-geo-alt me-1"></i> ${venue ? venue.name : 'Unknown Venue'}`;
+    let venueName = 'Unknown Venue';
+    if (event.venue_name) {
+        venueName = event.venue_name;
+    } else if (event.venue_id) {
+        const venue = MockDB.getVenueById(event.venue_id);
+        if (venue) venueName = venue.name;
+    }
+    const venueEl = document.getElementById('dashboardVenue');
+    if (venueEl) venueEl.innerHTML = `<i class="bi bi-geo-alt me-1"></i> ${venueName}`;
 
-    // Update Seats Available
+    // --- NEW STATS LOGIC ---
+    const totalCapacity = parseInt(event.total_seats) || 0;
+    const ticketsSold = event.sold || 0;
+    const checkedIn = event.checked_in_count || 0;
+    
+    let revenue = 0;
+    if (event.is_paid && event.tickets && event.tickets.length > 0) {
+        const potentialRevenue = event.tickets.reduce((sum, tier) => sum + (parseInt(tier.price || 0) * parseInt(tier.qty || 0)), 0);
+        const ticketCapacity = event.tickets.reduce((sum, tier) => sum + parseInt(tier.qty || 0), 0);
+        if (ticketCapacity > 0) {
+            const averagePrice = potentialRevenue / ticketCapacity;
+            revenue = averagePrice * ticketsSold;
+        }
+    }
+
+     // Update Seats Available
     const seatsEl = document.getElementById('dashboardSeatsAvailable');
-    if (seatsEl) seatsEl.textContent = event.total_seats || 0;
+    if (seatsEl) {
+        const available = totalCapacity - ticketsSold;
+        seatsEl.textContent = available;
+        const percentage = totalCapacity > 0 ? Math.round((available / totalCapacity) * 100) : 0;
+        const smallEl = seatsEl.nextElementSibling;
+        if (smallEl) {
+            smallEl.textContent = `${percentage}% left`;
+            smallEl.className = percentage > 20 ? 'text-success' : 'text-warning';
+        }
+    }
 
-    // Update Attendees
+    // Update Checked-in Guests (formerly Attendees)
     const attendeesEl = document.getElementById('dashboardAttendees');
-    if (attendeesEl) attendeesEl.textContent = event.attendees || 0;
+    if (attendeesEl) {
+        attendeesEl.textContent = checkedIn;
+        const percentageEl = document.getElementById('dashboardAttendeesPercentage');
+        if (percentageEl) {
+            const percentage = ticketsSold > 0 ? Math.round((checkedIn / ticketsSold) * 100) : 0;
+            percentageEl.textContent = `${percentage}% of sold`;
+        }
+    }
 
     // Update Tickets Sold
     const ticketsEl = document.getElementById('dashboardTicketsSold');
     if (ticketsEl) {
-        if (event.is_paid) {
-            ticketsEl.textContent = "0"; // Placeholder for actual sales
-        } else {
-            ticketsEl.textContent = "Free";
+        ticketsEl.textContent = ticketsSold;
+        const targetEl = document.getElementById('dashboardTicketsTarget');
+        if (targetEl) {
+            targetEl.textContent = `Target: ${totalCapacity}`;
         }
     }
 
@@ -215,10 +432,12 @@ function renderDashboardEvent(id) {
     const revenueEl = document.getElementById('dashboardRevenue');
     if (revenueEl) {
         if (event.is_paid) {
-            revenueEl.textContent = "₱0"; // Placeholder for actual revenue
+            revenueEl.textContent = `₱${revenue.toLocaleString()}`;
         } else {
-            revenueEl.textContent = "No Revenue";
+            revenueEl.textContent = "N/A";
         }
+        const smallEl = revenueEl.nextElementSibling;
+        if(smallEl) smallEl.style.display = 'none';
     }
 
     // Date & Time
@@ -226,12 +445,15 @@ function renderDashboardEvent(id) {
     const end = event.end_datetime ? new Date(event.end_datetime) : null;
     
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    document.getElementById('dashboardDateDay').textContent = start.getDate();
-    document.getElementById('dashboardDateMonth').textContent = months[start.getMonth()];
+    const dayEl = document.getElementById('dashboardDateDay');
+    if (dayEl) dayEl.textContent = start.getDate();
+    const monthEl = document.getElementById('dashboardDateMonth');
+    if (monthEl) monthEl.textContent = months[start.getMonth()];
 
     const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
                     (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
-    document.getElementById('dashboardTime').innerHTML = `<i class="bi bi-clock me-1"></i> ${timeStr}`;
+    const timeEl = document.getElementById('dashboardTime');
+    if (timeEl) timeEl.innerHTML = `<i class="bi bi-clock me-1"></i> ${timeStr}`;
 
     // Countdown Logic
     const now = new Date();
@@ -261,6 +483,19 @@ function renderDashboardEvent(id) {
             if (countSub) countSub.textContent = "Event completed.";
         }
     }
+
+    // Update Analytics Chart
+    try {
+        if (window.dashboardSalesChart) {
+            window.dashboardSalesChart.data.datasets[0].data = [totalCapacity, ticketsSold, checkedIn];
+            window.dashboardSalesChart.update();
+        }
+    } catch (e) {
+        console.warn("Failed to update dashboard chart:", e);
+    }
+
+    // Render Guest List
+    renderGuestList(event);
 
     // Draft Action Logic
     const draftAction = document.getElementById('dashboardDraftAction');
@@ -306,6 +541,62 @@ function renderDashboardEvent(id) {
     }
 }
 
+function renderGuestList(event) {
+    const container = document.getElementById('analyticsGuestList');
+    if (!container) return;
+
+    const searchInput = document.getElementById('guestListSearch');
+    const filter = searchInput ? searchInput.value.toLowerCase() : '';
+
+    container.innerHTML = '';
+    let guests = event.guests || [];
+
+    if (filter) {
+        guests = guests.filter(g => g.name.toLowerCase().includes(filter) || g.email.toLowerCase().includes(filter));
+    }
+
+    if (guests.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted small mt-3">No guests found.</div>';
+        return;
+    }
+
+    guests.forEach(guest => {
+        let seatInfo = '';
+        if (guest.seat_row) {
+            seatInfo = `<span class="badge bg-secondary ms-2" style="font-size: 0.7em;">${guest.seat_row}${guest.seat_col ? '-' + guest.seat_col : ''}</span>`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+        item.style.backgroundColor = 'var(--bg-panel)';
+        item.style.borderColor = 'var(--border-color)';
+        item.style.color = 'var(--text-main)';
+        
+        const creationTime = guest.timestamp 
+            ? new Date(guest.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
+            : 'N/A';
+
+        item.innerHTML = `
+            <div>
+                <div class="fw-bold">${guest.name} ${seatInfo}</div>
+                <small class="text-muted">${guest.email}</small>
+                <small class="text-muted d-block mt-1" style="font-size: 0.8em;">Added: ${creationTime}</small>
+            </div>
+            <button class="btn btn-sm btn-outline-danger btn-delete-guest" title="Remove Guest">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        
+        item.querySelector('.btn-delete-guest').addEventListener('click', () => {
+            if(confirm(`Remove ${guest.name}?`)) {
+                MockDB.deleteGuest(event.event_id, guest.id);
+            }
+        });
+        
+        container.appendChild(item);
+    });
+}
+
 function clearDashboardView() {
     const dropdownBtn = document.getElementById('dashboardSelectedEvent');
     if(dropdownBtn) dropdownBtn.textContent = "No Events Found";
@@ -334,11 +625,26 @@ function clearDashboardView() {
 
 window.simulateScanSuccess = function() {
     const modalEl = document.getElementById('qrScannerModal');
-    if(modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if(modal) modal.hide();
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+
+    if (!currentEventId) {
+        alert("No event selected to check-in to.");
+        return;
     }
-    alert("Ticket Scanned Successfully!\nAttendee: John Doe\nSeat: A-12\nStatus: Checked In");
+
+    const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+    const result = MockDB.checkInAttendee(currentEventId);
+
+    if (result.success) {
+        alert(`Check-in successful for "${event.title}"!\nTotal Checked-in: ${result.checkedIn}`);
+    } else {
+        alert(`Check-in failed: ${result.message}`);
+    }
+
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
 };
 
 let eventManagerInitialized = false;
@@ -480,8 +786,14 @@ function renderEventView() {
             grid.innerHTML = '<p class="text-muted text-center w-100">No events found.</p>';
         }
         events.forEach(event => {
-            const venue = MockDB.getVenueById(event.venue_id);
-            const venueName = venue ? venue.name : 'Unknown Venue';
+            let venueName = 'Unknown Venue';
+            if (event.venue_name) {
+                venueName = event.venue_name;
+            } else if (event.venue_id) {
+                const venue = MockDB.getVenueById(event.venue_id);
+                if (venue) venueName = venue.name;
+            }
+
             const dateObj = new Date(event.start_datetime);
             const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
             const day = dateObj.getDate();
@@ -575,8 +887,14 @@ function renderEventView() {
         }
 
         events.forEach(event => {
-            const venue = MockDB.getVenueById(event.venue_id);
-            const venueName = venue ? venue.name : 'Unknown Venue';
+            let venueName = 'Unknown Venue';
+            if (event.venue_name) {
+                venueName = event.venue_name;
+            } else if (event.venue_id) {
+                const venue = MockDB.getVenueById(event.venue_id);
+                if (venue) venueName = venue.name;
+            }
+
             const dateObj = new Date(event.start_datetime);
             const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const endObj = event.end_datetime ? new Date(event.end_datetime) : null;
@@ -808,20 +1126,65 @@ function openEditModal(eventId) {
         });
     }
 
-    // Populate Venues
-    const venueSelect = document.getElementById('editEventVenue');
-    if (venueSelect) {
-        venueSelect.innerHTML = '<option selected disabled value="">Select Venue</option>';
-        const venues = MockDB.getVenues();
-        venues.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.venue_id;
-            opt.textContent = v.name;
-            if (v.venue_id == event.venue_id) opt.selected = true;
-            venueSelect.appendChild(opt);
+    // Bind Send Test Ticket button
+    const btnSendTest = document.getElementById('btnSendTestTicketFromEdit');
+    if (btnSendTest) {
+        const newBtn = btnSendTest.cloneNode(true);
+        btnSendTest.parentNode.replaceChild(newBtn, btnSendTest);
+
+        newBtn.addEventListener('click', () => {
+            const email = prompt("Enter email address to send test ticket to:");
+            if (!email) return;
+
+            if (typeof emailjs === 'undefined') {
+                alert('EmailJS SDK is not loaded.');
+                return;
+            }
+
+            const originalText = newBtn.innerHTML;
+            newBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+            newBtn.disabled = true;
+
+            const ticketId = `TEST-${Date.now()}`;
+            const templateParams = {
+                to_email: email, // Required for sending
+                attendee_name: "Test User", // Placeholder for user.name
+                event_name: document.getElementById("editEventName").value,
+                event_date: document.getElementById("editEventDate").value,
+                event_start_time: document.getElementById("editEventTime").value,
+                event_end_time: document.getElementById("editEventEndTime").value,
+                event_venue: document.getElementById("editEventVenue").value,
+                seat_label: "A-1 (Test Seat)", // Placeholder for selectedSeat.label
+                ticket_id: ticketId,
+                qr_code_url: MockDB.generateQRCodeUrl(ticketId)
+            };
+
+            // Using Service and Template ID from ticket.html as an example
+            emailjs.send("service_ryl56ps", "template_5i46vh8", templateParams)
+                .then(() => alert('Test ticket sent successfully!'))
+                .catch((err) => {
+                    console.error('EmailJS Error:', err);
+                    alert('Failed to send email: ' + JSON.stringify(err));
+                })
+                .finally(() => {
+                    newBtn.innerHTML = originalText;
+                    newBtn.disabled = false;
+                });
         });
     }
 
+    // Populate Venue
+    const venueInput = document.getElementById('editEventVenue');
+    if (venueInput) {
+        let venueName = '';
+        if (event.venue_name) {
+            venueName = event.venue_name;
+        } else if (event.venue_id) {
+            const venue = MockDB.getVenueById(event.venue_id);
+            if (venue) venueName = venue.name;
+        }
+        venueInput.value = venueName;
+    }
     // Populate Fields
     document.getElementById('editEventId').value = event.event_id;
     document.getElementById('editEventName').value = event.title;
@@ -911,7 +1274,7 @@ function saveEventChanges() {
     const date = document.getElementById('editEventDate').value;
     const time = document.getElementById('editEventTime').value;
     const endTime = document.getElementById('editEventEndTime').value;
-    const venueId = document.getElementById('editEventVenue').value;
+    const venueName = document.getElementById('editEventVenue').value;
     const statusSelect = document.getElementById('editEventStatus');
     const desc = document.getElementById('editEventDescription').value;
     const totalSeats = document.getElementById('editEventTotalSeats').value;
@@ -929,11 +1292,17 @@ function saveEventChanges() {
         });
     }
 
+    // Find venue ID from name for compatibility, but prioritize saving the name.
+    const venues = MockDB.getVenues();
+    const venue = venues.find(v => v.name.toLowerCase() === venueName.toLowerCase());
+    const venueId = venue ? venue.venue_id : null;
+
     const updateData = {
         title: name,
         start_datetime: `${date}T${time}`,
         end_datetime: endTime ? `${date}T${endTime}` : null,
-        venue_id: venueId,
+        venue_id: venueId, // Keep for backward compatibility if found
+        venue_name: venueName, // The new source of truth
         description: desc,
         total_seats: totalSeats,
         total_tables: totalTables,
