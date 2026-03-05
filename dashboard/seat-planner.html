@@ -1,5 +1,9 @@
-<div class="container-fluid py-4 d-flex flex-column align-items-center">
+<div class="container-fluid pt-0 pb-4 d-flex flex-column">
     <style>
+        .chart-group.selected {
+            outline: 2px solid var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-light) !important;
+        }
         .grid-background {
             background-image:
                 linear-gradient(to right, var(--border-color) 1px, transparent 1px),
@@ -9,6 +13,17 @@
         .seat-planner-container.drag-over {
             border: 2px dashed var(--primary) !important;
         }
+        /* Custom styles for the range slider thumb */
+        .form-range::-webkit-slider-thumb {
+            background-color: #E53935; /* Red */
+        }
+        .form-range::-moz-range-thumb {
+            background-color: #E53935; /* Red */
+        }
+        .form-range::-ms-thumb {
+            background-color: #E53935; /* Red */
+        }
+
         @media (max-width: 767.98px) {
             /* Top Nav */
             .seat-planner-nav-container {
@@ -31,8 +46,23 @@
         }
     </style>
     
-    <h2 class="mb-4 fw-bold">Seat Planner</h2>
+    <!-- Empty State -->
+    <div id="seatPlannerEmptyState" class="text-center py-5" style="display: none;">
+        <div class="mb-4">
+            <i class="bi bi-calendar-plus display-1 text-muted"></i>
+        </div>
+        <h3 class="text-muted">Create an Event to Get Started</h3>
+        <p class="text-muted mb-4">There are no events in the system. Go to the dashboard to create your first event.</p>
+        <button class="btn btn-primary btn-lg" onclick="document.querySelector('.sidebar-nav .nav-link[data-target=\'dashboard\']').click()">
+            <i class="bi bi-plus-circle me-2"></i>Create an Event
+        </button>
+    </div>
 
+    <div id="seatPlannerMainContent">
+
+    
+        <h2 class="mb-4 fw-bold">Seat Planner</h2>
+    
     <!-- NAV BAR -->
     <div class="seat-planner-nav-container mb-3 d-flex justify-content-between align-items-center w-100 gap-3">
         <ul class="nav nav-pills" id="seatPlannerTabs" role="tablist">
@@ -62,15 +92,16 @@
                 <div class="h-100">
                     <!-- Chart Area -->
                     <div class="flex-grow-1" style="min-width: 0;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#chartToolsCollapse" aria-expanded="true" aria-controls="chartToolsCollapse">
-                                <i class="bi bi-tools"></i> Tools
-                            </button>
-                        </div>
-
-                        <div class="collapse show mb-3" id="chartToolsCollapse">
-                            <div class="card card-body p-2 shadow-sm border" style="background-color: var(--bg-panel); border-color: var(--border-color) !important;">
-                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <div class="accordion mb-3" id="chartToolsAccordion">
+                            <div class="accordion-item" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                                <h2 class="accordion-header" id="headingTools">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chartToolsCollapse" aria-expanded="true" aria-controls="chartToolsCollapse" style="background-color: var(--bg-panel); color: var(--text-main); box-shadow: none;">
+                                        <i class="bi bi-tools me-2"></i> Tools
+                                    </button>
+                                </h2>
+                                <div id="chartToolsCollapse" class="accordion-collapse collapse show" aria-labelledby="headingTools" data-bs-parent="#chartToolsAccordion">
+                                    <div class="accordion-body p-2">
+                                        <div class="d-flex gap-2 flex-wrap align-items-center">
                                     <button class="btn btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
                                         <i class="bi bi-list-ul"></i> <span class="d-none d-sm-inline">Row</span>
                                     </button>
@@ -94,12 +125,21 @@
                                     <button class="btn btn-primary" id="btnSaveChart">
                                         <i class="bi bi-save"></i> Save
                                     </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div id="chartViewContainer" class="p-3 border rounded overflow-auto" style="min-height: 400px; max-height: 600px; background-color: var(--bg-muted);">
                             <div id="seatPlannerRowContainer" class="d-flex flex-column gap-3">
                                 <div class="text-center text-muted p-4">The chart is empty. Add a new row or use 'Auto Build' to get started.</div>
+                            </div>
+                        </div>
+                        <div id="overallSeatSliderContainer" class="mt-4" style="display: none;">
+                            <label for="seat-slider" class="form-label">Number of Seats (All Rows)</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="range" class="form-range" min="1" max="100" id="seat-slider">
+                                <span id="seat-slider-max" class="badge bg-secondary" style="min-width: 60px; font-size: 1rem; padding: .5em .75em;" title="Max seats per row">100</span>
                             </div>
                         </div>
                     </div>
@@ -230,4 +270,55 @@
             </div>
         </div>
     </div>
+
+    <!-- SEAT SLIDER (Edit Mode Only)
+    <div id="seatSliderContainer" class="p-3 rounded shadow-lg" style="display:none; position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:1050; min-width:400px; max-width:90vw; background-color: var(--bg-panel); border: 1px solid var(--border-color);">
+         <div class="d-flex align-items-center justify-content-center gap-4">
+            <span class="text-muted fw-bold">Seats per row/table:</span>
+            Swiper 
+            <div class="swiper" id="chartSeatSlider" style="width: 200px;">
+                <div class="swiper-wrapper"> -->
+                    <!-- Slides will be generated by JS 
+                </div>
+            </div>
+            <span id="currentSeatSliderValue" class="fw-bold" style="color: var(--primary); font-size: 1.5rem; min-width: 40px; text-align: center;">12</span>
+            <div class="d-flex align-items-center gap-1">
+                <label for="seatSliderMaxInput" class="form-label text-muted mb-0 small">Max:</label>
+                <input type="number" id="seatSliderMaxInput" class="form-control form-control-sm" value="30" min="1" max="100" style="width: 60px; background-color: var(--bg-input); color: var(--text-main); border-color: var(--border-color);">
+            </div>
+        </div>
+    </div> -->
+
+    </div>
+
+    <script>
+        (function() {
+            // Ensure only one listener is added
+            if (window.seatPlannerVisibilityInitialized) {
+                updateSeatPlannerVisibility();
+                return;
+            }
+            window.seatPlannerVisibilityInitialized = true;
+
+            function updateSeatPlannerVisibility() {
+                const emptyState = document.getElementById('seatPlannerEmptyState');
+                const mainContent = document.getElementById('seatPlannerMainContent');
+
+                if (!emptyState || !mainContent) return;
+
+                // Use same logic as dashboard: show empty state if no events
+                const events = (typeof MockDB !== 'undefined' && MockDB.getEvents) ? MockDB.getEvents() : [];
+                if (Array.isArray(events) && events.length === 0) {
+                    mainContent.style.display = 'none';
+                    emptyState.style.display = 'block';
+                } else {
+                    mainContent.style.display = 'block';
+                    emptyState.style.display = 'none';
+                }
+            }
+
+            updateSeatPlannerVisibility();
+            window.addEventListener('db-events-updated', updateSeatPlannerVisibility);
+        })();
+    </script>
 </div>

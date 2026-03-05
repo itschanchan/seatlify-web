@@ -29,6 +29,17 @@
     <link rel="stylesheet" href="../assets/seat-planner.css">
     <link rel="stylesheet" href="../assets/ticket-styles.css">
     <link rel="stylesheet" href="../assets/analytics.css">
+    <style>
+        /* Custom styles for form switches to match the theme */
+        .form-check-input {
+            background-color: var(--bg-panel);
+            border-color: var(--border-color);
+        }
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+    </style>
 
 </head>
 <body>
@@ -177,19 +188,40 @@
                     </div>
 
                     <hr style="border-color: var(--border-color);">
+                    <div class="mb-3">
+                        <label for="editEventAttendees" class="form-label" style="color: var(--text-muted);">Total Capacity</label>
+                        <input type="number" class="form-control" id="editEventAttendees" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+                    <hr style="border-color: var(--border-color);">
                     
                     <!-- Seat Config -->
                     <h6 class="mb-3" style="color: var(--text-muted);">Seat Configuration</h6>
-                    <div class="row">
-                        <div class="col-6 col-md-6 mb-3">
-                            <label for="editEventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Seats</label>
-                            <input type="number" class="form-control" id="editEventTotalSeats" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                        </div>
-                        <div class="col-6 col-md-6 mb-3">
-                            <label for="editEventTotalTables" class="form-label" style="color: var(--text-muted);">Total Tables</label>
-                            <input type="number" class="form-control" id="editEventTotalTables" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="editSeatingByTableSwitch">
+                        <label class="form-check-label" for="editSeatingByTableSwitch" style="color: var(--text-main);">Seating by Table</label>
+                    </div>
+
+                    <div id="editTotalSeatsContainer">
+                        <label for="editEventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Number of Seats</label>
+                        <input type="number" class="form-control mb-3" id="editEventTotalSeats" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+
+                    <div id="editTableSeatingContainer" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editEventTotalTables" class="form-label" style="color: var(--text-muted);">Number of Tables</label>
+                                <input type="number" class="form-control" id="editEventTotalTables" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editEventSeatsPerTable" class="form-label" style="color: var(--text-muted);">Seats per Table</label>
+                                <input type="number" class="form-control" id="editEventSeatsPerTable" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div id="editTableCapacityWarning" class="text-danger small fw-bold mb-3" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Calculated seats exceed total capacity!</div>
                         </div>
                     </div>
+                    <small id="editSeatCountIndicator" class="form-text text-muted d-block mt-2">Current number of seats: 0 / 0</small>
+
+
                     <div class="mb-3">
                         <label for="editSeatLayout" class="form-label" style="color: var(--text-muted);">Layout Preference</label>
                         <select class="form-select" id="editSeatLayout" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">

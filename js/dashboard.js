@@ -242,6 +242,7 @@ function getNotificationIcon(type) {
         case 'ticket_sold': return 'bi bi-ticket-perforated-fill text-success';
         case 'event_created': return 'bi bi-calendar-plus text-primary';
         case 'event_published': return 'bi bi-megaphone-fill text-info';
+        case 'event_published': return 'bi bi-megaphone-fill text-danger';
         case 'event_cancelled': return 'bi bi-x-circle-fill text-danger';
         case 'event_deleted': return 'bi bi-trash-fill text-muted';
         default: return 'bi bi-bell';
@@ -398,7 +399,7 @@ function renderDashboardEvent(id) {
     const seatsEl = document.getElementById('dashboardSeatsAvailable');
     if (seatsEl) {
         const available = totalCapacity - ticketsSold;
-        seatsEl.textContent = available;
+        seatsEl.textContent = `${available} / ${totalCapacity}`;
         const percentage = totalCapacity > 0 ? Math.round((available / totalCapacity) * 100) : 0;
         const smallEl = seatsEl.nextElementSibling;
         if (smallEl) {
@@ -450,8 +451,8 @@ function renderDashboardEvent(id) {
     const monthEl = document.getElementById('dashboardDateMonth');
     if (monthEl) monthEl.textContent = months[start.getMonth()];
 
-    const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 
-                    (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
+    const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) + 
+                    (end ? ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) : '');
     const timeEl = document.getElementById('dashboardTime');
     if (timeEl) timeEl.innerHTML = `<i class="bi bi-clock me-1"></i> ${timeStr}`;
 
@@ -611,7 +612,7 @@ function clearDashboardView() {
     document.getElementById('dashboardDateDay').textContent = "-";
     document.getElementById('dashboardDateMonth').textContent = "-";
     
-    document.getElementById('dashboardSeatsAvailable').textContent = "0";
+    document.getElementById('dashboardSeatsAvailable').textContent = "0 / 0";
     document.getElementById('dashboardAttendees').textContent = "0";
     document.getElementById('dashboardTicketsSold').textContent = "0";
     document.getElementById('dashboardRevenue').textContent = "₱0";
@@ -969,8 +970,9 @@ function renderEventView() {
 
 function renderCalendar(container, events) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'calendar-wrapper p-3 bg-white rounded shadow-sm border';
-    
+    wrapper.className = 'calendar-wrapper p-3 rounded shadow-sm border';
+    wrapper.style.backgroundColor = 'var(--bg-panel)';
+
     // Header
     const header = document.createElement('div');
     header.className = 'd-flex justify-content-between align-items-center mb-3';
@@ -1030,8 +1032,9 @@ function renderCalendar(container, events) {
     // Empty cells
     for (let i = 0; i < firstDay; i++) {
         const cell = document.createElement('div');
-        cell.className = 'col p-2 border bg-light';
+        cell.className = 'col p-2 border';
         cell.style.minHeight = '100px';
+        cell.style.backgroundColor = 'var(--bg-muted)';
         row.appendChild(cell);
     }
 
@@ -1039,8 +1042,8 @@ function renderCalendar(container, events) {
         const cell = document.createElement('div');
         cell.className = 'col p-2 border position-relative';
         cell.style.minHeight = '100px';
-        cell.style.backgroundColor = 'var(--bg-panel)';
-        
+        cell.style.backgroundColor = 'var(--bg-muted)';
+
         const dayNum = document.createElement('div');
         dayNum.className = 'fw-bold mb-1';
         dayNum.textContent = day;
@@ -1086,8 +1089,9 @@ function renderCalendar(container, events) {
     const remainingCells = (7 - (firstDay + daysInMonth) % 7) % 7;
     for (let i = 0; i < remainingCells; i++) {
         const cell = document.createElement('div');
-        cell.className = 'col p-2 border bg-light';
+        cell.className = 'col p-2 border';
         cell.style.minHeight = '100px';
+        cell.style.backgroundColor = 'var(--bg-muted)';
         row.appendChild(cell);
     }
     if (row.children.length > 0) {
@@ -1105,24 +1109,67 @@ function openEditModal(eventId) {
     const event = MockDB.getEvents().find(e => e.event_id == eventId);
     if (!event) return;
 
-    // Initialize Flatpickr for date/time inputs
-    if (typeof flatpickr !== 'undefined') {
-        flatpickr("#editEventDate", {
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-        });
+    // Initialize date/time pickers
+    if (typeof flatpickr !== 'undefined') { // flatpickr is still used for time
+        // Use Vanilla Calendar Pro for the date picker
+        if (typeof VanillaCalendar !== 'undefined') {
+            const options = {
+                input: true,
+                type: 'default',
+                actions: {
+                    changeToInput(e, calendar, self) {
+                        if (!self.selectedDates[0]) return calendar.HTMLInputElement.value = '';
+                        const date = new Date(self.selectedDates[0]);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        calendar.HTMLInputElement.value = `${year}-${month}-${day}`;
+                        calendar.hide();
+                    }
+                },
+                settings: {
+                    visibility: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' }
+                }
+            };
+            const calendar = new VanillaCalendar('#editEventDate', options);
+            calendar.init();
+            const dateInput = document.getElementById('editEventDate');
+            // Add a listener to sync the calendar when the user types a date
+            if (dateInput && !dateInput.hasAttribute('vcal-listener')) {
+                dateInput.setAttribute('vcal-listener', 'true');
+                dateInput.addEventListener('change', () => {
+                    const newDate = new Date(dateInput.value);
+                    if (newDate && !isNaN(newDate.getTime())) {
+                        calendar.set({
+                            selectedDates: [dateInput.value],
+                            selectedMonth: newDate.getMonth(),
+                            selectedYear: newDate.getFullYear(),
+                        });
+                    }
+                });
+            }
+        } else { // Fallback to flatpickr if Vanilla Calendar fails to load
+            flatpickr("#editEventDate", { altInput: true, altFormat: "F j, Y", dateFormat: "Y-m-d" });
+        }
+
+        // Keep using flatpickr for time inputs
         flatpickr("#editEventTime", {
+            allowInput: true,
             enableTime: true,
             noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: false
+            dateFormat: "H:i", // For backend
+            altInput: true, // For user display
+            altFormat: "h:i K", // 12-hour format with AM/PM
+            time_24hr: false // UI picker
         });
         flatpickr("#editEventEndTime", {
+            allowInput: true,
             enableTime: true,
             noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: false
+            dateFormat: "H:i", // For backend
+            altInput: true, // For user display
+            altFormat: "h:i K", // 12-hour format with AM/PM
+            time_24hr: false // UI picker
         });
     }
 
@@ -1212,6 +1259,108 @@ function openEditModal(eventId) {
     document.getElementById('editEventTotalTables').value = event.total_tables || '';
     document.getElementById('editSeatLayout').value = event.layout_preference || 'empty';
 
+    // Populate new Total Capacity field
+    const editEventAttendeesInput = document.getElementById('editEventAttendees');
+    if (editEventAttendeesInput) {
+        editEventAttendeesInput.value = event.attendees || '';
+        editEventAttendeesInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/,/g, '');
+        });
+    }
+    // --- SEAT CONFIG SWITCH LOGIC (EDIT MODAL) ---
+    const editSeatingSwitch = document.getElementById('editSeatingByTableSwitch');
+    const editTotalSeatsContainer = document.getElementById('editTotalSeatsContainer');
+    const editTableSeatingContainer = document.getElementById('editTableSeatingContainer');
+    const editSeatCountIndicator = document.getElementById('editSeatCountIndicator');
+
+    if (editSeatingSwitch && editTotalSeatsContainer && editTableSeatingContainer) {
+        const newSwitch = editSeatingSwitch.cloneNode(true);
+        editSeatingSwitch.parentNode.replaceChild(newSwitch, editSeatingSwitch);
+
+        const editEventTotalTablesInput = document.getElementById('editEventTotalTables');
+        const editEventSeatsPerTableInput = document.getElementById('editEventSeatsPerTable');
+        const editTableCapacityWarning = document.getElementById('editTableCapacityWarning');
+        const editEventTotalSeatsInput = document.getElementById('editEventTotalSeats');
+
+        const updateIndicator = () => {
+            if (!editSeatCountIndicator || !editEventAttendeesInput) return;
+            const capacity = parseInt(editEventAttendeesInput.value) || 0;
+            let currentSeats = 0;
+            if (newSwitch.checked) {
+                const tables = parseInt(editEventTotalTablesInput.value) || 0;
+                const seatsPer = parseInt(editEventSeatsPerTableInput.value) || 0;
+                currentSeats = tables * seatsPer;
+            } else {
+                currentSeats = parseInt(editEventTotalSeatsInput.value) || 0;
+            }
+            editSeatCountIndicator.textContent = `Current number of seats: ${currentSeats} / ${capacity}`;
+        };
+
+        [editEventAttendeesInput, editEventTotalSeatsInput, editEventTotalTablesInput, editEventSeatsPerTableInput].forEach(el => el.addEventListener('input', updateIndicator));
+
+        const validateEditTableSeatingCapacity = () => {
+            if (!newSwitch || !editEventAttendeesInput || !editEventTotalTablesInput || !editEventSeatsPerTableInput || !editTableCapacityWarning) {
+                return true; // Cannot validate if elements are missing
+            }
+
+            const totalCapacity = parseInt(editEventAttendeesInput.value) || 0;
+            const numTables = parseInt(editEventTotalTablesInput.value) || 0;
+            const seatsPerTable = parseInt(editEventSeatsPerTableInput.value) || 0;
+            const calculatedSeats = numTables * seatsPerTable;
+
+            if (newSwitch.checked) {
+                if (calculatedSeats > totalCapacity && totalCapacity > 0) {
+                    editTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) exceed total capacity (${totalCapacity})!`;
+                    editTableCapacityWarning.style.display = 'block';
+                    return false;
+                } else if (calculatedSeats > 0 && totalCapacity === 0) {
+                    editTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) require a total capacity greater than 0.`;
+                    editTableCapacityWarning.style.display = 'block';
+                    return false;
+                } else {
+                    editTableCapacityWarning.style.display = 'none';
+                    return true;
+                }
+            }
+            return true; // No validation needed if seatingByTable is not checked
+        };
+
+        const toggleEditSeatConfig = () => {
+            if (newSwitch.checked) {
+                editTotalSeatsContainer.style.display = 'none';
+                editTableSeatingContainer.style.display = 'block';
+                validateEditTableSeatingCapacity(); // Validate when switching to table view
+                // Add listeners for table inputs
+                editEventTotalTablesInput.addEventListener('input', validateEditTableSeatingCapacity);
+                editEventSeatsPerTableInput.addEventListener('input', validateEditTableSeatingCapacity);
+                editEventAttendeesInput.addEventListener('input', validateEditTableSeatingCapacity);
+            } else {
+                editTotalSeatsContainer.style.display = 'block';
+                editTableSeatingContainer.style.display = 'none';
+                editTableCapacityWarning.style.display = 'none'; // Hide warning when switching away
+                // Remove listeners
+                editEventTotalTablesInput.removeEventListener('input', validateEditTableSeatingCapacity);
+                editEventSeatsPerTableInput.removeEventListener('input', validateEditTableSeatingCapacity);
+                editEventAttendeesInput.removeEventListener('input', validateEditTableSeatingCapacity);
+            }
+            updateIndicator();
+        };
+        
+        newSwitch.addEventListener('change', toggleEditSeatConfig);
+
+        newSwitch.checked = event.seating_by_table || false;
+        if (event.seating_by_table) {
+            document.getElementById('editEventSeatsPerTable').value = event.seats_per_table || '';
+        }
+
+        toggleEditSeatConfig();
+
+        // Initial validation when modal opens, if seating by table is active
+        if (newSwitch.checked) {
+            validateEditTableSeatingCapacity();
+        }
+        updateIndicator(); // Initial call
+    }
     // Ticket Config
     const radioFree = document.getElementById('editTypeFree');
     const radioPaid = document.getElementById('editTypePaid');
@@ -1270,6 +1419,9 @@ function addEditTierRow(ticket = null) {
 
 function saveEventChanges() {
     const id = document.getElementById('editEventId').value;
+    const event = MockDB.getEvents().find(e => e.event_id == id);
+    if (!event) return;
+
     const name = document.getElementById('editEventName').value;
     const date = document.getElementById('editEventDate').value;
     const time = document.getElementById('editEventTime').value;
@@ -1277,18 +1429,63 @@ function saveEventChanges() {
     const venueName = document.getElementById('editEventVenue').value;
     const statusSelect = document.getElementById('editEventStatus');
     const desc = document.getElementById('editEventDescription').value;
-    const totalSeats = document.getElementById('editEventTotalSeats').value;
-    const totalTables = document.getElementById('editEventTotalTables').value;
     const layout = document.getElementById('editSeatLayout').value;
+    const attendees = document.getElementById('editEventAttendees').value; // Get the value from the new input
     
     const isPaid = document.getElementById('editTypePaid').checked;
     let tickets = [];
+
+    const seatingByTable = document.getElementById('editSeatingByTableSwitch').checked;
+    let totalSeats, totalTables, seatsPerTable;
+
+    // Re-validate before final save
+    if (seatingByTable) {
+        if (!validateEditTableSeatingCapacity()) {
+            alert("Calculated seats exceed total capacity. Please adjust your seating configuration.");
+            return; // Stop save operation
+        }
+    }
+    if (seatingByTable) {
+        totalTables = document.getElementById('editEventTotalTables').value;
+        seatsPerTable = document.getElementById('editEventSeatsPerTable').value;
+        totalSeats = (parseInt(totalTables) || 0) * (parseInt(seatsPerTable) || 0);
+    } else {
+        totalSeats = document.getElementById('editEventTotalSeats').value;
+        totalTables = 0; // When not seating by table, this field is not relevant from this form
+        seatsPerTable = 0;
+    }
+
     if (isPaid) {
         document.querySelectorAll('#editTiersList .tier-row').forEach(row => {
             const tName = row.querySelector('.tier-name').value;
             const tPrice = row.querySelector('.tier-price').value;
             const tQty = row.querySelector('.tier-qty').value;
             if (tName) tickets.push({ name: tName, price: tPrice, qty: tQty });
+        });
+    }
+
+    // --- NEW LOGIC: Update table_layout_data intelligently ---
+    let newTableLayoutData = event.table_layout_data ? JSON.parse(JSON.stringify(event.table_layout_data)) : [];
+    if (seatingByTable) {
+        const numTables = parseInt(totalTables) || 0;
+        const numSeatsPerTable = parseInt(seatsPerTable) || 0;
+
+        // If more tables are needed, add them
+        while (newTableLayoutData.length < numTables) {
+            newTableLayoutData.push({
+                label: `Table ${newTableLayoutData.length + 1}`,
+                seats: 0 // will be updated below
+            });
+        }
+
+        // If fewer tables are needed, remove from the end
+        if (newTableLayoutData.length > numTables) {
+            newTableLayoutData = newTableLayoutData.slice(0, numTables);
+        }
+
+        // Update seat count for all tables
+        newTableLayoutData.forEach(table => {
+            table.seats = numSeatsPerTable;
         });
     }
 
@@ -1304,11 +1501,15 @@ function saveEventChanges() {
         venue_id: venueId, // Keep for backward compatibility if found
         venue_name: venueName, // The new source of truth
         description: desc,
+        attendees: attendees, // Add attendees to updateData
         total_seats: totalSeats,
         total_tables: totalTables,
+        seating_by_table: seatingByTable,
+        seats_per_table: seatsPerTable,
         layout_preference: layout,
         is_paid: isPaid,
-        tickets: tickets
+        tickets: tickets,
+        table_layout_data: newTableLayoutData
     };
 
     if (statusSelect) {

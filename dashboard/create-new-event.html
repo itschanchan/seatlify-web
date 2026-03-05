@@ -65,27 +65,34 @@
                     <!-- Step 2: Seat Planning -->
                     <div id="step2" style="display: none;">
                         <h6 class="mb-3" style="color: var(--text-muted);">Seat Planning Setup</h6>
-                        <div class="mb-3">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="seatingByTableSwitch">
+                            <label class="form-check-label" for="seatingByTableSwitch" style="color: var(--text-main);">Seating by Table</label>
+                        </div>
+
+                        <div id="totalSeatsContainer">
+                            <label for="eventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Number of Seats</label>
+                            <input type="number" class="form-control" id="eventTotalSeats" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+
+                        <div id="tableSeatingContainer" style="display: none;">
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="eventTotalSeats" class="form-label" style="color: var(--text-muted);">Number of Seats</label>
-                                    <input type="number" class="form-control" id="eventTotalSeats" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="eventTotalTables" class="form-label" style="color: var(--text-muted);">Number of Tables</label>
                                     <input type="number" class="form-control" id="eventTotalTables" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="eventSeatsPerTable" class="form-label" style="color: var(--text-muted);">Seats per Table</label>
+                                    <input type="number" class="form-control" id="eventSeatsPerTable" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div id="createTableCapacityWarning" class="text-danger small fw-bold mb-3" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Calculated seats exceed total capacity!</div>
                             </div>
-                            <label class="form-label" style="color: var(--text-muted);">Initial Layout</label>
-                            <select class="form-select" id="seatLayout" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                <option value="empty">Empty Canvas</option>
-                                <option value="theater">Theater Style</option>
-                                <option value="banquet">Banquet Hall</option>
-                            </select>
                         </div>
-                        <div class="alert alert-info bg-opacity-10 border-0" style="background-color: var(--primary); color: var(--text-main);">
+                        <small id="seatCountIndicator" class="form-text text-muted d-block mt-2">Current number of seats: 0 / 0</small>
+
+                        <!-- <div class="alert alert-info bg-opacity-10 border-0" style="background-color: var(--primary); color: var(--text-main);">
                             <i class="bi bi-info-circle me-2"></i> You can customize the seat plan fully in the Seat Planner module after creating the event.
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Step 3: Ticket Setup -->
@@ -94,11 +101,11 @@
                         <div class="mb-3">
                             <label class="form-label d-block" style="color: var(--text-muted);">Event Type</label>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="eventType" id="typeFree" value="free" checked style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                                <input class="form-check-input" type="radio" name="eventType" id="typeFree" value="free" checked>
                                 <label class="form-check-label" for="typeFree" style="color: var(--text-main);">Free Event</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="eventType" id="typePaid" value="paid" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                                <input class="form-check-input" type="radio" name="eventType" id="typePaid" value="paid">
                                 <label class="form-check-label" for="typePaid" style="color: var(--text-main);">Paid Event</label>
                             </div>
                         </div>

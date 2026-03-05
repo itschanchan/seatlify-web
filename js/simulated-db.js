@@ -389,25 +389,157 @@ window.openCreateEventModal = async function() {
     const modalEl = document.getElementById('createEventModal');
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
+    // --- SEAT CONFIG SWITCH LOGIC ---
+    const seatingSwitch = document.getElementById('seatingByTableSwitch');
+    const totalSeatsContainer = document.getElementById('totalSeatsContainer');
+    const tableSeatingContainer = document.getElementById('tableSeatingContainer');
+    const eventAttendeesInput = document.getElementById('eventAttendees');
+    const eventTotalTablesInput = document.getElementById('eventTotalTables');
+    const eventSeatsPerTableInput = document.getElementById('eventSeatsPerTable');
+    const createTableCapacityWarning = document.getElementById('createTableCapacityWarning');
+    const eventTotalSeatsInput = document.getElementById('eventTotalSeats');
+    const seatCountIndicator = document.getElementById('seatCountIndicator');
+
+    eventAttendeesInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/,/g, '');
+    });
+
+    // --- Seat Indicator Logic ---
+    const updateIndicator = () => {
+        if (!seatCountIndicator || !eventAttendeesInput) return;
+        const capacity = parseInt(eventAttendeesInput.value) || 0;
+        let currentSeats = 0;
+        if (seatingSwitch.checked) {
+            const tables = parseInt(eventTotalTablesInput.value) || 0;
+            const seatsPer = parseInt(eventSeatsPerTableInput.value) || 0;
+            currentSeats = tables * seatsPer;
+        } else {
+            currentSeats = parseInt(eventTotalSeatsInput.value) || 0;
+        }
+        seatCountIndicator.textContent = `Current number of seats: ${currentSeats} / ${capacity}`;
+    };
+
+    eventAttendeesInput.addEventListener('input', updateIndicator);
+    eventTotalSeatsInput.addEventListener('input', updateIndicator);
+    eventTotalTablesInput.addEventListener('input', updateIndicator);
+    eventSeatsPerTableInput.addEventListener('input', updateIndicator);
+
+    const validateCreateTableSeatingCapacity = () => {
+        // Ensure all elements exist before proceeding
+        if (!seatingSwitch || !eventAttendeesInput || !eventTotalTablesInput || !eventSeatsPerTableInput || !createTableCapacityWarning) {
+            return true; // Cannot validate if elements are missing
+        }
+
+        const totalCapacity = parseInt(eventAttendeesInput.value) || 0;
+        const numTables = parseInt(eventTotalTablesInput.value) || 0;
+        const seatsPerTable = parseInt(eventSeatsPerTableInput.value) || 0;
+        const calculatedSeats = numTables * seatsPerTable;
+
+        if (seatingSwitch.checked) {
+            if (calculatedSeats > totalCapacity && totalCapacity > 0) {
+                createTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) exceed total capacity (${totalCapacity})!`;
+                createTableCapacityWarning.style.display = 'block';
+                return false;
+            } else if (calculatedSeats > 0 && totalCapacity === 0) {
+                createTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) require a total capacity greater than 0.`;
+                createTableCapacityWarning.style.display = 'block';
+                return false;
+            }
+            else {
+                createTableCapacityWarning.style.display = 'none';
+                return true;
+            }
+        }
+        return true; // No validation needed if seatingByTable is not checked
+    };
+
+    if (seatingSwitch && totalSeatsContainer && tableSeatingContainer) {
+        const toggleSeatConfig = () => {
+            if (seatingSwitch.checked) {
+                totalSeatsContainer.style.display = 'none';
+                tableSeatingContainer.style.display = 'block';
+                validateCreateTableSeatingCapacity(); // Validate when switching to table view
+                // Add listeners for table inputs
+                eventTotalTablesInput.addEventListener('input', validateCreateTableSeatingCapacity);
+                eventSeatsPerTableInput.addEventListener('input', validateCreateTableSeatingCapacity);
+                eventAttendeesInput.addEventListener('input', validateCreateTableSeatingCapacity); // Also listen to capacity changes
+            } else {
+                totalSeatsContainer.style.display = 'block';
+                tableSeatingContainer.style.display = 'none';
+                createTableCapacityWarning.style.display = 'none'; // Hide warning when switching away
+                // Remove listeners to prevent unnecessary calls when not in table mode
+                eventTotalTablesInput.removeEventListener('input', validateCreateTableSeatingCapacity);
+                eventSeatsPerTableInput.removeEventListener('input', validateCreateTableSeatingCapacity);
+                eventAttendeesInput.removeEventListener('input', validateCreateTableSeatingCapacity);
+            }
+            updateIndicator();
+        };
+        seatingSwitch.addEventListener('change', toggleSeatConfig);
+        // Reset to initial state every time modal opens
+        seatingSwitch.checked = false;
+        toggleSeatConfig();
+    }
 
     // Initialize Flatpickr for date/time inputs
-    if (typeof flatpickr !== 'undefined') {
-        flatpickr("#eventDate", {
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-        });
+    if (typeof flatpickr !== 'undefined') { // flatpickr is still used for time
+        // Use Vanilla Calendar Pro for the date picker
+        if (typeof VanillaCalendar !== 'undefined') {
+            const options = {
+                input: true,
+                type: 'default',
+                actions: {
+                    changeToInput(e, calendar, self) {
+                        if (!self.selectedDates[0]) return calendar.HTMLInputElement.value = '';
+                        const date = new Date(self.selectedDates[0]);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        calendar.HTMLInputElement.value = `${year}-${month}-${day}`;
+                        calendar.hide();
+                    }
+                },
+                settings: {
+                    visibility: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' }
+                }
+            };
+            const calendar = new VanillaCalendar('#eventDate', options);
+            calendar.init();
+            const dateInput = document.getElementById('eventDate');
+            // Add a listener to sync the calendar when the user types a date
+            if (dateInput && !dateInput.hasAttribute('vcal-listener')) {
+                dateInput.setAttribute('vcal-listener', 'true');
+                dateInput.addEventListener('change', () => {
+                    const newDate = new Date(dateInput.value);
+                    if (newDate && !isNaN(newDate.getTime())) {
+                        calendar.set({
+                            selectedDates: [dateInput.value],
+                            selectedMonth: newDate.getMonth(),
+                            selectedYear: newDate.getFullYear(),
+                        });
+                    }
+                });
+            }
+        } else { // Fallback to flatpickr if Vanilla Calendar fails to load
+            flatpickr("#eventDate", { altInput: true, altFormat: "F j, Y", dateFormat: "Y-m-d" });
+        }
+
         flatpickr("#eventTime", {
+            allowInput: true,
             enableTime: true,
             noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: false
+            dateFormat: "H:i", // For backend
+            altInput: true, // For user display
+            altFormat: "h:i K", // 12-hour format with AM/PM
+            time_24hr: false // UI picker
         });
         flatpickr("#eventEndTime", {
+            allowInput: true,
             enableTime: true,
             noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: false
+            dateFormat: "H:i", // For backend
+            altInput: true, // For user display
+            altFormat: "h:i K", // 12-hour format with AM/PM
+            time_24hr: false // UI picker
         });
     }
 
@@ -591,10 +723,16 @@ window.openCreateEventModal = async function() {
             step1.style.display = 'none';
             step2.style.display = 'block';
             updateStepper(2);
+            updateIndicator();
             newBtnBack.style.display = 'inline-block';
             btnCancel.style.display = 'none';
         } else if (step2.style.display !== 'none') {
             // Go to Step 3
+            const seatingByTable = document.getElementById('seatingByTableSwitch').checked;
+            if (seatingByTable && !validateCreateTableSeatingCapacity()) {
+                alert("Calculated seats exceed total capacity. Please adjust your seating configuration.");
+                return;
+            }
             step2.style.display = 'none';
             step3.style.display = 'block';
             updateStepper(3);
@@ -630,14 +768,31 @@ window.openCreateEventModal = async function() {
         const venueName = document.getElementById('eventVenue').value;
         const attendees = document.getElementById('eventAttendees').value;
         const desc = document.getElementById('eventDescription').value;
-        const layout = document.getElementById('seatLayout').value;
-        const totalSeats = document.getElementById('eventTotalSeats').value;
-        const totalTables = document.getElementById('eventTotalTables').value;
+
+        const seatingByTable = document.getElementById('seatingByTableSwitch').checked;
+        let totalSeats, totalTables, seatsPerTable;
+        
+        // Re-validate before final creation
+        if (seatingByTable && !validateCreateTableSeatingCapacity()) {
+            alert("Calculated seats exceed total capacity. Please adjust your seating configuration.");
+            return;
+        }
+
+        if (seatingByTable) {
+            totalTables = document.getElementById('eventTotalTables').value;
+            seatsPerTable = document.getElementById('eventSeatsPerTable').value;
+            totalSeats = (parseInt(totalTables) || 0) * (parseInt(seatsPerTable) || 0);
+        } else {
+            totalSeats = document.getElementById('eventTotalSeats').value;
+            totalTables = 0;
+            seatsPerTable = 0;
+        }
 
         // Ticket Data
         const isPaid = document.getElementById('typePaid').checked;
         let tickets = [];
         let rowLayoutData = [];
+        let tableLayoutData = [];
 
         if (isPaid) {
             document.querySelectorAll('.tier-row').forEach(row => {
@@ -657,6 +812,18 @@ window.openCreateEventModal = async function() {
             }
         }
 
+        // If totalTables is set, pre-populate the table_layout_data
+        const numTables = parseInt(totalTables) || 0;
+        if (numTables > 0) {
+            // This will be used by the Seat Planner's "Table" view
+            for (let i = 1; i <= numTables; i++) {
+                tableLayoutData.push({
+                    label: `Table ${i}`,
+                    seats: parseInt(seatsPerTable) || 0
+                });
+            }
+        }
+
         // Find venue ID from name for compatibility
         const venues = MockDB.getVenues();
         const venue = venues.find(v => v.name.toLowerCase() === venueName.toLowerCase());
@@ -670,12 +837,14 @@ window.openCreateEventModal = async function() {
             start_datetime: `${date}T${startTime}`,
             end_datetime: endTime ? `${date}T${endTime}` : null,
             attendees: attendees,
-            layout_preference: layout,
             total_seats: totalSeats,
             total_tables: totalTables,
+            seating_by_table: seatingByTable,
+            seats_per_table: seatsPerTable,
             is_paid: isPaid,
             tickets: tickets,
-            row_layout_data: rowLayoutData
+            row_layout_data: rowLayoutData,
+            table_layout_data: tableLayoutData
         });
 
         modal.hide();

@@ -21,6 +21,9 @@ let scale = 1;
 let chartLayoutMode = 'row'; // 'row' or 'table'
 let isChartEditMode = true;
 
+let selectedChartGroup = null;
+let chartSeatSlider = null;
+
 let isPanning = false;
 let isCreating = false;
 let isDraggingShape = false;
@@ -118,6 +121,7 @@ export function initSeatPlanner() {
     console.log("initSeatPlanner() called");
 
     // Load stats whenever initialized/shown
+    loadSwiperDependencies();
     loadCurrentEventStats();
 
     // Global listeners should only be bound once.
@@ -148,6 +152,14 @@ export function initSeatPlanner() {
         const savedMode = localStorage.getItem(`seatlify_chart_edit_mode_${currentEventId}`);
         isChartEditMode = savedMode === 'false' ? false : true;
     }
+    if (currentEventId) {
+        const savedLayoutMode = localStorage.getItem(`seatlify_chart_layout_mode_${currentEventId}`);
+        if (savedLayoutMode) {
+            chartLayoutMode = savedLayoutMode;
+        }
+    }
+
+    updateChartGroupingButtonsUI();
 
     historyManager.clear();
     bindToolSelection();
@@ -164,20 +176,283 @@ export function initSeatPlanner() {
     bindChartGroupingButtons();
     bindRowLabelToggle();
     initChartSortable();
+    initSeatSlider();
+    bindOverallSeatSlider();
     bindChartEditControls();
     bindTabSwitchers();
     refreshChartLayout();
 }
 
+function bindOverallSeatSlider() {
+    const slider = document.getElementById('seat-slider');
+    if (!slider) return;
+
+    slider.addEventListener('input', (e) => {
+        if (!isChartEditMode) {
+            alert("Please enter edit mode to change seat counts.");
+            const firstGroup = document.querySelector('#seatPlannerRowContainer .chart-group');
+            if(firstGroup) {
+                slider.value = firstGroup.querySelectorAll('.chart-seat').length;
+            }
+            return;
+        }
+
+        const newSeatCount = parseInt(e.target.value, 10);
+
+        document.querySelectorAll('#seatPlannerRowContainer .chart-group').forEach(group => {
+            updateSeatsInGroup(group, newSeatCount);
+        });
+
+        loadCurrentEventStats();
+    });
+}
+
+function updateOverallSliderMax() {
+    const slider = document.getElementById('seat-slider');
+    const maxInput = document.getElementById('seat-slider-max');
+    if (!slider || !maxInput) return;
+
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+    if (currentEventId && typeof MockDB !== 'undefined') {
+        const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+        if (event) {
+            const maxCapacity = parseInt(event.total_seats) || 0;
+            const groups = document.querySelectorAll('#seatPlannerRowContainer .chart-group');
+            const numGroups = groups.length;
+
+            let newMax = 100; // Default
+            if (maxCapacity > 0 && numGroups > 0) {
+                newMax = Math.floor(maxCapacity / numGroups);
+            }
+            
+            newMax = newMax > 0 ? newMax : 1;
+            slider.max = newMax;
+            maxInput.textContent = newMax;
+
+            if (parseInt(slider.value) > newMax) {
+                slider.value = newMax;
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    }
+}
+
+function updateSeatsInGroup(group, newSeatCount) {
+    const seatsDiv = group.querySelector('.d-flex.flex-wrap.gap-2');
+    if (!seatsDiv) return;
+
+    const addBtn = seatsDiv.querySelector('.btn-add-seat-chart');
+    const currentCount = seatsDiv.querySelectorAll('.chart-seat').length;
+
+    if (newSeatCount > currentCount) {
+        for (let i = 0; i < (newSeatCount - currentCount); i++) {
+            const seatEl = createNewSeatElement(seatsDiv);
+            if(addBtn) {
+                seatsDiv.insertBefore(seatEl, addBtn);
+            } else {
+                seatsDiv.appendChild(seatEl);
+            }
+        }
+    } else if (newSeatCount < currentCount) {
+        for (let i = 0; i < (currentCount - newSeatCount); i++) {
+            const seatToRemove = seatsDiv.querySelector('.chart-seat:last-of-type');
+            if (seatToRemove) seatToRemove.remove();
+        }
+    }
+
+    // Renumber seats
+    seatsDiv.querySelectorAll('.chart-seat').forEach((seat, index) => {
+        seat.textContent = index + 1;
+    });
+
+    const finalCount = seatsDiv.querySelectorAll('.chart-seat').length;
+    const badge = group.querySelector('.badge');
+    if (badge) badge.textContent = `${finalCount} seats`;
+}
+
+function createNewSeatElement(seatsDiv) {
+    const newSeatNumber = seatsDiv.querySelectorAll('.chart-seat').length + 1;
+
+    const seatEl = document.createElement('div');
+    seatEl.className = 'chart-seat d-flex align-items-center justify-content-center border rounded';
+    if (chartLayoutMode === 'table') {
+        seatEl.classList.add('rounded-circle');
+    }
+    seatEl.style.cssText = 'width: 30px; height: 30px; font-size: 12px; cursor: pointer; background-color: var(--bg-muted); color: var(--text-main);';
+    seatEl.textContent = newSeatNumber;
+
+    // Simplified popover logic for this context
+    const rowCard = seatsDiv.closest('.chart-group');
+    const label = rowCard?.querySelector('.row-label')?.textContent || 'Row';
+    seatEl.dataset.bsToggle = 'popover';
+    seatEl.dataset.bsTrigger = 'hover';
+    seatEl.dataset.bsPlacement = 'top';
+    seatEl.dataset.bsTitle = `${label}, Seat ${newSeatNumber}`;
+    seatEl.dataset.bsContent = `Status: Available`;
+    seatEl.dataset.bsContainer = 'body';
+
+    const popover = new bootstrap.Popover(seatEl, { container: 'body' });
+    if (!isChartEditMode) {
+        popover.enable();
+    } else {
+        popover.disable();
+    }
+
+    return seatEl;
+}
+
+function loadSwiperDependencies() {
+    if (!document.querySelector('link[href*="swiper-bundle.min.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css';
+        document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[src*="swiper-bundle.min.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';
+        document.body.appendChild(script);
+    }
+}
+
+function initSeatSlider() {
+    // Check if Swiper is loaded. If not, wait and retry.
+    if (typeof Swiper === 'undefined') {
+        setTimeout(initSeatSlider, 100);
+        return;
+    }
+
+    const sliderEl = document.getElementById('chartSeatSlider');
+    if (!sliderEl) return; // Element not found
+
+    // Destroy existing instance if it exists
+    if (chartSeatSlider && !chartSeatSlider.destroyed) {
+        chartSeatSlider.destroy(true, true);
+        chartSeatSlider = null;
+    }
+
+    const maxInput = document.getElementById('seatSliderMaxInput');
+    const maxSeats = maxInput ? parseInt(maxInput.value, 10) : 30;
+
+    const wrapper = sliderEl.querySelector('.swiper-wrapper');
+    if (wrapper) {
+        wrapper.innerHTML = '';
+        for (let i = 1; i <= maxSeats; i++) { // Use dynamic max
+            wrapper.innerHTML += `<div class="swiper-slide text-center fs-5" style="color: var(--text-main);">${i}</div>`;
+        }
+    }
+
+    const valueEl = document.getElementById('currentSeatSliderValue');
+    const currentVal = valueEl ? parseInt(valueEl.textContent, 10) : 12;
+    const initialSlideIndex = Math.min(Math.max(0, currentVal - 1), maxSeats - 1);
+
+    chartSeatSlider = new Swiper(sliderEl, {
+        slidesPerView: 'auto',
+        centeredSlides: true,
+        spaceBetween: 10,
+        initialSlide: initialSlideIndex,
+    });
+
+    chartSeatSlider.on('slideChange', function () {
+        if (valueEl) {
+            const newSeatCount = parseInt(chartSeatSlider.slides[chartSeatSlider.activeIndex].textContent);
+            valueEl.textContent = newSeatCount;
+            if (selectedChartGroup) {
+                updateSeatsInSelectedGroup(newSeatCount);
+            }
+        }
+    });
+
+    // Add listener to the max input if not already added
+    if (maxInput && !maxInput.hasAttribute('listener-added')) {
+        maxInput.setAttribute('listener-added', 'true');
+        maxInput.addEventListener('change', () => initSeatSlider());
+    }
+}
+
+function updateSeatsInSelectedGroup(newSeatCount) {
+    if (!selectedChartGroup) return;
+
+    const seatsDiv = selectedChartGroup.querySelector('.d-flex.flex-wrap.gap-2');
+    if (!seatsDiv) return;
+
+    const addBtn = seatsDiv.querySelector('.btn-add-seat-chart');
+    const currentCount = seatsDiv.querySelectorAll('.chart-seat').length;
+
+    if (newSeatCount > currentCount) {
+        // Add seats by simulating a click on the group's add button
+        if (addBtn) {
+            for (let i = 0; i < (newSeatCount - currentCount); i++) {
+                addBtn.click();
+            }
+        }
+    } else if (newSeatCount < currentCount) {
+        // Remove seats from the end
+        for (let i = 0; i < (currentCount - newSeatCount); i++) {
+            const seatToRemove = seatsDiv.querySelector('.chart-seat:last-of-type');
+            if (seatToRemove) seatToRemove.remove();
+        }
+    }
+
+    // Update the badge on the row/table card
+    const badge = selectedChartGroup.querySelector('.badge');
+    if (badge) badge.textContent = `${newSeatCount} seats`;
+
+    // Update the main total seats counter
+    loadCurrentEventStats();
+}
+
+function deselectAllChartGroups() {
+    if (selectedChartGroup) {
+        selectedChartGroup.classList.remove('selected');
+    }
+    selectedChartGroup = null;
+    const sliderContainer = document.getElementById('seatSliderContainer');
+    if (sliderContainer) {
+        sliderContainer.style.display = 'none';
+    }
+}
+
 function addChartRowButton(container) {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'chartBtnWrapper';
+    wrapper.className = 'd-flex gap-2 mt-3 w-100';
+
     const addRowBtn = document.createElement('button');
     addRowBtn.id = 'chartAddRowBtn';
-    addRowBtn.className = 'btn btn-outline-secondary mt-3 w-100';
+    addRowBtn.className = 'btn btn-outline-secondary flex-grow-1';
     addRowBtn.style.borderStyle = 'dashed';
     const buttonText = chartLayoutMode === 'table' ? 'Add Table' : 'Add Row';
     addRowBtn.innerHTML = `<i class="bi bi-plus-lg"></i> ${buttonText}`;
     addRowBtn.addEventListener('click', addNewRowToChart);
-    container.appendChild(addRowBtn);
+    
+    const reduceBtn = document.createElement('button');
+    reduceBtn.id = 'chartReduceBtn';
+    reduceBtn.className = 'btn btn-outline-danger';
+    reduceBtn.style.borderStyle = 'dashed';
+    reduceBtn.innerHTML = `<i class="bi bi-dash-lg"></i>`;
+    reduceBtn.title = chartLayoutMode === 'table' ? 'Remove Last Table' : 'Remove Last Row';
+    reduceBtn.addEventListener('click', removeLastRowFromChart);
+
+    wrapper.appendChild(addRowBtn);
+    wrapper.appendChild(reduceBtn);
+    container.appendChild(wrapper);
+}
+
+function removeLastRowFromChart() {
+    const container = document.getElementById('seatPlannerRowContainer');
+    if (!container) return;
+
+    const groups = container.querySelectorAll('.chart-group');
+    if (groups.length > 0) {
+        const lastGroup = groups[groups.length - 1];
+        if (selectedChartGroup === lastGroup) {
+            deselectAllChartGroups();
+        }
+        lastGroup.remove();
+        loadCurrentEventStats();
+        updateOverallSliderMax();
+    }
 }
 
 function setActiveTool(tool) {
@@ -780,8 +1055,23 @@ function bindEditTotalSeats() {
             if (newTotal !== null && !isNaN(newTotal) && newTotal.trim() !== "") {
                 MockDB.updateEvent(currentEventId, { total_seats: parseInt(newTotal) });
                 loadCurrentEventStats();
+                updateOverallSliderMax();
             }
         });
+    }
+}
+
+function updateChartGroupingButtonsUI() {
+    const btnRow = document.getElementById('btnGroupRow');
+    const btnTable = document.getElementById('btnGroupTable');
+    if (!btnRow || !btnTable) return;
+
+    if (chartLayoutMode === 'table') {
+        btnTable.classList.add('active');
+        btnRow.classList.remove('active');
+    } else {
+        btnRow.classList.add('active');
+        btnTable.classList.remove('active');
     }
 }
 
@@ -791,21 +1081,26 @@ function bindEditTotalSeats() {
 function bindChartGroupingButtons() {
     const btnRow = document.getElementById('btnGroupRow');
     const btnTable = document.getElementById('btnGroupTable');
-    
-    if(btnRow && btnTable) {
-        btnRow.addEventListener('click', () => {
-            chartLayoutMode = 'row';
-            btnRow.classList.add('active');
-            btnTable.classList.remove('active');
-            refreshChartLayout();
-        });
 
-        btnTable.addEventListener('click', () => {
-            chartLayoutMode = 'table';
-            btnTable.classList.add('active');
-            btnRow.classList.remove('active');
-            refreshChartLayout();
-        });
+    const setMode = (mode) => {
+        // If in edit mode and switching layouts, silently save the current state first to prevent losing progress.
+        if (isChartEditMode && mode !== chartLayoutMode) {
+            saveChartState(true);
+        }
+
+        chartLayoutMode = mode;
+        updateChartGroupingButtonsUI();
+        const currentEventId = localStorage.getItem('seatlify_current_event_id');
+        if (currentEventId) {
+            localStorage.setItem(`seatlify_chart_layout_mode_${currentEventId}`, mode);
+        }
+        deselectAllChartGroups();
+        refreshChartLayout();
+    };
+
+    if (btnRow && btnTable) {
+        btnRow.addEventListener('click', () => setMode('row'));
+        btnTable.addEventListener('click', () => setMode('table'));
     }
 }
 
@@ -932,21 +1227,21 @@ function loadCurrentEventStats() {
     if (countEl && currentEventId && typeof MockDB !== 'undefined') {
         const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
         if (event) {
-            const total = parseInt(event.total_seats) || 0;
-            countEl.dataset.total = total;
+            const totalCapacity = parseInt(event.total_seats) || 0;
+            countEl.dataset.total = totalCapacity;
 
-            // Determine active tab
+            // Determine active tab and count current seats in that view
             const chartTab = document.getElementById('pills-chart-tab');
+            const isChartActive = chartTab && chartTab.classList.contains('active');
             let currentSeats = 0;
-            if (chartTab && chartTab.classList.contains('active')) {
+            if (isChartActive) {
                 // Chart view is active
                 currentSeats = document.querySelectorAll('#seatPlannerRowContainer .chart-seat').length;
             } else {
                 // Blueprint view is active
                 currentSeats = document.querySelectorAll('#canvasInner .shape.chair').length;
             }
-            
-            countEl.textContent = `${currentSeats} / ${total}`;
+            countEl.textContent = `${currentSeats} / ${totalCapacity}`;
         } else {
             // Event ID from storage is invalid
             countEl.textContent = '0 / 0';
@@ -993,6 +1288,7 @@ function bindClearChartButton() {
             if(confirm("Clear all rows in the chart view?")) {
                 const container = document.getElementById('seatPlannerRowContainer');
                 if(container) container.innerHTML = '';
+                deselectAllChartGroups();
                 if (isChartEditMode) addChartRowButton(container);
                 loadCurrentEventStats();
             }
@@ -1048,6 +1344,7 @@ function loadBlueprintLayout() {
 
 function refreshChartLayout() {
     const currentEventId = localStorage.getItem('seatlify_current_event_id');
+    deselectAllChartGroups();
     if (currentEventId) {
         generateChartLayout();
     }
@@ -1079,10 +1376,11 @@ function generateChartLayout(totalSeats = 0) {
         // Iterate over saved groups and render them
         savedLayoutData.forEach(groupData => {
             const groupDiv = document.createElement('div');
-            groupDiv.className = 'p-3 border rounded shadow-sm';
+            groupDiv.className = 'p-3 border rounded shadow-sm chart-group';
             groupDiv.dataset.originalLabel = groupData.label;
             groupDiv.style.backgroundColor = 'var(--bg-panel)';
             groupDiv.style.borderColor = 'var(--border-color)';
+            groupDiv.style.cursor = 'pointer';
             if (chartLayoutMode === 'table') {
                 groupDiv.classList.add('text-center');
                 groupDiv.style.width = '200px';
@@ -1104,6 +1402,7 @@ function generateChartLayout(totalSeats = 0) {
                 </div>
                 <span class="badge bg-secondary">${groupData.seats} seats</span>`;
             groupDiv.appendChild(header);
+            groupDiv.addEventListener('click', () => selectChartGroup(groupDiv));
             header.querySelector('.btn-edit-label').addEventListener('click', editChartLabel);
 
             const seatsDiv = document.createElement('div');
@@ -1171,7 +1470,7 @@ function generateChartLayout(totalSeats = 0) {
         console.log(`No saved layout for '${chartLayoutMode}'. Auto-building from total seats: ${totalSeats}.`);
         if (chartLayoutMode === 'table') {
             // TABLE LAYOUT
-            const seatsPerTable = 10;
+            const seatsPerTable = (event && parseInt(event.seats_per_table)) || 10;
             const numTables = Math.ceil(totalSeats / seatsPerTable);
             let seatsRendered = 0;
 
@@ -1183,10 +1482,11 @@ function generateChartLayout(totalSeats = 0) {
                 const ticketTier = event && event.tickets ? event.tickets.find(t => t.name === tableLabel) : null;
                 const price = ticketTier ? ticketTier.price : 0;
 
-                tableEl.className = 'border rounded p-3 text-center shadow-sm';
+                tableEl.className = 'border rounded p-3 text-center shadow-sm chart-group';
                 tableEl.style.backgroundColor = 'var(--bg-panel)';
                 tableEl.style.width = '200px';
                 tableEl.style.borderColor = 'var(--border-color)';
+                tableEl.style.cursor = 'pointer';
 
                 const tableHeader = document.createElement('div');
                 tableHeader.className = 'd-flex justify-content-center align-items-center gap-2 mb-2';
@@ -1195,6 +1495,7 @@ function generateChartLayout(totalSeats = 0) {
                     <button class="btn btn-sm btn-link p-0 btn-edit-label" title="Edit Label" style="display: none; color: var(--text-muted);"><i class="bi bi-pencil-square"></i></button>
                 `;
                 tableEl.appendChild(tableHeader);
+                tableEl.addEventListener('click', () => selectChartGroup(tableEl));
                 tableHeader.querySelector('.btn-edit-label').addEventListener('click', editChartLabel);
 
                 const seatsContainer = document.createElement('div');
@@ -1258,10 +1559,11 @@ function generateChartLayout(totalSeats = 0) {
             
             for (let i = 0; i < groupCount; i++) {
                 const groupDiv = document.createElement('div');
-                groupDiv.className = 'p-3 border rounded shadow-sm';
+                groupDiv.className = 'p-3 border rounded shadow-sm chart-group';
                 groupDiv.style.backgroundColor = 'var(--bg-panel)';
                 groupDiv.style.borderColor = 'var(--border-color)';
-                
+                groupDiv.style.cursor = 'pointer';
+
                 const header = document.createElement('div');
                 header.className = 'd-flex justify-content-between align-items-center mb-2';
                 const labelText = `Row ${String.fromCharCode(65 + (i % 26))}${Math.floor(i/26) > 0 ? Math.floor(i/26) : ''}`;
@@ -1276,6 +1578,7 @@ function generateChartLayout(totalSeats = 0) {
                     <span class="badge bg-secondary">${Math.min(seatsPerGroup, totalSeats - (i * seatsPerGroup))} seats</span>
                 `;
                 groupDiv.appendChild(header);
+                groupDiv.addEventListener('click', () => selectChartGroup(groupDiv));
                 header.querySelector('.btn-edit-label').addEventListener('click', editChartLabel);
 
                 const seatsDiv = document.createElement('div');
@@ -1339,12 +1642,13 @@ function generateChartLayout(totalSeats = 0) {
     addChartRowButton(container);
     updateChartEditModeUI();
     loadCurrentEventStats();
+    updateOverallSliderMax();
 }
 
 function addNewRowToChart() {
     const container = document.getElementById('seatPlannerRowContainer');
-    const addBtn = document.getElementById('chartAddRowBtn');
-    if (!container || !addBtn) return;
+    const btnWrapper = document.getElementById('chartBtnWrapper');
+    if (!container || !btnWrapper) return;
 
     // Remove placeholder if it exists
     const placeholder = container.querySelector('.text-center.text-muted');
@@ -1353,9 +1657,10 @@ function addNewRowToChart() {
     }
 
     const groupDiv = document.createElement('div');
-    groupDiv.className = 'p-3 border rounded shadow-sm';
+    groupDiv.className = 'p-3 border rounded shadow-sm chart-group';
     groupDiv.style.backgroundColor = 'var(--bg-panel)';
     groupDiv.style.borderColor = 'var(--border-color)';
+    groupDiv.style.cursor = 'pointer';
 
     const existingRows = container.querySelectorAll('.p-3.border.rounded.shadow-sm').length;
     let labelText;
@@ -1381,13 +1686,16 @@ function addNewRowToChart() {
     `;
 
     groupDiv.querySelector('.btn-edit-label').addEventListener('click', editChartLabel);
+    groupDiv.addEventListener('click', () => selectChartGroup(groupDiv));
 
     const seatsDiv = groupDiv.querySelector('.d-flex.flex-wrap.gap-2');
     if (seatsDiv) {
         seatsDiv.appendChild(createChartAddSeatBtn());
+        seatsDiv.appendChild(createChartReduceSeatBtn());
     }
 
-    container.insertBefore(groupDiv, addBtn);
+    container.insertBefore(groupDiv, btnWrapper);
+    updateOverallSliderMax();
 }
 
 function editChartLabel(e) {
@@ -1404,13 +1712,54 @@ function editChartLabel(e) {
     }
 }
 
+function selectChartGroup(groupEl) {
+    if (!isChartEditMode) return;
+
+    // Deselect previous one if it's different
+    if (selectedChartGroup && selectedChartGroup !== groupEl) {
+        selectedChartGroup.classList.remove('selected');
+    }
+
+    // Toggle selection on the current element
+    if (selectedChartGroup === groupEl) {
+        // It was already selected, so deselect it
+        groupEl.classList.remove('selected');
+        deselectAllChartGroups(); // Use helper to hide slider etc.
+    } else {
+        // It's a new selection
+        groupEl.classList.add('selected');
+        selectedChartGroup = groupEl;
+
+        // Show slider and set its value
+        const sliderContainer = document.getElementById('seatSliderContainer');
+        const valueEl = document.getElementById('currentSeatSliderValue');
+        const currentSeatCount = groupEl.querySelectorAll('.chart-seat').length;
+
+        if (chartSeatSlider) {
+            // Slides are 1-30, so index is value-1
+            const slideIndex = Math.max(0, currentSeatCount - 1);
+            chartSeatSlider.slideTo(slideIndex, 0); // Slide to the number without animation
+        }
+        if (valueEl) valueEl.textContent = currentSeatCount;
+        if (sliderContainer) {
+            sliderContainer.style.display = 'block';
+        }
+    }
+}
+
 function updateChartEditModeUI() {
     const container = document.getElementById('seatPlannerRowContainer');
     if (!container) return;
 
-    const addBtn = document.getElementById('chartAddRowBtn');
-    if (addBtn) {
-        addBtn.style.display = isChartEditMode ? 'block' : 'none';
+    const btnWrapper = document.getElementById('chartBtnWrapper');
+    if (btnWrapper) {
+        btnWrapper.style.display = isChartEditMode ? 'flex' : 'none';
+    }
+
+    // Show/hide the overall seat slider based on edit mode
+    const overallSliderContainer = document.getElementById('overallSeatSliderContainer');
+    if (overallSliderContainer) {
+        overallSliderContainer.style.display = isChartEditMode ? 'block' : 'none';
     }
 
     const btnAutoBuild = document.getElementById('btnAutoBuild');
@@ -1452,25 +1801,46 @@ function updateChartEditModeUI() {
         const seatsDiv = row.querySelector('.d-flex.flex-wrap.gap-2');
         if (seatsDiv) {
             const existingBtn = seatsDiv.querySelector('.btn-add-seat-chart');
+            const existingReduceBtn = seatsDiv.querySelector('.btn-reduce-seat-chart');
             
             if (isChartEditMode) {
                 if (!existingBtn) {
                     seatsDiv.appendChild(createChartAddSeatBtn());
                 }
+                if (!existingReduceBtn) {
+                    seatsDiv.appendChild(createChartReduceSeatBtn());
+                }
             } else {
                 if (existingBtn) {
                     existingBtn.remove();
+                }
+                if (existingReduceBtn) {
+                    existingReduceBtn.remove();
                 }
             }
         }
     });
 
-    // Manage Popovers: Ensure they are initialized (even in edit mode)
+    // Manage Popovers: Disable in edit mode, enable in view mode.
     const seats = container.querySelectorAll('.chart-seat');
     seats.forEach(seat => {
-        const popover = bootstrap.Popover.getInstance(seat);
-        if (!popover) new bootstrap.Popover(seat, { container: 'body' });
+        let popover = bootstrap.Popover.getInstance(seat);
+        // Initialize if it doesn't exist
+        if (!popover) {
+            popover = new bootstrap.Popover(seat, { container: 'body' });
+        }
+        
+        // Enable or disable based on the current mode
+        if (isChartEditMode) {
+            popover.disable();
+        } else {
+            popover.enable();
+        }
     });
+
+    if (!isChartEditMode) {
+        deselectAllChartGroups();
+    }
 }
 
 function createChartAddSeatBtn() {
@@ -1540,10 +1910,41 @@ function createChartAddSeatBtn() {
         seatEl.dataset.bsContainer = 'body';
 
         seatsDiv.insertBefore(seatEl, this);
-        new bootstrap.Popover(seatEl, { container: 'body' });
+        const popover = new bootstrap.Popover(seatEl, { container: 'body' });
+        // This button is only visible in edit mode, so disable the popover immediately.
+        popover.disable();
 
         // Update main counter
         loadCurrentEventStats();
+    };
+    return btn;
+}
+
+function createChartReduceSeatBtn() {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-outline-danger border-dashed btn-reduce-seat-chart d-flex align-items-center justify-content-center';
+    btn.style.width = '30px';
+    btn.style.height = '30px';
+    btn.style.borderRadius = chartLayoutMode === 'table' ? '50%' : '4px';
+    btn.innerHTML = '<i class="bi bi-dash"></i>';
+    btn.title = 'Remove Seat';
+    
+    btn.onclick = function(e) {
+        e.stopPropagation();
+        const seatsDiv = this.parentNode;
+        const seats = seatsDiv.querySelectorAll('.chart-seat');
+        
+        if (seats.length > 0) {
+            seats[seats.length - 1].remove();
+            
+            const rowCard = seatsDiv.closest('.chart-group');
+            if (rowCard) {
+                const badge = rowCard.querySelector('.badge');
+                if(badge) badge.textContent = `${seats.length - 1} seats`;
+            }
+            
+            loadCurrentEventStats();
+        }
     };
     return btn;
 }

@@ -76,6 +76,15 @@ function setupNavigationEvents() {
 async function handleNavClick(e, link) {
     e.preventDefault();
     const target = link.dataset.target;
+    const currentActiveTab = localStorage.getItem('seatlify_active_dashboard_tab');
+
+    // If navigating away from the seat-planner, trigger a silent save to prevent data loss.
+    if (currentActiveTab === 'seat-planner' && target !== 'seat-planner') {
+        if (typeof window.saveCurrentPlannerState === 'function') {
+            console.log('Navigating away from seat planner, auto-saving state.');
+            window.saveCurrentPlannerState();
+        }
+    }
 
     // Update Active State in both Sidebar and Bottom Nav
     document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(l => l.classList.remove('active'));
