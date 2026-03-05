@@ -57,10 +57,11 @@ const historyManager = {
         if (this.undoStack.length > this.maxHistory) {
             this.undoStack.shift();
         }
+        this.updateButtons();
     },
 
     undo: function() {
-        if (this.undoStack.length === 0) return;
+        if (this.undoStack.length <= 1) return;
 
         const canvas = document.getElementById("canvasInner");
         if (!canvas) return;
@@ -68,6 +69,7 @@ const historyManager = {
         this.redoStack.push(canvas.innerHTML);
         canvas.innerHTML = this.undoStack.pop();
         this.rebindAllEvents();
+        this.updateButtons();
     },
 
     redo: function() {
@@ -79,6 +81,7 @@ const historyManager = {
         this.undoStack.push(canvas.innerHTML);
         canvas.innerHTML = this.redoStack.pop();
         this.rebindAllEvents();
+        this.updateButtons();
     },
 
     rebindAllEvents: function() {
@@ -95,6 +98,83 @@ const historyManager = {
     clear: function() {
         this.undoStack = [];
         this.redoStack = [];
+        this.updateButtons();
+    },
+
+    updateButtons: function() {
+        const btnUndo = document.getElementById('btnUndoBlueprint');
+        const btnRedo = document.getElementById('btnRedoBlueprint');
+        if (btnUndo) btnUndo.disabled = this.undoStack.length <= 1;
+        if (btnRedo) btnRedo.disabled = this.redoStack.length === 0;
+    }
+};
+
+const chartHistoryManager = {
+    undoStack: [],
+    redoStack: [],
+    maxHistory: 50,
+
+    saveState: function() {
+        if (!isChartEditMode) return;
+        const container = document.getElementById("seatPlannerRowContainer");
+        if (!container) return;
+        const currentState = container.innerHTML;
+        
+        if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === currentState) {
+            return; // Don't save if state is identical
+        }
+
+        this.redoStack = []; // Clear redo stack on new action
+        this.undoStack.push(currentState);
+
+        if (this.undoStack.length > this.maxHistory) {
+            this.undoStack.shift();
+        }
+        this.updateButtons();
+    },
+
+    undo: function() {
+        if (!isChartEditMode || this.undoStack.length <= 1) return;
+        
+        const container = document.getElementById("seatPlannerRowContainer");
+        if (!container) return;
+
+        this.redoStack.push(container.innerHTML);
+        container.innerHTML = this.undoStack.pop();
+        this.rebindChartEvents();
+        this.updateButtons();
+    },
+
+    redo: function() {
+        if (!isChartEditMode || this.redoStack.length === 0) return;
+
+        const container = document.getElementById("seatPlannerRowContainer");
+        if (!container) return;
+
+        this.undoStack.push(container.innerHTML);
+        container.innerHTML = this.redoStack.pop();
+        this.rebindChartEvents();
+        this.updateButtons();
+    },
+    
+    rebindChartEvents: function() {
+        initChartSortable();
+        updateChartEditModeUI();
+        loadCurrentEventStats();
+        deselectAllChartGroups();
+    },
+
+    clear: function() {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.updateButtons();
+    },
+
+    updateButtons: function() {
+        const btnUndo = document.getElementById('btnUndoChart');
+        const btnRedo = document.getElementById('btnRedoChart');
+        if (btnUndo) btnUndo.disabled = this.undoStack.length <= 1 || !isChartEditMode;
+        if (btnRedo) btnRedo.disabled = this.redoStack.length === 0 || !isChartEditMode;
     }
 };
 
@@ -128,9 +208,11 @@ export function initSeatPlanner() {
     if (!seatPlannerInitialized) {
         console.log("Binding global listeners for seat planner.");
         bindKeyboardShortcuts();
-        // Expose the save function to the window scope and add listeners for auto-saving
+        // Expose the save function to the window scope for SPA navigation
         window.saveCurrentPlannerState = saveCurrentPlannerState;
-        window.addEventListener('beforeunload', window.saveCurrentPlannerState);
+        // Add listeners to save state automatically before the page is unloaded (e.g., refresh, close tab)
+        window.addEventListener('beforeunload', saveCurrentPlannerState);
+        window.addEventListener('pagehide', saveCurrentPlannerState);
     }
 
     seatPlannerInitialized = true;
@@ -162,6 +244,7 @@ export function initSeatPlanner() {
     updateChartGroupingButtonsUI();
 
     historyManager.clear();
+    bindUndoRedoButtons();
     bindToolSelection();
     bindToolbarDragAndDrop();
     bindMouseEvents();
@@ -183,9 +266,29 @@ export function initSeatPlanner() {
     refreshChartLayout();
 }
 
+function bindUndoRedoButtons() {
+    // Blueprint buttons
+    const btnUndoBlueprint = document.getElementById('btnUndoBlueprint');
+    const btnRedoBlueprint = document.getElementById('btnRedoBlueprint');
+    if (btnUndoBlueprint) btnUndoBlueprint.addEventListener('click', () => historyManager.undo());
+    if (btnRedoBlueprint) btnRedoBlueprint.addEventListener('click', () => historyManager.redo());
+
+    // Chart buttons
+    const btnUndoChart = document.getElementById('btnUndoChart');
+    const btnRedoChart = document.getElementById('btnRedoChart');
+    if (btnUndoChart) btnUndoChart.addEventListener('click', () => chartHistoryManager.undo());
+    if (btnRedoChart) btnRedoChart.addEventListener('click', () => chartHistoryManager.redo());
+}
+
 function bindOverallSeatSlider() {
     const slider = document.getElementById('seat-slider');
     if (!slider) return;
+
+    slider.addEventListener('change', () => {
+        if (isChartEditMode) {
+            chartHistoryManager.saveState();
+        }
+    });
 
     slider.addEventListener('input', (e) => {
         if (!isChartEditMode) {
@@ -196,7 +299,6 @@ function bindOverallSeatSlider() {
             }
             return;
         }
-
         const newSeatCount = parseInt(e.target.value, 10);
 
         document.querySelectorAll('#seatPlannerRowContainer .chart-group').forEach(group => {
@@ -357,6 +459,7 @@ function initSeatSlider() {
         if (valueEl) {
             const newSeatCount = parseInt(chartSeatSlider.slides[chartSeatSlider.activeIndex].textContent);
             valueEl.textContent = newSeatCount;
+            chartHistoryManager.saveState();
             if (selectedChartGroup) {
                 updateSeatsInSelectedGroup(newSeatCount);
             }
@@ -373,6 +476,7 @@ function initSeatSlider() {
 function updateSeatsInSelectedGroup(newSeatCount) {
     if (!selectedChartGroup) return;
 
+    
     const seatsDiv = selectedChartGroup.querySelector('.d-flex.flex-wrap.gap-2');
     if (!seatsDiv) return;
 
@@ -445,6 +549,7 @@ function removeLastRowFromChart() {
 
     const groups = container.querySelectorAll('.chart-group');
     if (groups.length > 0) {
+        chartHistoryManager.saveState();
         const lastGroup = groups[groups.length - 1];
         if (selectedChartGroup === lastGroup) {
             deselectAllChartGroups();
@@ -594,18 +699,31 @@ function bindKeyboardShortcuts() {
             return;
         }
 
+        const isChartActive = document.getElementById('pills-chart-tab')?.classList.contains('active');
+
         // Undo (Ctrl+Z)
         if (e.ctrlKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
             e.preventDefault();
-            historyManager.undo();
+            if (isChartActive) {
+                if (isChartEditMode) chartHistoryManager.undo();
+            } else {
+                historyManager.undo();
+            }
         }
         // Redo (Ctrl+Shift+Z or Ctrl+Y)
         else if (e.ctrlKey && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
             e.preventDefault();
-            historyManager.redo();
+            if (isChartActive) {
+                if (isChartEditMode) chartHistoryManager.redo();
+            } else {
+                historyManager.redo();
+            }
         }
         // Delete selected shape
         else if (e.key === 'Delete' || e.key === 'Backspace') {
+            // This only applies to the blueprint view
+            if (isChartActive) return;
+
             if (selectedShape) {
                 e.preventDefault(); // Prevent browser back navigation on Backspace
                 historyManager.saveCurrentState(); // Save state before deleting
@@ -1110,7 +1228,8 @@ function initChartSortable() {
         new Sortable(container, {
             animation: 150,
             ghostClass: 'bg-light',
-            draggable: '.shadow-sm'
+            draggable: '.shadow-sm',
+            onEnd: () => chartHistoryManager.saveState()
         });
     }
 }
@@ -1207,6 +1326,9 @@ function bindTabSwitchers() {
 
     if (chartTab) {
         chartTab.addEventListener('shown.bs.tab', () => {
+            // Blueprint is being hidden, save its state
+            saveBlueprintState(true);
+
             loadCurrentEventStats();
             refreshChartLayout();
         });
@@ -1214,8 +1336,14 @@ function bindTabSwitchers() {
 
     if (blueprintTab) {
         blueprintTab.addEventListener('shown.bs.tab', () => {
+            // Chart is being hidden, save its state
+            saveChartState(true);
+
             loadBlueprintLayout();
             loadCurrentEventStats();
+            // After blueprint is loaded, clear and save its initial state for undo/redo
+            historyManager.clear();
+            historyManager.saveCurrentState();
         });
     }
 }
@@ -1273,6 +1401,7 @@ function bindAutoBuildButton() {
             }
 
             if (totalSeats > 0) {
+                chartHistoryManager.saveState();
                 generateChartLayout(totalSeats);
             } else {
                 alert("Please set a total seat count for this event first.");
@@ -1286,6 +1415,7 @@ function bindClearChartButton() {
     if (btn) {
         btn.addEventListener('click', () => {
             if(confirm("Clear all rows in the chart view?")) {
+                chartHistoryManager.saveState();
                 const container = document.getElementById('seatPlannerRowContainer');
                 if(container) container.innerHTML = '';
                 deselectAllChartGroups();
@@ -1348,6 +1478,8 @@ function refreshChartLayout() {
     if (currentEventId) {
         generateChartLayout();
     }
+    chartHistoryManager.clear();
+    chartHistoryManager.saveState();
 }
 
 function generateChartLayout(totalSeats = 0) {
@@ -1355,6 +1487,10 @@ function generateChartLayout(totalSeats = 0) {
     if (!container) return;
 
     container.innerHTML = '';
+
+    // Save initial state for undo/redo before generating
+    // This will be the baseline state
+    // chartHistoryManager.saveState();
 
     // --- Get event and saved layout data ---
     const currentEventId = localStorage.getItem('seatlify_current_event_id');
@@ -1694,6 +1830,7 @@ function addNewRowToChart() {
         seatsDiv.appendChild(createChartReduceSeatBtn());
     }
 
+    chartHistoryManager.saveState();
     container.insertBefore(groupDiv, btnWrapper);
     updateOverallSliderMax();
 }
@@ -1706,7 +1843,8 @@ function editChartLabel(e) {
     if (labelEl) {
         const currentLabel = labelEl.textContent;
         const newLabel = prompt("Enter new label:", currentLabel);
-        if (newLabel && newLabel.trim() !== "") {
+        if (newLabel && newLabel.trim() !== "" && newLabel.trim() !== currentLabel) {
+            chartHistoryManager.saveState();
             labelEl.textContent = newLabel.trim();
         }
     }
@@ -1841,6 +1979,8 @@ function updateChartEditModeUI() {
     if (!isChartEditMode) {
         deselectAllChartGroups();
     }
+
+    chartHistoryManager.updateButtons();
 }
 
 function createChartAddSeatBtn() {
@@ -1854,6 +1994,8 @@ function createChartAddSeatBtn() {
     
     btn.onclick = function(e) {
         e.stopPropagation();
+
+        chartHistoryManager.saveState();
 
         const totalSeatsEl = document.getElementById('plannerTotalSeats');
         const chartContainer = document.getElementById('seatPlannerRowContainer');
@@ -1935,6 +2077,7 @@ function createChartReduceSeatBtn() {
         const seats = seatsDiv.querySelectorAll('.chart-seat');
         
         if (seats.length > 0) {
+            chartHistoryManager.saveState();
             seats[seats.length - 1].remove();
             
             const rowCard = seatsDiv.closest('.chart-group');

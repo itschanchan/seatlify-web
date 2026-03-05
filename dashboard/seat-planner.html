@@ -95,25 +95,33 @@
                         <div class="accordion mb-3" id="chartToolsAccordion">
                             <div class="accordion-item" style="background-color: var(--bg-panel); border-color: var(--border-color);">
                                 <h2 class="accordion-header" id="headingTools">
-                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chartToolsCollapse" aria-expanded="true" aria-controls="chartToolsCollapse" style="background-color: var(--bg-panel); color: var(--text-main); box-shadow: none;">
+                                    <button class="accordion-button py-2" type="button" data-bs-toggle="collapse" data-bs-target="#chartToolsCollapse" aria-expanded="true" aria-controls="chartToolsCollapse" style="background-color: var(--bg-panel); color: var(--text-main); box-shadow: none;">
                                         <i class="bi bi-tools me-2"></i> Tools
                                     </button>
                                 </h2>
                                 <div id="chartToolsCollapse" class="accordion-collapse collapse show" aria-labelledby="headingTools" data-bs-parent="#chartToolsAccordion">
                                     <div class="accordion-body p-2">
                                         <div class="d-flex gap-2 flex-wrap align-items-center">
-                                    <button class="btn btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
+                                    <button class="btn btn-sm btn-outline-secondary active" id="btnGroupRow" title="Group by Row" style="color: var(--text-main); border-color: var(--border-color);">
                                         <i class="bi bi-list-ul"></i> <span class="d-none d-sm-inline">Row</span>
                                     </button>
-                                    <button class="btn btn-outline-secondary" id="btnGroupTable" title="Group by Table" style="color: var(--text-main); border-color: var(--border-color);">
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnGroupTable" title="Group by Table" style="color: var(--text-main); border-color: var(--border-color);">
                                         <i class="bi bi-grid-3x3"></i> <span class="d-none d-sm-inline">Table</span>
                                     </button>
                                     <div class="vr d-none d-md-block"></div>
-                                    <button class="btn btn-primary" id="btnAutoBuild" style="background-color: var(--primary); border-color: var(--primary);">
+                                    <button class="btn btn-sm btn-primary" id="btnAutoBuild" style="background-color: var(--primary); border-color: var(--primary);">
                                         <i class="bi bi-magic"></i> <span class="d-none d-sm-inline">Auto Build</span>
                                     </button>
-                                    <button class="btn btn-outline-danger" id="btnClearChart">
+                                    <button class="btn btn-sm btn-outline-danger" id="btnClearChart">
                                         <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Clear</span>
+                                    </button>
+                                    <div class="vr mx-2 d-none d-md-block"></div>
+                                    <!-- Undo/Redo Buttons -->
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnUndoChart" title="Undo (Ctrl+Z)" disabled>
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnRedoChart" title="Redo (Ctrl+Y)" disabled>
+                                        <i class="bi bi-arrow-clockwise"></i>
                                     </button>
                                     <div class="vr mx-2 d-none d-md-block"></div>
                                     <div class="form-check form-switch mb-0">
@@ -121,10 +129,12 @@
                                         <label class="form-check-label" for="toggleRowLabels" style="color: var(--text-main); cursor: pointer;">Labels</label>
                                     </div>
                                     <div class="vr mx-2 d-none d-md-block"></div>
-                                    <button class="btn btn-outline-secondary" id="btnEditChart" style="display: none;"><i class="bi bi-pencil"></i> Edit</button>
-                                    <button class="btn btn-primary" id="btnSaveChart">
-                                        <i class="bi bi-save"></i> Save
-                                    </button>
+                                    <div class="ms-auto">
+                                        <button class="btn btn-sm btn-outline-secondary" id="btnEditChart" style="display: none;"><i class="bi bi-pencil"></i> Edit</button>
+                                        <button class="btn btn-sm btn-primary" id="btnSaveChart">
+                                            <i class="bi bi-save"></i> Save
+                                        </button>
+                                    </div>
                                         </div>
                                     </div>
                                 </div>
@@ -148,11 +158,11 @@
         </div>
 
         <!-- MAP VIEW -->
-        <div class="tab-pane fade" id="pills-blueprint" role="tabpanel" aria-labelledby="pills-blueprint-tab">
+        <div class="tab-pane fade d-flex flex-column" id="pills-blueprint" role="tabpanel" aria-labelledby="pills-blueprint-tab" style="height: 75vh;">
         <!-- CANVAS WRAPPER -->
-        <div class="position-relative mb-3 shadow-sm border rounded overflow-hidden w-100">
+        <div class="position-relative shadow-sm border rounded overflow-hidden w-100 flex-grow-1">
             <!-- CANVAS -->
-            <div class="seat-planner-container grid-background" id="canvas" style="border: none; background-color: var(--bg-panel);">
+            <div class="seat-planner-container grid-background h-100" id="canvas" style="border: none; background-color: var(--bg-panel);">
                 <div class="canvas-inner" id="canvasInner">
                 </div>
             </div>
@@ -167,7 +177,7 @@
         </div>
 
             <!-- TOOLBAR -->
-            <div class="btn-toolbar gap-1 justify-content-center flex-wrap p-2 rounded shadow-sm border" id="seatPlannerToolbar" style="background-color: var(--bg-panel); border-color: var(--border-color) !important;">
+            <div class="btn-toolbar gap-1 justify-content-center flex-wrap p-2 rounded shadow-sm border mt-3" id="seatPlannerToolbar" style="background-color: var(--bg-panel); border-color: var(--border-color) !important; flex-shrink: 0;">
 
                 <!-- Select -->
                 <button class="btn btn-outline-secondary tool-btn active" data-tool="select">
@@ -227,6 +237,16 @@
                 <!-- Clear Button -->
                 <button class="btn btn-outline-danger" id="clearBtn">
                     <i class="bi bi-trash"></i>
+                </button>
+
+                <div class="vr mx-2"></div>
+
+                <!-- Undo/Redo -->
+                <button class="btn btn-outline-secondary" id="btnUndoBlueprint" title="Undo (Ctrl+Z)" disabled>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                <button class="btn btn-outline-secondary" id="btnRedoBlueprint" title="Redo (Ctrl+Y)" disabled>
+                    <i class="bi bi-arrow-clockwise"></i>
                 </button>
 
                 <div class="vr mx-2"></div>

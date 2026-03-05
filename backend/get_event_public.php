@@ -6,13 +6,19 @@ error_reporting(E_ALL);       // Still log errors internally
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); // Allow access from other devices/ports
-header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 $response = ['success' => false, 'message' => 'Unknown error'];
 
 try {
     // 2. Check if file exists before requiring
-    if (!file_exists('db_connection.php')) {
+    if (!file_exists('db_connect.php')) {
         throw new Exception("Database configuration missing.");
     }
     require_once 'db_connect.php';

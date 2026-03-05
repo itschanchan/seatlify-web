@@ -5,6 +5,11 @@ let notificationsInitialized = false;
 let dashboardInitialized = false;
 let dashboardFilter = 'current'; // 'current' or 'past'
 
+// --- Event Manager State (for "All Events" section) ---
+let eventManagerInitialized = false;
+let currentEventView = 'table';
+let calendarDate = new Date();
+
 export function initDashboard() {
     // Bind Tabs
     const tabCurrent = document.getElementById('tabCurrent');
@@ -56,6 +61,62 @@ export function initDashboard() {
         });
     }
     
+    // --- QR Scanner Logic ---
+    const qrScannerModalEl = document.getElementById('qrScannerModal');
+    if (qrScannerModalEl) {
+        let html5QrCode; // To hold the scanner instance
+
+        const onScanSuccess = (decodedText, decodedResult) => {
+            // Handle the scanned code here.
+            console.log(`Code matched = ${decodedText}`, decodedResult);
+
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (!currentEventId) {
+                alert("No event selected to check-in to.");
+                return;
+            }
+
+            // In a real app, you'd parse `decodedText` to get ticket/guest info.
+            // For this simulation, we'll just check-in a guest for the current event.
+            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+            const result = MockDB.checkInAttendee(currentEventId);
+
+            if (result.success) {
+                alert(`Check-in successful for "${event.title}"!\nTotal Checked-in: ${result.checkedIn}`);
+            } else {
+                alert(`Check-in failed: ${result.message}`);
+            }
+
+            // Hide the modal after a scan attempt
+            const modal = bootstrap.Modal.getInstance(qrScannerModalEl);
+            if (modal) {
+                modal.hide();
+            }
+        };
+
+        const onScanFailure = (error) => {
+            // handle scan failure, usually better to ignore and keep scanning.
+        };
+
+        qrScannerModalEl.addEventListener('shown.bs.modal', () => {
+            if (typeof Html5Qrcode !== 'undefined') {
+                html5QrCode = new Html5Qrcode("qr-reader");
+                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
+                .catch(err => {
+                    console.error("Unable to start QR scanner", err);
+                    const readerEl = document.getElementById('qr-reader');
+                    if(readerEl) readerEl.innerHTML = `<div class="alert alert-danger">Error: Could not start camera. Please grant camera permissions.</div>`;
+                });
+            }
+        });
+
+        qrScannerModalEl.addEventListener('hidden.bs.modal', () => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().catch(err => console.error("Failed to stop QR scanner.", err));
+            }
+        });
+    }
+
     if (!dashboardInitialized) {
         // Listen for DB updates to refresh the view in real-time
         window.addEventListener('db-events-updated', () => {
@@ -82,7 +143,6 @@ export function initDashboard() {
         dashboardInitialized = true;
     }
 
-    // Initialize the event manager views (table, calendar, etc.) for the "All Events" section
     initEventManager();
 
     // --- Analytics Initialization ---
@@ -624,33 +684,10 @@ function clearDashboardView() {
     if(draftAction) draftAction.style.display = 'none';
 }
 
-window.simulateScanSuccess = function() {
-    const modalEl = document.getElementById('qrScannerModal');
-    const currentEventId = localStorage.getItem('seatlify_current_event_id');
 
-    if (!currentEventId) {
-        alert("No event selected to check-in to.");
-        return;
-    }
-
-    const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
-    const result = MockDB.checkInAttendee(currentEventId);
-
-    if (result.success) {
-        alert(`Check-in successful for "${event.title}"!\nTotal Checked-in: ${result.checkedIn}`);
-    } else {
-        alert(`Check-in failed: ${result.message}`);
-    }
-
-    if (modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-    }
-};
-
-let eventManagerInitialized = false;
-let currentEventView = 'table';
-let calendarDate = new Date();
+// ==========================================================
+// EVENT MANAGER LOGIC (for "All Events" section)
+// ==========================================================
 
 function initEventManager() {
     console.log("Initializing Event Manager");
@@ -787,14 +824,7 @@ function renderEventView() {
             grid.innerHTML = '<p class="text-muted text-center w-100">No events found.</p>';
         }
         events.forEach(event => {
-            let venueName = 'Unknown Venue';
-            if (event.venue_name) {
-                venueName = event.venue_name;
-            } else if (event.venue_id) {
-                const venue = MockDB.getVenueById(event.venue_id);
-                if (venue) venueName = venue.name;
-            }
-
+            const venueName = event.venue_name || MockDB.getVenueById(event.venue_id)?.name || 'Unknown Venue';
             const dateObj = new Date(event.start_datetime);
             const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
             const day = dateObj.getDate();
@@ -862,40 +892,20 @@ function renderEventView() {
         const tbody = document.createElement('tbody');
         tbody.id = 'eventTableBody';
 
-        if (currentEventView === 'list') {
-            table.classList.add('table-sm');
-            thead.innerHTML = `
-                <tr>
-                    <th style="width: 40px; background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);"></th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Event Name</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Date</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Status</th>
-                    <th class="text-end" style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Actions</th>
-                </tr>
-            `;
-        } else {
-            thead.innerHTML = `
-                <tr>
-                    <th style="width: 40px; background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);"></th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Event Name</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Date</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Time</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Location</th>
-                    <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Status</th>
-                    <th class="text-end" style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Actions</th>
-                </tr>
-            `;
-        }
+        thead.innerHTML = `
+            <tr>
+                <th style="width: 40px; background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);"></th>
+                <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Event Name</th>
+                <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Date</th>
+                <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Time</th>
+                <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Location</th>
+                <th style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Status</th>
+                <th class="text-end" style="background-color: var(--bg-muted); color: var(--text-main); border-bottom-color: var(--border-color);">Actions</th>
+            </tr>
+        `;
 
         events.forEach(event => {
-            let venueName = 'Unknown Venue';
-            if (event.venue_name) {
-                venueName = event.venue_name;
-            } else if (event.venue_id) {
-                const venue = MockDB.getVenueById(event.venue_id);
-                if (venue) venueName = venue.name;
-            }
-
+            const venueName = event.venue_name || MockDB.getVenueById(event.venue_id)?.name || 'Unknown Venue';
             const dateObj = new Date(event.start_datetime);
             const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const endObj = event.end_datetime ? new Date(event.end_datetime) : null;
@@ -908,49 +918,29 @@ function renderEventView() {
             const statusText = event.status.charAt(0).toUpperCase() + event.status.slice(1);
 
             const tr = document.createElement('tr');
-            
-            if (currentEventView === 'list') {
-                tr.innerHTML = `
-                    <td class="cursor-move" style="color: var(--text-muted); border-bottom-color: var(--border-color);">
-                        <i class="bi bi-grip-vertical"></i>
-                    </td>
-                    <td style="border-bottom-color: var(--border-color);">
-                        <strong>${event.title}</strong>
-                    </td>
-                    <td style="border-bottom-color: var(--border-color);">${dateStr}</td>
-                    <td style="border-bottom-color: var(--border-color);">
-                        <span class="badge ${badgeClass}">${statusText}</span>
-                    </td>
-                    <td class="text-end" style="border-bottom-color: var(--border-color);">
-                        <button class="btn btn-sm btn-outline-secondary me-1 btn-edit"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger btn-delete"><i class="bi bi-trash"></i></button>
-                    </td>
-                `;
-            } else {
-                tr.innerHTML = `
-                    <td class="cursor-move" style="color: var(--text-muted); border-bottom-color: var(--border-color);">
-                        <i class="bi bi-grip-vertical"></i>
-                    </td>
-                    <td style="border-bottom-color: var(--border-color);">
-                        <strong>${event.title}</strong>
-                        <div class="small text-muted">${event.description || ''}</div>
-                    </td>
-                    <td style="border-bottom-color: var(--border-color);">${dateStr}</td>
-                    <td style="border-bottom-color: var(--border-color);">${timeStr}</td>
-                    <td style="border-bottom-color: var(--border-color);">${venueName}</td>
-                    <td style="border-bottom-color: var(--border-color);">
-                        <span class="badge ${badgeClass}">${statusText}</span>
-                    </td>
-                    <td class="text-end table-actions" style="border-bottom-color: var(--border-color);">
-                        <button class="btn btn-sm btn-outline-secondary me-1 btn-edit" style="border-color: var(--border-color); color: var(--text-muted);">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger btn-delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                `;
-            }
+            tr.innerHTML = `
+                <td class="cursor-move" style="color: var(--text-muted); border-bottom-color: var(--border-color);">
+                    <i class="bi bi-grip-vertical"></i>
+                </td>
+                <td style="border-bottom-color: var(--border-color);">
+                    <strong>${event.title}</strong>
+                    <div class="small text-muted">${event.description || ''}</div>
+                </td>
+                <td style="border-bottom-color: var(--border-color);">${dateStr}</td>
+                <td style="border-bottom-color: var(--border-color);">${timeStr}</td>
+                <td style="border-bottom-color: var(--border-color);">${venueName}</td>
+                <td style="border-bottom-color: var(--border-color);">
+                    <span class="badge ${badgeClass}">${statusText}</span>
+                </td>
+                <td class="text-end table-actions" style="border-bottom-color: var(--border-color);">
+                    <button class="btn btn-sm btn-outline-secondary me-1 btn-edit" style="border-color: var(--border-color); color: var(--text-muted);">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
 
             tr.querySelector('.btn-edit').addEventListener('click', () => openEditModal(event.event_id));
             tr.querySelector('.btn-delete').addEventListener('click', () => {
@@ -970,9 +960,8 @@ function renderEventView() {
 
 function renderCalendar(container, events) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'calendar-wrapper p-3 rounded shadow-sm border';
-    wrapper.style.backgroundColor = 'var(--bg-panel)';
-
+    wrapper.className = 'calendar-wrapper p-3 bg-white rounded shadow-sm border';
+    
     // Header
     const header = document.createElement('div');
     header.className = 'd-flex justify-content-between align-items-center mb-3';
@@ -1032,9 +1021,8 @@ function renderCalendar(container, events) {
     // Empty cells
     for (let i = 0; i < firstDay; i++) {
         const cell = document.createElement('div');
-        cell.className = 'col p-2 border';
+        cell.className = 'col p-2 border bg-light';
         cell.style.minHeight = '100px';
-        cell.style.backgroundColor = 'var(--bg-muted)';
         row.appendChild(cell);
     }
 
@@ -1042,8 +1030,8 @@ function renderCalendar(container, events) {
         const cell = document.createElement('div');
         cell.className = 'col p-2 border position-relative';
         cell.style.minHeight = '100px';
-        cell.style.backgroundColor = 'var(--bg-muted)';
-
+        cell.style.backgroundColor = 'var(--bg-panel)';
+        
         const dayNum = document.createElement('div');
         dayNum.className = 'fw-bold mb-1';
         dayNum.textContent = day;
@@ -1089,9 +1077,8 @@ function renderCalendar(container, events) {
     const remainingCells = (7 - (firstDay + daysInMonth) % 7) % 7;
     for (let i = 0; i < remainingCells; i++) {
         const cell = document.createElement('div');
-        cell.className = 'col p-2 border';
+        cell.className = 'col p-2 border bg-light';
         cell.style.minHeight = '100px';
-        cell.style.backgroundColor = 'var(--bg-muted)';
         row.appendChild(cell);
     }
     if (row.children.length > 0) {
@@ -1109,135 +1096,10 @@ function openEditModal(eventId) {
     const event = MockDB.getEvents().find(e => e.event_id == eventId);
     if (!event) return;
 
-    // Initialize date/time pickers
-    if (typeof flatpickr !== 'undefined') { // flatpickr is still used for time
-        // Use Vanilla Calendar Pro for the date picker
-        if (typeof VanillaCalendar !== 'undefined') {
-            const options = {
-                input: true,
-                type: 'default',
-                actions: {
-                    changeToInput(e, calendar, self) {
-                        if (!self.selectedDates[0]) return calendar.HTMLInputElement.value = '';
-                        const date = new Date(self.selectedDates[0]);
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        calendar.HTMLInputElement.value = `${year}-${month}-${day}`;
-                        calendar.hide();
-                    }
-                },
-                settings: {
-                    visibility: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' }
-                }
-            };
-            const calendar = new VanillaCalendar('#editEventDate', options);
-            calendar.init();
-            const dateInput = document.getElementById('editEventDate');
-            // Add a listener to sync the calendar when the user types a date
-            if (dateInput && !dateInput.hasAttribute('vcal-listener')) {
-                dateInput.setAttribute('vcal-listener', 'true');
-                dateInput.addEventListener('change', () => {
-                    const newDate = new Date(dateInput.value);
-                    if (newDate && !isNaN(newDate.getTime())) {
-                        calendar.set({
-                            selectedDates: [dateInput.value],
-                            selectedMonth: newDate.getMonth(),
-                            selectedYear: newDate.getFullYear(),
-                        });
-                    }
-                });
-            }
-        } else { // Fallback to flatpickr if Vanilla Calendar fails to load
-            flatpickr("#editEventDate", { altInput: true, altFormat: "F j, Y", dateFormat: "Y-m-d" });
-        }
-
-        // Keep using flatpickr for time inputs
-        flatpickr("#editEventTime", {
-            allowInput: true,
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: "H:i", // For backend
-            altInput: true, // For user display
-            altFormat: "h:i K", // 12-hour format with AM/PM
-            time_24hr: false // UI picker
-        });
-        flatpickr("#editEventEndTime", {
-            allowInput: true,
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: "H:i", // For backend
-            altInput: true, // For user display
-            altFormat: "h:i K", // 12-hour format with AM/PM
-            time_24hr: false // UI picker
-        });
-    }
-
-    // Bind Send Test Ticket button
-    const btnSendTest = document.getElementById('btnSendTestTicketFromEdit');
-    if (btnSendTest) {
-        const newBtn = btnSendTest.cloneNode(true);
-        btnSendTest.parentNode.replaceChild(newBtn, btnSendTest);
-
-        newBtn.addEventListener('click', () => {
-            const email = prompt("Enter email address to send test ticket to:");
-            if (!email) return;
-
-            if (typeof emailjs === 'undefined') {
-                alert('EmailJS SDK is not loaded.');
-                return;
-            }
-
-            const originalText = newBtn.innerHTML;
-            newBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
-            newBtn.disabled = true;
-
-            const ticketId = `TEST-${Date.now()}`;
-            const templateParams = {
-                to_email: email, // Required for sending
-                attendee_name: "Test User", // Placeholder for user.name
-                event_name: document.getElementById("editEventName").value,
-                event_date: document.getElementById("editEventDate").value,
-                event_start_time: document.getElementById("editEventTime").value,
-                event_end_time: document.getElementById("editEventEndTime").value,
-                event_venue: document.getElementById("editEventVenue").value,
-                seat_label: "A-1 (Test Seat)", // Placeholder for selectedSeat.label
-                ticket_id: ticketId,
-                qr_code_url: MockDB.generateQRCodeUrl(ticketId)
-            };
-
-            // Using Service and Template ID from ticket.html as an example
-            emailjs.send("service_ryl56ps", "template_5i46vh8", templateParams)
-                .then(() => alert('Test ticket sent successfully!'))
-                .catch((err) => {
-                    console.error('EmailJS Error:', err);
-                    alert('Failed to send email: ' + JSON.stringify(err));
-                })
-                .finally(() => {
-                    newBtn.innerHTML = originalText;
-                    newBtn.disabled = false;
-                });
-        });
-    }
-
-    // Populate Venue
-    const venueInput = document.getElementById('editEventVenue');
-    if (venueInput) {
-        let venueName = '';
-        if (event.venue_name) {
-            venueName = event.venue_name;
-        } else if (event.venue_id) {
-            const venue = MockDB.getVenueById(event.venue_id);
-            if (venue) venueName = venue.name;
-        }
-        venueInput.value = venueName;
-    }
     // Populate Fields
     document.getElementById('editEventId').value = event.event_id;
     document.getElementById('editEventName').value = event.title;
     
-    // Date/Time parsing
-    // event.start_datetime is "YYYY-MM-DDTHH:MM"
     const startParts = event.start_datetime.split('T');
     document.getElementById('editEventDate').value = startParts[0];
     document.getElementById('editEventTime').value = startParts[1];
@@ -1249,138 +1111,27 @@ function openEditModal(eventId) {
         document.getElementById('editEventEndTime').value = '';
     }
 
-    const statusSelect = document.getElementById('editEventStatus');
-    if (statusSelect) {
-        statusSelect.value = event.status;
-    }
-    
+    document.getElementById('editEventStatus').value = event.status;
     document.getElementById('editEventDescription').value = event.description || '';
     document.getElementById('editEventTotalSeats').value = event.total_seats || '';
     document.getElementById('editEventTotalTables').value = event.total_tables || '';
     document.getElementById('editSeatLayout').value = event.layout_preference || 'empty';
+    document.getElementById('editEventAttendees').value = event.attendees || '';
+    document.getElementById('editEventVenue').value = event.venue_name || (MockDB.getVenueById(event.venue_id) || {}).name || '';
 
-    // Populate new Total Capacity field
-    const editEventAttendeesInput = document.getElementById('editEventAttendees');
-    if (editEventAttendeesInput) {
-        editEventAttendeesInput.value = event.attendees || '';
-        editEventAttendeesInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/,/g, '');
-        });
-    }
-    // --- SEAT CONFIG SWITCH LOGIC (EDIT MODAL) ---
-    const editSeatingSwitch = document.getElementById('editSeatingByTableSwitch');
-    const editTotalSeatsContainer = document.getElementById('editTotalSeatsContainer');
-    const editTableSeatingContainer = document.getElementById('editTableSeatingContainer');
-    const editSeatCountIndicator = document.getElementById('editSeatCountIndicator');
-
-    if (editSeatingSwitch && editTotalSeatsContainer && editTableSeatingContainer) {
-        const newSwitch = editSeatingSwitch.cloneNode(true);
-        editSeatingSwitch.parentNode.replaceChild(newSwitch, editSeatingSwitch);
-
-        const editEventTotalTablesInput = document.getElementById('editEventTotalTables');
-        const editEventSeatsPerTableInput = document.getElementById('editEventSeatsPerTable');
-        const editTableCapacityWarning = document.getElementById('editTableCapacityWarning');
-        const editEventTotalSeatsInput = document.getElementById('editEventTotalSeats');
-
-        const updateIndicator = () => {
-            if (!editSeatCountIndicator || !editEventAttendeesInput) return;
-            const capacity = parseInt(editEventAttendeesInput.value) || 0;
-            let currentSeats = 0;
-            if (newSwitch.checked) {
-                const tables = parseInt(editEventTotalTablesInput.value) || 0;
-                const seatsPer = parseInt(editEventSeatsPerTableInput.value) || 0;
-                currentSeats = tables * seatsPer;
-            } else {
-                currentSeats = parseInt(editEventTotalSeatsInput.value) || 0;
-            }
-            editSeatCountIndicator.textContent = `Current number of seats: ${currentSeats} / ${capacity}`;
-        };
-
-        [editEventAttendeesInput, editEventTotalSeatsInput, editEventTotalTablesInput, editEventSeatsPerTableInput].forEach(el => el.addEventListener('input', updateIndicator));
-
-        const validateEditTableSeatingCapacity = () => {
-            if (!newSwitch || !editEventAttendeesInput || !editEventTotalTablesInput || !editEventSeatsPerTableInput || !editTableCapacityWarning) {
-                return true; // Cannot validate if elements are missing
-            }
-
-            const totalCapacity = parseInt(editEventAttendeesInput.value) || 0;
-            const numTables = parseInt(editEventTotalTablesInput.value) || 0;
-            const seatsPerTable = parseInt(editEventSeatsPerTableInput.value) || 0;
-            const calculatedSeats = numTables * seatsPerTable;
-
-            if (newSwitch.checked) {
-                if (calculatedSeats > totalCapacity && totalCapacity > 0) {
-                    editTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) exceed total capacity (${totalCapacity})!`;
-                    editTableCapacityWarning.style.display = 'block';
-                    return false;
-                } else if (calculatedSeats > 0 && totalCapacity === 0) {
-                    editTableCapacityWarning.textContent = `Calculated seats (${calculatedSeats}) require a total capacity greater than 0.`;
-                    editTableCapacityWarning.style.display = 'block';
-                    return false;
-                } else {
-                    editTableCapacityWarning.style.display = 'none';
-                    return true;
-                }
-            }
-            return true; // No validation needed if seatingByTable is not checked
-        };
-
-        const toggleEditSeatConfig = () => {
-            if (newSwitch.checked) {
-                editTotalSeatsContainer.style.display = 'none';
-                editTableSeatingContainer.style.display = 'block';
-                validateEditTableSeatingCapacity(); // Validate when switching to table view
-                // Add listeners for table inputs
-                editEventTotalTablesInput.addEventListener('input', validateEditTableSeatingCapacity);
-                editEventSeatsPerTableInput.addEventListener('input', validateEditTableSeatingCapacity);
-                editEventAttendeesInput.addEventListener('input', validateEditTableSeatingCapacity);
-            } else {
-                editTotalSeatsContainer.style.display = 'block';
-                editTableSeatingContainer.style.display = 'none';
-                editTableCapacityWarning.style.display = 'none'; // Hide warning when switching away
-                // Remove listeners
-                editEventTotalTablesInput.removeEventListener('input', validateEditTableSeatingCapacity);
-                editEventSeatsPerTableInput.removeEventListener('input', validateEditTableSeatingCapacity);
-                editEventAttendeesInput.removeEventListener('input', validateEditTableSeatingCapacity);
-            }
-            updateIndicator();
-        };
-        
-        newSwitch.addEventListener('change', toggleEditSeatConfig);
-
-        newSwitch.checked = event.seating_by_table || false;
-        if (event.seating_by_table) {
-            document.getElementById('editEventSeatsPerTable').value = event.seats_per_table || '';
-        }
-
-        toggleEditSeatConfig();
-
-        // Initial validation when modal opens, if seating by table is active
-        if (newSwitch.checked) {
-            validateEditTableSeatingCapacity();
-        }
-        updateIndicator(); // Initial call
-    }
     // Ticket Config
-    const radioFree = document.getElementById('editTypeFree');
     const radioPaid = document.getElementById('editTypePaid');
+    const radioFree = document.getElementById('editTypeFree');
     const tiersWrapper = document.getElementById('editTicketTiersWrapper');
     const tiersList = document.getElementById('editTiersList');
 
-    if (event.is_paid) {
-        radioPaid.checked = true;
-        tiersWrapper.style.display = 'block';
-    } else {
-        radioFree.checked = true;
-        tiersWrapper.style.display = 'none';
-    }
+    radioPaid.checked = event.is_paid;
+    radioFree.checked = !event.is_paid;
+    tiersWrapper.style.display = event.is_paid ? 'block' : 'none';
 
-    // Populate Tiers
     tiersList.innerHTML = '';
     if (event.tickets && event.tickets.length > 0) {
-        event.tickets.forEach(ticket => {
-            addEditTierRow(ticket);
-        });
+        event.tickets.forEach(ticket => addEditTierRow(ticket));
     }
 
     // Show Modal
@@ -1419,43 +1170,12 @@ function addEditTierRow(ticket = null) {
 
 function saveEventChanges() {
     const id = document.getElementById('editEventId').value;
-    const event = MockDB.getEvents().find(e => e.event_id == id);
-    if (!event) return;
-
-    const name = document.getElementById('editEventName').value;
     const date = document.getElementById('editEventDate').value;
     const time = document.getElementById('editEventTime').value;
     const endTime = document.getElementById('editEventEndTime').value;
-    const venueName = document.getElementById('editEventVenue').value;
-    const statusSelect = document.getElementById('editEventStatus');
-    const desc = document.getElementById('editEventDescription').value;
-    const layout = document.getElementById('editSeatLayout').value;
-    const attendees = document.getElementById('editEventAttendees').value; // Get the value from the new input
     
-    const isPaid = document.getElementById('editTypePaid').checked;
     let tickets = [];
-
-    const seatingByTable = document.getElementById('editSeatingByTableSwitch').checked;
-    let totalSeats, totalTables, seatsPerTable;
-
-    // Re-validate before final save
-    if (seatingByTable) {
-        if (!validateEditTableSeatingCapacity()) {
-            alert("Calculated seats exceed total capacity. Please adjust your seating configuration.");
-            return; // Stop save operation
-        }
-    }
-    if (seatingByTable) {
-        totalTables = document.getElementById('editEventTotalTables').value;
-        seatsPerTable = document.getElementById('editEventSeatsPerTable').value;
-        totalSeats = (parseInt(totalTables) || 0) * (parseInt(seatsPerTable) || 0);
-    } else {
-        totalSeats = document.getElementById('editEventTotalSeats').value;
-        totalTables = 0; // When not seating by table, this field is not relevant from this form
-        seatsPerTable = 0;
-    }
-
-    if (isPaid) {
+    if (document.getElementById('editTypePaid').checked) {
         document.querySelectorAll('#editTiersList .tier-row').forEach(row => {
             const tName = row.querySelector('.tier-name').value;
             const tPrice = row.querySelector('.tier-price').value;
@@ -1464,65 +1184,28 @@ function saveEventChanges() {
         });
     }
 
-    // --- NEW LOGIC: Update table_layout_data intelligently ---
-    let newTableLayoutData = event.table_layout_data ? JSON.parse(JSON.stringify(event.table_layout_data)) : [];
-    if (seatingByTable) {
-        const numTables = parseInt(totalTables) || 0;
-        const numSeatsPerTable = parseInt(seatsPerTable) || 0;
-
-        // If more tables are needed, add them
-        while (newTableLayoutData.length < numTables) {
-            newTableLayoutData.push({
-                label: `Table ${newTableLayoutData.length + 1}`,
-                seats: 0 // will be updated below
-            });
-        }
-
-        // If fewer tables are needed, remove from the end
-        if (newTableLayoutData.length > numTables) {
-            newTableLayoutData = newTableLayoutData.slice(0, numTables);
-        }
-
-        // Update seat count for all tables
-        newTableLayoutData.forEach(table => {
-            table.seats = numSeatsPerTable;
-        });
-    }
-
-    // Find venue ID from name for compatibility, but prioritize saving the name.
-    const venues = MockDB.getVenues();
-    const venue = venues.find(v => v.name.toLowerCase() === venueName.toLowerCase());
-    const venueId = venue ? venue.venue_id : null;
-
     const updateData = {
-        title: name,
+        title: document.getElementById('editEventName').value,
         start_datetime: `${date}T${time}`,
         end_datetime: endTime ? `${date}T${endTime}` : null,
-        venue_id: venueId, // Keep for backward compatibility if found
-        venue_name: venueName, // The new source of truth
-        description: desc,
-        attendees: attendees, // Add attendees to updateData
-        total_seats: totalSeats,
-        total_tables: totalTables,
-        seating_by_table: seatingByTable,
-        seats_per_table: seatsPerTable,
-        layout_preference: layout,
-        is_paid: isPaid,
+        venue_name: document.getElementById('editEventVenue').value,
+        description: document.getElementById('editEventDescription').value,
+        attendees: document.getElementById('editEventAttendees').value,
+        total_seats: document.getElementById('editEventTotalSeats').value,
+        total_tables: document.getElementById('editEventTotalTables').value,
+        seating_by_table: document.getElementById('editSeatingByTableSwitch').checked,
+        seats_per_table: document.getElementById('editEventSeatsPerTable').value,
+        layout_preference: document.getElementById('editSeatLayout').value,
+        is_paid: document.getElementById('editTypePaid').checked,
         tickets: tickets,
-        table_layout_data: newTableLayoutData
+        status: document.getElementById('editEventStatus').value
     };
-
-    if (statusSelect) {
-        updateData.status = statusSelect.value;
-    }
 
     MockDB.updateEvent(id, updateData);
     
-    // Hide Modal
     const modalEl = document.getElementById('editEventModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) modal.hide();
-    renderEventView();
 }
 
 // Expose functions globally for Dashboard usage

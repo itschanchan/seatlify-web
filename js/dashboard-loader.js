@@ -110,20 +110,32 @@ async function handleNavClick(e, link) {
         loadSimpleContent(container, "finance.html", "Finance");
     }
     else if (target === "invitations") {
+        // MODIFIED: Load HTML, then the mock service script, then execute the inline logic.
+        // This ensures the mock service is used, avoiding CORS errors with the PHP backend.
         container.innerHTML = `<div class="demo-panel p-3">Loading Invitations...</div>`;
         try {
             const res = await fetch("invitations/invitations.html");
-            if (res.ok) {
-                container.innerHTML = await res.text();
-                // Execute scripts manually for invitations
-                const scriptTag = container.querySelector('script');
-                if (scriptTag) {
-                    const newScript = document.createElement('script');
-                    newScript.textContent = scriptTag.textContent;
-                    scriptTag.parentNode.replaceChild(newScript, scriptTag);
-                }
-            } else container.innerHTML = `<p class="text-danger">Failed to load Invitations.</p>`;
-        } catch (err) { container.innerHTML = `<p class="text-danger">Error loading Invitations.</p>`; }
+            if (!res.ok) throw new Error('Failed to load invitations.html');
+            
+            container.innerHTML = await res.text();
+
+            // Find the original inline script but don't run it yet.
+            const inlineScript = container.querySelector('script');
+            const inlineScriptContent = inlineScript ? inlineScript.textContent : '';
+            if (inlineScript) {
+                inlineScript.remove(); // Prevent original from executing
+            }
+
+            // Now, load the external mock service script. This will set up window.InvitationService.
+            await import('../js/invitations.js');
+
+            // After the mock service is on the window, execute the original inline script's logic.
+            if (inlineScriptContent) {
+                const script = document.createElement('script');
+                script.textContent = inlineScriptContent;
+                document.body.appendChild(script).remove(); // Append, run, and immediately remove.
+            }
+        } catch (err) { console.error(err); container.innerHTML = `<p class="text-danger">Error loading Invitations.</p>`; }
     }
 }
 

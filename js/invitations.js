@@ -1,53 +1,60 @@
 /**
  * Invitation Service
  * Handles sending invitation emails via the backend.
+ * MODIFIED: Uses MockDB and EmailJS to avoid backend calls and CORS issues.
  */
+
 const InvitationService = {
     sendInvite: async (email, eventTitle, eventDate, link) => {
         if (!email || !link) {
             return { success: false, message: "Missing email or link." };
         }
 
-        try {
-            // Call the existing backend script
-            const response = await fetch('../../backend/send_email.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    to: email,
-                    eventTitle: eventTitle,
-                    eventDate: eventDate,
-                    link: link,
-                    type: 'invitation' // Specify type to change email content
-                })
-            });
+        // Use EmailJS directly, bypassing the PHP backend
+        if (typeof emailjs === 'undefined' || typeof MockDB === 'undefined') {
+            console.error('EmailJS SDK or MockDB not loaded.');
+            return { success: false, message: 'A required library (EmailJS or MockDB) is not loaded.' };
+        }
 
-            return await response.json();
+        // These parameters should match the variables used in your EmailJS template.
+        // This is based on the template used in dashboard.js (template_5i46vh8).
+        const templateParams = {
+            to_email: email,
+            event_name: eventTitle,
+            event_date: eventDate,
+            invitation_link: link, // You might need to add {{invitation_link}} to your template
+            // Providing other potential variables the template might use
+            attendee_name: "Valued Guest",
+            qr_code_url: MockDB.generateQRCodeUrl(link) // Generate a QR code for the invitation link
+        };
+
+        try {
+            // Using Service ID and Template ID from dashboard.js
+            const response = await emailjs.send("service_ryl56ps", "template_5i46vh8", templateParams);
+            console.log('EmailJS Success:', response);
+            return { success: true, message: 'Invitation sent successfully via EmailJS.' };
         } catch (error) {
-            console.error("Invitation Email Error:", error);
-            return { success: false, message: "Network error occurred." };
+            console.error("EmailJS Send Error:", error);
+            return { success: false, message: `Failed to send email via EmailJS.` };
         }
     },
 
     saveConfig: async (eventId, config) => {
-        try {
-            const response = await fetch('../../backend/save_invitation_config.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    event_id: eventId,
-                    config: config
-                })
-            });
-            return await response.json();
-        } catch (error) {
-            console.error("Save Config Error:", error);
-            return { success: false, message: "Network error occurred." };
-        }
+        return new Promise((resolve, reject) => {
+            try {
+                // Use MockDB to save the configuration locally
+                if (typeof MockDB === 'undefined') {
+                    throw new Error("MockDB is not available.");
+                }
+                MockDB.updateEvent(eventId, { invitation_config: config });
+                console.log(`Invitation config saved to MockDB for event ${eventId}`);
+                resolve({ success: true, message: 'Configuration saved locally.' });
+            } catch (error) {
+                console.error("Save Config Error (MockDB):", error);
+                // The original function returned a success:false object on error, so we do the same.
+                resolve({ success: false, message: "Error saving configuration to local DB." });
+            }
+        });
     }
 };
 

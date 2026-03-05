@@ -3,6 +3,9 @@
     <link href="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/build/vanilla-calendar.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/build/vanilla-calendar.min.js" defer></script>
 
+    <!-- QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
         @media (min-width: 768px) {
             .search-bar-responsive {
@@ -68,8 +71,8 @@
             <button class="btn btn-primary" style="background-color: var(--primary); border-color: var(--primary);">Search</button>
         </div>
 
-        <!-- Scan QR Button -->
-        <button class="btn btn-outline-secondary w-50 w-md-auto me-md-2" title="Scan QR Code" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR</button>
+        <!-- Scan QR Button (Mobile/Tablet Only) -->
+        <button class="btn btn-outline-secondary w-50 w-md-auto me-md-2 d-lg-none" title="Scan QR Code" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR</button>
 
         <!-- Simulate Sale Button -->
         <button class="btn btn-outline-success w-50 w-md-auto me-md-2" id="btnSimulateSale" title="Simulate Ticket Sale"><i class="bi bi-cart-plus me-2"></i>Simulate Sale</button>
@@ -304,16 +307,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <div class="ratio ratio-1x1 bg-black mb-3 rounded overflow-hidden position-relative">
-                    <div class="d-flex align-items-center justify-content-center h-100 flex-column">
-                        <i class="bi bi-camera-video display-1 text-secondary mb-3"></i>
-                        <p class="text-muted">Camera feed</p>
-                        <div class="spinner-border text-primary" role="status"></div>
-                    </div>
-                    <div class="position-absolute top-50 start-0 w-100 border-top border-danger border-2" style="animation: scanLine 2s infinite linear;"></div>
-                </div>
-                <p class="text-muted small">Point camera at QR code</p>
-                <button class="btn btn-sm btn-outline-primary mt-2" onclick="simulateScanSuccess()">Simulate Scan</button>
+                <div id="qr-reader" style="width: 100%;"></div>
+                <p class="text-muted small mt-2">Point camera at QR code</p>
             </div>
         </div>
     </div>

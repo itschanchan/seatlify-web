@@ -35,52 +35,64 @@
                 font-size: 2rem !important;
             }
         }
+        .invitation-banner .banner-upload-btn-container {
+            opacity: 0;
+            transition: opacity .3s ease;
+            z-index: 2; /* Ensure it's above the image */
+        }
+        .invitation-banner:hover .banner-upload-btn-container {
+            opacity: 1;
+        }
+        .invitation-banner:hover > img {
+            filter: brightness(0.6);
+            transition: filter .3s ease;
+        }
     </style>
 
     <h2 class="mb-4 fw-bold">Invitations Designer</h2>
 
-    <!-- Editor Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
+    <!-- Editor Header & Toolbar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 p-3 rounded shadow-sm" style="background-color: var(--bg-panel);">
+        <!-- Left Group: Tools and History -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Toolbox Buttons -->
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="header" title="Header & Description">
+                <i class="bi bi-fonts"></i> <span class="d-none d-md-inline">Header</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="section" title="Text Section">
+                <i class="bi bi-layout-text-window-reverse"></i> <span class="d-none d-md-inline">Section</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="image" title="Picture">
+                <i class="bi bi-image"></i> <span class="d-none d-md-inline">Picture</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="details" title="Venue & Date">
+                <i class="bi bi-calendar-event"></i> <span class="d-none d-md-inline">Details</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="form" title="Form Builder">
+                <i class="bi bi-ui-checks"></i> <span class="d-none d-md-inline">Form</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="question" title="Question">
+                <i class="bi bi-question-circle"></i> <span class="d-none d-md-inline">Question</span>
+            </button>
+
+            <!-- Separator -->
+            <div class="vr mx-2"></div>
+            
+            <!-- History Buttons -->
             <button id="btnUndoInvitation" class="btn btn-outline-secondary" title="Undo (Ctrl+Z)" disabled><i class="bi bi-arrow-counterclockwise"></i></button>
             <button id="btnRedoInvitation" class="btn btn-outline-secondary" title="Redo (Ctrl+Y)" disabled><i class="bi bi-arrow-clockwise"></i></button>
-            <button id="btnPreviewInvitation" class="btn btn-outline-secondary ms-2"><i class="bi bi-eye me-1"></i> Preview</button>
+        </div>
+        
+        <!-- Right Group: Main Actions -->
+        <div class="d-flex gap-2">
+            <button id="btnPreviewInvitation" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> Preview</button>
             <button id="btnSaveInvitation" class="btn btn-primary"><i class="bi bi-link-45deg me-1"></i> Save & Get Link</button>
         </div>
     </div>
 
     <div class="row">
-        <!-- Toolbar -->
-        <div class="col-md-3 col-lg-2 mb-3 mb-md-0">
-            <div class="card shadow-sm border-0 sticky-top" style="top: 1rem; background-color: var(--bg-panel);">
-                <div class="card-header bg-transparent border-bottom-0 pt-3">
-                    <h6 class="mb-0 text-muted">Toolbox</h6>
-                </div>
-                <div class="card-body d-flex flex-row flex-md-column gap-2 overflow-auto pb-3 pb-md-2">
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="header">
-                        <i class="bi bi-fonts"></i> Header & Desc
-                    </button>
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="section">
-                        <i class="bi bi-layout-text-window-reverse"></i> Section
-                    </button>
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="image">
-                        <i class="bi bi-image"></i> Picture
-                    </button>
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="details">
-                        <i class="bi bi-calendar-event"></i> Venue & Date
-                    </button>
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="form">
-                        <i class="bi bi-ui-checks"></i> Form Builder
-                    </button>
-                    <button class="btn btn-outline-secondary text-start d-flex align-items-center gap-2 draggable-tool flex-shrink-0" draggable="true" data-type="question">
-                        <i class="bi bi-question-circle"></i> Question
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Invitation Editor/Preview -->
-        <div class="col-md-9 col-lg-10">
+        <div class="col-12">
             <div id="invitationDesigner" class="invitation-preview-wrapper mx-auto" style="max-width: 800px;">
         
         <div id="invitationSectionsContainer">
@@ -88,8 +100,8 @@
             <div class="invitation-section" data-section="banner" data-type="banner">
                 <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary z-3"><i class="bi bi-grip-vertical"></i></div>
                 <div class="invitation-banner position-relative bg-light">
-                    <img id="bannerImagePreview" src="https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Upload+Your+Banner" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
-                    <div class="position-absolute top-0 end-0 p-3">
+                    <img id="bannerImagePreview" src="https://images.pexels.com/photos/28216688/pexels-photo-28216688.png" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
+                    <div class="position-absolute top-50 start-50 translate-middle banner-upload-btn-container">
                         <label for="bannerUpload" class="btn btn-sm btn-light bg-white shadow-sm">
                             <i class="bi bi-upload me-1"></i> Change Banner
                         </label>
@@ -237,38 +249,11 @@
             return `${base}/${endpoint}`;
         };
 
-        /**
-         * Invitation Service
-         * Handles sending invitation emails via the backend.
-         */
-        const InvitationService = {
-            sendInvite: async (email, eventTitle, eventDate, link) => {
-                if (!email || !link) {
-                    return { success: false, message: "Missing email or link." };
-                }
-
-                try {
-                    // Call the existing backend script
-                    const response = await fetch(getApiUrl('send_email.php'), {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            to: email,
-                            eventTitle: eventTitle,
-                            eventDate: eventDate,
-                            link: link,
-                            type: 'invitation' // Specify type to change email content
-                        })
-                    });
-
-                    return await response.json();
-                } catch (error) {
-                    console.error("Invitation Email Error:", error);
-                    return { success: false, message: "Network error occurred." };
-                }
-            }
+        // Use the global InvitationService defined in js/invitations.js
+        // This service uses MockDB/EmailJS to avoid backend CORS issues.
+        const InvitationService = window.InvitationService || {
+            sendInvite: async () => ({ success: false, message: "InvitationService not loaded." }),
+            saveConfig: async () => ({ success: false, message: "InvitationService not loaded." })
         };
 
         const historyManager = {
@@ -404,8 +389,9 @@
 
         function createNewSection(type, data = null) {
             const div = document.createElement('div');
+            const uniqueId = type + '_' + Date.now();
             div.className = 'invitation-section p-4 p-md-5';
-            div.dataset.section = type + '_' + Date.now();
+            div.dataset.section = uniqueId;
             div.dataset.type = type;
             
             // Common Drag Handle
@@ -423,16 +409,16 @@
 
             switch(type) {
                 case 'banner':
-                    const bannerSrc = (data && data.image) ? data.image : 'https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Upload+Your+Banner';
+                    const bannerSrc = (data && data.image) ? data.image : 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
                     div.className = 'invitation-section'; 
                     content = `
                         <div class="invitation-banner position-relative bg-light">
-                            <img id="bannerImagePreview" src="${bannerSrc}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
-                            <div class="position-absolute top-0 end-0 p-3">
-                                <label for="bannerUpload" class="btn btn-sm btn-light bg-white shadow-sm">
+                            <img id="bannerImagePreview_${uniqueId}" src="${bannerSrc}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
+                            <div class="position-absolute top-50 start-50 translate-middle banner-upload-btn-container">
+                                <label for="bannerUpload_${uniqueId}" class="btn btn-sm btn-light bg-white shadow-sm">
                                     <i class="bi bi-upload me-1"></i> Change Banner
                                 </label>
-                                <input type="file" id="bannerUpload" class="d-none" accept="image/*">
+                                <input type="file" id="bannerUpload_${uniqueId}" class="d-none" accept="image/*">
                             </div>
                         </div>
                     `;
@@ -519,15 +505,15 @@
                                 <h5 class="mb-3" style="color: var(--text-main);">Please confirm your details:</h5>
                                 <div class="mb-3">
                                     <label class="form-label" style="color: var(--text-muted);">Full Name</label>
-                                    <input type="text" class="form-control" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    <input type="text" class="form-control" id="guestName_${uniqueId}" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" style="color: var(--text-muted);">Email Address</label>
-                                    <input type="email" class="form-control" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    <input type="email" class="form-control" id="guestEmail_${uniqueId}" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" style="color: var(--text-muted);">Age</label>
-                                    <input type="number" class="form-control" placeholder="Enter your age" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    <input type="number" class="form-control" id="guestAge_${uniqueId}" placeholder="Enter your age" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" style="color: var(--text-muted);">Seat Reservation</label>
@@ -561,8 +547,8 @@
             
             // Re-bind banner upload if applicable
             if (type === 'banner') {
-                const uploadInput = div.querySelector('#bannerUpload');
-                const preview = div.querySelector('#bannerImagePreview');
+                const uploadInput = div.querySelector(`#bannerUpload_${uniqueId}`);
+                const preview = div.querySelector(`#bannerImagePreview_${uniqueId}`);
                 if (uploadInput && preview) {
                     uploadInput.addEventListener('change', function() {
                         const file = this.files[0];
@@ -621,14 +607,11 @@
 
         // --- Load Data Logic ---
         const currentEventId = localStorage.getItem('seatlify_current_event_id');
-        if (currentEventId) {
-            // Fetch from Backend instead of MockDB
-            fetch(getApiUrl(`get_event_public.php?event_id=${currentEventId}`))
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success || !data.event) return;
-                
-                const event = data.event;
+        if (currentEventId && typeof MockDB !== 'undefined') {
+            // Fetch from MockDB instead of Backend to avoid CORS
+            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+            
+            if (event) {
                 currentEventData = event; // Store for later use (sending emails)
 
                 // Check if we have a saved config to restore
@@ -657,8 +640,7 @@
 
                     if(descEl) descEl.innerHTML = `<p>${event.description || 'Join us for this event!'}</p>`;
                 }
-            })
-            .catch(err => console.error("Error loading event data:", err));
+            }
         }
 
 
@@ -792,13 +774,8 @@
                     sections: sections
                 };
 
-                // Save to Backend
-                fetch(getApiUrl('save_invitation_config.php'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ event_id: eventId, config: config })
-                })
-                .then(res => res.json())
+                // Save to Backend (MockDB via InvitationService)
+                InvitationService.saveConfig(eventId, config)
                 .then(data => {
                     if (data.success) {
                         // Generate Link
