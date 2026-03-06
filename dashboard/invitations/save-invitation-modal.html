@@ -1,0 +1,171 @@
+<!-- Save & Share Modal -->
+<div class="modal fade" id="saveShareModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Invitation Saved!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Your invitation has been saved successfully. Share this link with your guests:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareLinkInput" readonly style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    <button class="btn btn-outline-primary" type="button" id="btnCopyLink">
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                </div>
+                <hr class="my-3" style="border-color: var(--border-color);">
+                <label for="inviteEmailInput" class="form-label text-muted">Send via Email</label>
+                <div class="input-group">
+                    <input type="email" class="form-control" id="inviteEmailInput" placeholder="guest@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    <button class="btn btn-outline-primary" type="button" id="btnSendInvite">
+                        <i class="bi bi-send"></i> Send
+                    </button>
+                </div>
+                <div class="alert alert-success py-2 d-none" id="copySuccessAlert">
+                    <small><i class="bi bi-check-circle me-1"></i> Link copied to clipboard!</small>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Save & Share Logic ---
+    function bindSaveAndShare(currentEventData, InvitationService) {
+        const btnSave = document.getElementById('btnSaveInvitation');
+        const shareModalEl = document.getElementById('saveShareModal');
+        const shareInput = document.getElementById('shareLinkInput');
+        const btnCopy = document.getElementById('btnCopyLink');
+        const copyAlert = document.getElementById('copySuccessAlert');
+
+        if (!btnSave || !shareModalEl) return;
+
+        const shareModal = new bootstrap.Modal(shareModalEl);
+
+        function serializeSection(sec) {
+            const type = sec.dataset.type;
+            const data = { type: type };
+
+            if (type === 'banner' || type === 'image') {
+                data.image = sec.querySelector('img').src;
+            } else if (type === 'header') {
+                data.title = sec.querySelector('h1').innerHTML;
+                data.host = sec.querySelector('.lead').innerHTML;
+                data.description = sec.querySelector('.invitation-description').innerHTML;
+            } else if (type === 'section') {
+                data.title = sec.querySelector('h3').innerHTML;
+                data.blocks = [];
+                const innerContainer = sec.querySelector('.section-blocks-container');
+                if (innerContainer) {
+                    [...innerContainer.children].forEach(child => {
+                        if (child.classList.contains('invitation-section')) {
+                            data.blocks.push(serializeSection(child));
+                        }
+                    });
+                }
+            } else if (type === 'form' || type === 'rsvp_form') {
+                data.title = sec.querySelector('.form-title').innerHTML;
+                data.fields = [];
+                sec.querySelectorAll('.form-field-item').forEach(field => {
+                    const fType = field.dataset.fieldType;
+                    if (fType === 'text') {
+                        data.fields.push({ type: 'text', label: field.querySelector('label').innerHTML });
+                    } else if (fType === 'seat') {
+                        data.fields.push({ type: 'seat', viewPreference: field.querySelector('.seat-view-preference').value });
+                    }
+                });
+            } else if (type === 'question') {
+                data.question = sec.querySelector('.question-title')?.innerHTML || '';
+                data.questionType = sec.querySelector('.question-block')?.dataset.questionType || 'short_answer';
+                if (['multiple_choice', 'checkboxes', 'dropdown'].includes(data.questionType)) {
+                    data.options = [];
+                    sec.querySelectorAll('.question-options-list .d-flex').forEach(opt => {
+                        const label = opt.querySelector('[contenteditable="true"]')?.innerHTML || '';
+                        if (label) data.options.push(label);
+                    });
+                }
+                data.buttons = [];
+                sec.querySelectorAll('.question-buttons-list .question-custom-btn').forEach(btn => {
+                    data.buttons.push(btn.textContent);
+                });
+            }
+            return data;
+        }
+
+        btnSave.addEventListener('click', () => {
+            const eventId = localStorage.getItem('seatlify_current_event_id');
+            if (!eventId) {
+                alert("No active event found.");
+                return;
+            }
+            const sections = [];
+            const container = document.getElementById('invitationSectionsContainer');
+            [...container.children].forEach(sec => {
+                if (sec.classList.contains('invitation-section')) {
+                    sections.push(serializeSection(sec));
+                }
+            });
+            const config = {
+                host: document.getElementById('invDesignHost')?.innerHTML || '', 
+                sections: sections
+            };
+            InvitationService.saveConfig(eventId, config)
+            .then(data => {
+                if (data.success) {
+                    let baseUrl = window.location.href.split('?')[0];
+                    baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+                    if (!baseUrl.endsWith('/invitations/')) {
+                        baseUrl += 'invitations/';
+                    }
+                    const link = `${baseUrl}public-view-invitation.html?event=${eventId}&share=${Date.now()}`;
+                    shareInput.value = link;
+                    if(copyAlert) copyAlert.classList.add('d-none');
+                    shareModal.show();
+                } else {
+                    alert("Failed to save configuration: " + data.message);
+                }
+            }).catch(err => {
+                console.error(err);
+                alert("Network error while saving.");
+            });
+        });
+
+        if (btnCopy) {
+            btnCopy.addEventListener('click', () => {
+                shareInput.select();
+                navigator.clipboard.writeText(shareInput.value).then(() => {
+                    if(copyAlert) copyAlert.classList.remove('d-none');
+                    setTimeout(() => { if(copyAlert) copyAlert.classList.add('d-none'); }, 3000);
+                });
+            });
+        }
+
+        const btnSendInvite = document.getElementById('btnSendInvite');
+        if (btnSendInvite) {
+            btnSendInvite.addEventListener('click', async () => {
+                const email = document.getElementById('inviteEmailInput').value;
+                const link = shareInput.value;
+                if (!email || !link) return alert("Please enter an email address.");
+                
+                const title = currentEventData ? currentEventData.title : 'Event';
+                const date = currentEventData ? currentEventData.start_datetime : '';
+
+                const originalText = btnSendInvite.innerHTML;
+                btnSendInvite.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                btnSendInvite.disabled = true;
+
+                const res = await InvitationService.sendInvite(email, title, date, link);
+                
+                btnSendInvite.innerHTML = originalText;
+                btnSendInvite.disabled = false;
+
+                alert(res.success ? "Invitation sent successfully!" : "Failed to send: " + res.message);
+                if (res.success) document.getElementById('inviteEmailInput').value = '';
+            });
+        }
+    }
+</script>

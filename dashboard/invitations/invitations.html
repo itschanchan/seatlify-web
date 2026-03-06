@@ -51,223 +51,229 @@
 
     <h2 class="mb-4 fw-bold">Invitations Designer</h2>
 
-    <!-- Editor Header & Toolbar -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 p-3 rounded shadow-sm" style="background-color: var(--bg-panel);">
-        <!-- Left Group: Tools and History -->
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Toolbox Buttons -->
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="banner" title="Banner Image">
-                <i class="bi bi-card-image"></i> <span class="d-none d-md-inline">Banner</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="header" title="Header & Description">
-                <i class="bi bi-fonts"></i> <span class="d-none d-md-inline">Header</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="section" title="Text Section">
-                <i class="bi bi-layout-text-window-reverse"></i> <span class="d-none d-md-inline">Section</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="image" title="Picture">
-                <i class="bi bi-image"></i> <span class="d-none d-md-inline">Picture</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="details" title="Venue & Date">
-                <i class="bi bi-calendar-event"></i> <span class="d-none d-md-inline">Details</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="form" title="Form Builder">
-                <i class="bi bi-ui-checks"></i> <span class="d-none d-md-inline">Form</span>
-            </button>
-            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="question" title="Question">
-                <i class="bi bi-question-circle"></i> <span class="d-none d-md-inline">Question</span>
-            </button>
+    <!-- Toolbar Placeholder -->
+    <div id="invitations-designer-tools-container"></div>
 
-            <!-- Separator -->
-            <div class="vr mx-2"></div>
-            
-            <!-- History Buttons -->
-            <button id="btnUndoInvitation" class="btn btn-outline-secondary" title="Undo (Ctrl+Z)" disabled><i class="bi bi-arrow-counterclockwise"></i></button>
-            <button id="btnRedoInvitation" class="btn btn-outline-secondary" title="Redo (Ctrl+Y)" disabled><i class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        
-        <!-- Right Group: Main Actions -->
-        <div class="d-flex gap-2">
-            <button id="btnPreviewInvitation" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> Preview</button>
-            <button id="btnSaveInvitation" class="btn btn-primary"><i class="bi bi-link-45deg me-1"></i> Save & Get Link</button>
-        </div>
-    </div>
-
+    <!-- Invitation Preview -->
     <div class="row">
         <!-- Invitation Editor/Preview -->
         <div class="col-12">
             <div id="invitationDesigner" class="invitation-preview-wrapper mx-auto" style="max-width: 800px;">
-        
         <div id="invitationSectionsContainer">
-            <!-- SECTION: Banner -->
+
+    <!-- DEFAULT -->
+    <!-- ========================= -->
+    <!-- SECTION 1 -->
+    <!-- ========================= -->
+    <div class="invitation-section p-4 p-md-5" data-section="main_details" data-type="section">
+
+        <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary">
+            <i class="bi bi-grip-vertical"></i>
+        </div>
+
+        <h3 contenteditable="true" class="mb-3" style="color: var(--text-main);">Invitation Details</h3>
+
+        <div class="section-blocks-container p-3 border rounded" style="background-color: var(--bg-muted);">
+
+            <!-- BANNER BLOCK -->
             <div class="invitation-section" data-section="banner" data-type="banner">
-                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary z-3"><i class="bi bi-grip-vertical"></i></div>
+                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary" style="z-index: 10;">
+                    <i class="bi bi-grip-vertical"></i>
+                </div>
                 <div class="invitation-banner position-relative bg-light">
-                    <img id="bannerImagePreview" src="https://images.pexels.com/photos/28216688/pexels-photo-28216688.png" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
+                    <img id="bannerImagePreview_default" src="https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;">
                     <div class="position-absolute top-50 start-50 translate-middle banner-upload-btn-container">
-                        <label for="bannerUpload" class="btn btn-sm btn-light bg-white shadow-sm">
+                        <label for="bannerUpload_default" class="btn btn-sm btn-light bg-white shadow-sm">
                             <i class="bi bi-upload me-1"></i> Change Banner
                         </label>
-                        <input type="file" id="bannerUpload" class="d-none" accept="image/*">
+                        <input type="file" id="bannerUpload_default" class="d-none" accept="image/*">
                     </div>
                 </div>
             </div>
 
-            <!-- SECTION: Header (Title & Description) -->
+            <!-- HEADER BLOCK -->
             <div class="invitation-section p-4 p-md-5" data-section="header" data-type="header">
-                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
-                
-                <!-- 1. Header title -->
-                <h1 id="invDesignTitle" contenteditable="true" class="invitation-title display-4 mb-3" style="color: var(--text-main);">Event Title</h1>
 
-                <!-- 3. Hosted by -->
-                <p id="invDesignHost" contenteditable="true" class="lead" style="color: var(--text-muted);">Hosted by: <span class="fw-bold" style="color: var(--text-main);">Your Organization</span></p>
+                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary">
+                    <i class="bi bi-grip-vertical"></i>
+                </div>
+
+                <h1 id="invDesignTitle" contenteditable="true"
+                    class="invitation-title display-4 mb-3"
+                    style="color: var(--text-main);">
+                    Event Title
+                </h1>
+
+                <p id="invDesignHost" contenteditable="true"
+                   class="lead"
+                   style="color: var(--text-muted);">
+                    Hosted by:
+                    <span class="fw-bold" style="color: var(--text-main);">
+                        Your Organization
+                    </span>
+                </p>
 
                 <hr class="my-4" style="border-color: var(--border-color);">
 
-                <!-- 5. Description -->
-                <div id="invDesignDesc" contenteditable="true" class="invitation-description mb-4 fs-5" style="color: var(--text-main);">
-                    <p>Join us for an exclusive event where we will unveil our latest innovations and celebrate a year of success. It's an evening you won't want to miss, filled with networking opportunities, keynote speakers, and live entertainment.</p>
+                <div id="invDesignDesc"
+                     contenteditable="true"
+                     class="invitation-description mb-4 fs-5"
+                     style="color: var(--text-main);">
+
+                    <p>
+                        Join us for an exclusive event where we will unveil our latest
+                        innovations and celebrate a year of success.
+                    </p>
+
                 </div>
+
             </div>
 
-            <!-- SECTION: Details (Date, Time, Venue) -->
+
+            <!-- EVENT DETAILS BLOCK -->
             <div class="invitation-section p-4 p-md-5" data-section="details" data-type="details">
-                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
-                
-                <!-- 2. Venue -->
+
+                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary">
+                    <i class="bi bi-grip-vertical"></i>
+                </div>
+
                 <div class="card mb-4 border-0" style="background-color: var(--bg-muted);">
+
                     <div class="card-body">
-                        <h5 class="card-title" style="color: var(--text-main);">When & Where</h5>
-                        <p id="invDesignDate" class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i></p>
-                        <p id="invDesignTime" class="card-text mb-2" style="color: var(--text-muted);"><i class="bi bi-clock me-2"></i></p>
-                        <p id="invDesignVenue" class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i></p>
+
+                        <h5 class="card-title" style="color: var(--text-main);">
+                            When & Where
+                        </h5>
+
+                        <p id="invDesignDate" class="card-text mb-0"
+                           style="color: var(--text-main);">
+                            <i class="bi bi-calendar3 me-2"></i>
+                        </p>
+
+                        <p id="invDesignTime" class="card-text mb-2"
+                           style="color: var(--text-muted);">
+                            <i class="bi bi-clock me-2"></i>
+                        </p>
+
+                        <p id="invDesignVenue" class="card-text"
+                           style="color: var(--text-main);">
+                            <i class="bi bi-geo-alt-fill me-2"></i>
+                        </p>
+
                     </div>
+
                 </div>
+
             </div>
 
-            <!-- SECTION: RSVP Question -->
-            <div class="invitation-section p-4 p-md-5" data-section="rsvp_question" data-type="rsvp_question">
-                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
-                
-                <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
-                    <h4 class="mb-3 text-center" style="color: var(--text-main);">Will you be attending?</h4>
-                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-0">
-                        <button type="button" class="btn btn-success btn-lg px-4 gap-3">Yes, I'll be there!</button>
-                        <button type="button" class="btn btn-outline-secondary btn-lg px-4">No, I can't make it</button>
-                    </div>
-                </div>
-            </div>
+            <!-- FORM BLOCK -->
+            <div class="invitation-section p-4 p-md-5"
+                 data-section="rsvp_form"
+                 data-type="rsvp_form">
 
-            <!-- SECTION: RSVP Form -->
-            <div class="invitation-section p-4 p-md-5" data-section="rsvp_form" data-type="form">
-                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
-                
-                <div class="form-builder-wrapper p-4 rounded" style="background-color: var(--bg-muted);">
-                    <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">Please confirm your details:</h4>
+                <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary">
+                    <i class="bi bi-grip-vertical"></i>
+                </div>
+
+                <div class="form-builder-wrapper p-4 rounded"
+                     style="background-color: var(--bg-muted);">
+
+                    <h4 contenteditable="true"
+                        class="mb-3 form-title"
+                        style="color: var(--text-main);">
+
+                        Please confirm your details:
+
+                    </h4>
+
                     <div class="form-fields-list"></div>
-                    <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
-                        <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
-                        <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
+
+                    <div class="d-grid mt-3">
+                        <button class="btn btn-primary" disabled>Confirm RSVP</button>
                     </div>
+
+                    <div class="d-flex gap-2 mt-3 border-top pt-3"
+                         style="border-color: var(--border-color) !important;">
+
+                        <button class="btn btn-sm btn-outline-secondary btn-add-form-field">
+                            <i class="bi bi-plus"></i> Add Text Field
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-primary btn-add-seat-res">
+                            <i class="bi bi-grid-3x3"></i> Add Seat Reservation
+                        </button>
+
+                    </div>
+
                 </div>
+
             </div>
+
         </div>
+
     </div>
-        </div>
-    </div>
-</div>
+
+    </div> <!-- closes invitation-section (section_rsvp) -->
+</div> <!-- closes invitationSectionsContainer -->
+</div> <!-- closes invitationDesigner -->
+</div> <!-- closes col-12 -->
+</div> <!-- closes row -->
+</div> <!-- closes container-fluid -->
 
 <!-- Container for the dynamically loaded modal -->
 <div id="invitationPreviewModalContainer"></div>
 
-<!-- Save & Share Modal -->
-<div class="modal fade" id="saveShareModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
-            <div class="modal-header border-bottom-0">
-                <h5 class="modal-title">Invitation Saved!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted mb-3">Your invitation has been saved successfully. Share this link with your guests:</p>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="shareLinkInput" readonly style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                    <button class="btn btn-outline-primary" type="button" id="btnCopyLink">
-                        <i class="bi bi-clipboard"></i> Copy
-                    </button>
-                </div>
-                <hr class="my-3" style="border-color: var(--border-color);">
-                <label for="inviteEmailInput" class="form-label text-muted">Send via Email</label>
-                <div class="input-group">
-                    <input type="email" class="form-control" id="inviteEmailInput" placeholder="guest@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                    <button class="btn btn-outline-primary" type="button" id="btnSendInvite">
-                        <i class="bi bi-send"></i> Send
-                    </button>
-                </div>
-                <div class="alert alert-success py-2 d-none" id="copySuccessAlert">
-                    <small><i class="bi bi-check-circle me-1"></i> Link copied to clipboard!</small>
-                </div>
-            </div>
-            <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Container for the Save & Share modal -->
+<div id="saveShareModalContainer"></div>
 
 <script>
     // Self-invoking function to avoid polluting the global scope
-    (function() {
-        let currentEventData = null; // Store the fetched event data
-
-        // Helper for API URLs to support Live Server (Port 5500)
-        const getApiUrl = (endpoint) => {
-            const isLiveServer = window.location.port === '5500';
-            const base = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
-            return `${base}/${endpoint}`;
-        };
-
-        // Use the global InvitationService defined in js/invitations.js
-        // This service uses MockDB/EmailJS to avoid backend CORS issues.
-        const InvitationService = window.InvitationService || {
-            sendInvite: async () => ({ success: false, message: "InvitationService not loaded." }),
-            saveConfig: async () => ({ success: false, message: "InvitationService not loaded." })
-        };
-
+    (async function() {
+        // --- History Manager ---
         const historyManager = {
             undoStack: [],
             redoStack: [],
             maxHistory: 30,
+            rebindCallback: () => {},
+
+            init: function(rebindCallback) {
+                this.rebindCallback = rebindCallback;
+            },
 
             saveState: function() {
                 const container = document.getElementById('invitationSectionsContainer');
                 if (!container) return;
                 const currentState = container.innerHTML;
                 
-                if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === currentState) {
-                    return; // Don't save if state is identical
+                // Auto-save to LocalStorage
+                const currentEventId = localStorage.getItem('seatlify_current_event_id');
+                if (currentEventId) {
+                    localStorage.setItem(`seatlify_invitation_draft_${currentEventId}`, currentState);
                 }
 
-                this.redoStack = []; // Clear redo stack on new action
+                if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === currentState) {
+                    return;
+                }
+
+                this.redoStack = [];
                 this.undoStack.push(currentState);
 
                 if (this.undoStack.length > this.maxHistory) {
                     this.undoStack.shift();
                 }
-                updateUndoRedoButtons();
+                this.updateButtons();
             },
 
             undo: function() {
-                if (this.undoStack.length <= 1) return; // Keep the initial state
+                if (this.undoStack.length <= 1) return;
                 
                 const container = document.getElementById('invitationSectionsContainer');
                 if (!container) return;
 
                 this.redoStack.push(container.innerHTML);
                 container.innerHTML = this.undoStack.pop();
-                rebindAllInvitationEvents();
-                updateUndoRedoButtons();
+                if(typeof this.rebindCallback === 'function') this.rebindCallback();
+                this.updateButtons();
             },
 
             redo: function() {
@@ -278,36 +284,111 @@
 
                 this.undoStack.push(container.innerHTML);
                 container.innerHTML = this.redoStack.pop();
-                rebindAllInvitationEvents();
-                updateUndoRedoButtons();
+                if(typeof this.rebindCallback === 'function') this.rebindCallback();
+                this.updateButtons();
             },
             
             clear: function() {
                 this.undoStack = [];
                 this.redoStack = [];
+                this.updateButtons();
+            },
+
+            updateButtons: function() {
+                const btnUndo = document.getElementById('btnUndoInvitation');
+                const btnRedo = document.getElementById('btnRedoInvitation');
+                if(btnUndo) btnUndo.disabled = this.undoStack.length <= 1;
+                if(btnRedo) btnRedo.disabled = this.redoStack.length === 0;
             }
         };
 
-        function updateUndoRedoButtons() {
-            const btnUndo = document.getElementById('btnUndoInvitation');
-            const btnRedo = document.getElementById('btnRedoInvitation');
-            if(btnUndo) btnUndo.disabled = historyManager.undoStack.length <= 1;
-            if(btnRedo) btnRedo.disabled = historyManager.redoStack.length === 0;
+        // --- Toolbar Drag & Drop Logic ---
+        function bindToolbarDragAndDrop() {
+            const toolbarItems = document.querySelectorAll('.draggable-tool');
+            toolbarItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('toolType', item.dataset.type);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+            });
         }
 
-        function rebindAllInvitationEvents() {
-            initSortable();
-            bindSectionControls();
-            bindBannerUpload();
-        }
-
+        // --- Toolbar Button Click Logic ---
         function bindUndoRedoControls() {
             const btnUndo = document.getElementById('btnUndoInvitation');
             const btnRedo = document.getElementById('btnRedoInvitation');
 
             if (btnUndo) btnUndo.addEventListener('click', () => historyManager.undo());
             if (btnRedo) btnRedo.addEventListener('click', () => historyManager.redo());
+        }
 
+        function bindPreviewButton() {
+            const previewBtn = document.getElementById('btnPreviewInvitation');
+            const designer = document.getElementById('invitationDesigner');
+            const modalEl = document.getElementById('invitationPreviewModal');
+            
+            if (!previewBtn || !designer || !modalEl) return;
+
+            const modal = new bootstrap.Modal(modalEl);
+            const previewWrapper = document.getElementById('previewContentWrapper');
+
+            previewBtn.addEventListener('click', () => {
+                const previewNode = designer.cloneNode(true);
+
+                // Clean up the cloned node for a pure preview
+                previewNode.removeAttribute('id');
+                previewNode.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+
+                previewNode.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                    el.removeAttribute('contenteditable');
+                    el.style.outline = 'none';
+                    el.style.backgroundColor = '';
+                });
+                previewNode.querySelector('.position-absolute.top-0.end-0')?.remove();
+                previewNode.querySelectorAll('.section-drag-handle').forEach(el => el.remove());
+                previewNode.querySelectorAll('.btn-delete-section').forEach(el => el.remove());
+
+                previewNode.style.backgroundColor = 'var(--bg-panel)';
+                previewNode.style.borderRadius = '12px';
+                previewNode.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+                previewNode.style.overflow = 'hidden';
+
+                previewNode.querySelectorAll('.invitation-section').forEach(el => {
+                    el.style.border = 'none';
+                    el.style.margin = '0';
+                    el.style.borderRadius = '0';
+                    el.style.backgroundColor = 'transparent';
+                });
+
+                previewWrapper.innerHTML = '';
+                previewWrapper.appendChild(previewNode);
+                modal.show();
+            });
+        }
+
+        let currentEventData = null; // Store the fetched event data
+
+        // Use the global InvitationService defined in js/invitations.js
+        const InvitationService = window.InvitationService || {
+            sendInvite: async () => ({ success: false, message: "InvitationService not loaded." }),
+            saveConfig: async () => ({ success: false, message: "InvitationService not loaded." })
+        };
+
+        function rebindAllInvitationEvents() {
+            initSortable();
+            bindSectionControls();
+            bindBannerUpload();
+            // Re-initialize all form builders and question blocks after an undo/redo
+            document.querySelectorAll('.form-builder-wrapper').forEach(fb => {
+                initFormBuilder(fb, null); // Pass null to preserve content and just rebind
+            });
+            document.querySelectorAll('.question-block').forEach(qb => {
+                renderQuestionInput(qb);
+            });
+        }
+
+        // This function handles global keyboard shortcuts for undo/redo
+        function bindGlobalUndoRedoKeys() {
             document.addEventListener('keydown', (e) => {
                 if (e.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
                     return;
@@ -325,7 +406,6 @@
         function bindQuestionOptionEvents(context) {
             // Add Option button
             context.querySelectorAll('.btn-add-option').forEach(btn => {
-                // Use a clone to prevent multiple listeners
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
 
@@ -426,20 +506,59 @@
             bindQuestionOptionEvents(answerArea);
         }
 
-        function initFormBuilder(builderWrapper, defaultFields) {
+        function initFormBuilder(builderWrapper, defaultFields = null) {
             if (!builderWrapper) return;
             
             const list = builderWrapper.querySelector('.form-fields-list');
             if (!list) return;
 
-            // Populate with default fields
-            defaultFields.forEach(f => addFieldToBuilder(list, f));
+            if (defaultFields !== null) {
+                list.innerHTML = ''; // Clear previous fields
+                // Populate with default fields
+                defaultFields.forEach(f => addFieldToBuilder(list, f));
+            } else {
+                // Re-bind events for existing fields (restored from storage/history)
+                list.querySelectorAll('.form-field-item').forEach(wrapper => {
+                    const fieldType = wrapper.dataset.fieldType;
+                    
+                    // Re-bind Delete
+                    const deleteBtn = wrapper.querySelector('.btn-link.text-danger');
+                    if (deleteBtn) {
+                        deleteBtn.onclick = () => { 
+                            historyManager.saveState(); 
+                            if (fieldType === 'seat') {
+                                const addSeatBtn = builderWrapper.querySelector('.btn-add-seat-res');
+                                if (addSeatBtn) addSeatBtn.disabled = false;
+                            }
+                            wrapper.remove(); 
+                        };
+                    }
+
+                    // Re-bind Seat Dropdown
+                    if (fieldType === 'seat') {
+                        const dropdownItems = wrapper.querySelectorAll('.dropdown-item');
+                        const hiddenInput = wrapper.querySelector('.seat-view-preference');
+                        if (dropdownItems.length && hiddenInput) {
+                            dropdownItems.forEach(item => {
+                                item.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    historyManager.saveState();
+                                    hiddenInput.value = item.dataset.view;
+                                    wrapper.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                                    item.classList.add('active');
+                                });
+                            });
+                        }
+                    }
+                });
+            }
 
             // Check if a seat field already exists and disable the button
-            const hasSeatField = defaultFields.some(f => f.type === 'seat');
+            // If defaultFields is null, we check the DOM
+            const hasSeatField = list.querySelector('.form-field-item[data-field-type="seat"]') !== null;
             const addSeatBtnInitial = builderWrapper.querySelector('.btn-add-seat-res');
-            if (addSeatBtnInitial && hasSeatField) {
-                addSeatBtnInitial.disabled = true;
+            if (addSeatBtnInitial) {
+                addSeatBtnInitial.disabled = hasSeatField;
             }
 
             // Initialize SortableJS for the fields
@@ -447,7 +566,7 @@
                 new Sortable(list, {
                     animation: 150,
                     ghostClass: 'bg-light',
-                    handle: '.form-field-drag-handle', // Specify the handle
+                    handle: '.form-field-drag-handle',
                     onEnd: () => historyManager.saveState()
                 });
             }
@@ -455,7 +574,9 @@
             // Bind add buttons
             const addFieldBtn = builderWrapper.querySelector('.btn-add-form-field');
             if (addFieldBtn) {
-                addFieldBtn.addEventListener('click', () => {
+                const newBtn = addFieldBtn.cloneNode(true);
+                addFieldBtn.parentNode.replaceChild(newBtn, addFieldBtn);
+                newBtn.addEventListener('click', () => {
                     historyManager.saveState();
                     addFieldToBuilder(list, {type: 'text', label: 'New Field'});
                 });
@@ -463,7 +584,9 @@
             
             const addSeatBtn = builderWrapper.querySelector('.btn-add-seat-res');
             if (addSeatBtn) {
-                addSeatBtn.addEventListener('click', () => {
+                const newBtn = addSeatBtn.cloneNode(true);
+                addSeatBtn.parentNode.replaceChild(newBtn, addSeatBtn);
+                newBtn.addEventListener('click', () => {
                     historyManager.saveState();
                     addFieldToBuilder(list, {type: 'seat', viewPreference: 'chart'});
                 });
@@ -474,14 +597,14 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'form-field-item mb-3 position-relative p-3 border rounded';
             wrapper.style.backgroundColor = 'var(--bg-muted)';
-            wrapper.style.paddingLeft = '2.5rem'; // Make space for handle
+            wrapper.style.paddingLeft = '2.5rem';
             wrapper.dataset.fieldType = fieldData.type;
 
             let innerHTML = '';
             if (fieldData.type === 'text') {
                 innerHTML = `
                     <label class="form-label" contenteditable="true" style="color: var(--text-muted);">${fieldData.label}</label>
-                    <input type="text" class="form-control" disabled placeholder="Input field" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                    <input type="text" class="form-control" disabled placeholder="" style="background-color: var(--bg-panel); border-color: var(--border-color);">
                 `;
             } else if (fieldData.type === 'seat') {
                 const pref = fieldData.viewPreference || 'chart';
@@ -515,10 +638,8 @@
             deleteBtn.className = 'btn btn-sm btn-link text-danger position-absolute top-0 end-0';
             deleteBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
             deleteBtn.title = "Remove Field";
-            deleteBtn.onclick = () => { historyManager.saveState(); wrapper.remove(); };
             deleteBtn.onclick = () => { 
                 historyManager.saveState(); 
-                // If we are deleting a seat reservation field, re-enable the add button
                 if (fieldData.type === 'seat') {
                     const builderWrapper = wrapper.closest('.form-builder-wrapper');
                     if (builderWrapper) {
@@ -546,7 +667,6 @@
 
             container.appendChild(wrapper);
 
-            // If a seat reservation field was just added, disable the button
             if (fieldData.type === 'seat') {
                 const builderWrapper = container.closest('.form-builder-wrapper');
                 if (builderWrapper) {
@@ -556,51 +676,15 @@
             }
         }
 
-        // --- Initialize Sortable ---
-        function initSortable() {
-            const sortableContainer = document.getElementById('invitationSectionsContainer');
-            if (typeof Sortable !== 'undefined') {
-                // Main container
-                if (sortableContainer) new Sortable(sortableContainer, {
-                    group: 'nested',
-                    animation: 150,
-                    handle: '.section-drag-handle',
-                    ghostClass: 'bg-light',
-                    onEnd: () => historyManager.saveState()
-                });
-                
-                // Nested containers
-                document.querySelectorAll('.section-blocks-container').forEach(el => {
-                    new Sortable(el, {
-                        group: 'nested',
-                        animation: 150,
-                        handle: '.section-drag-handle',
-                        ghostClass: 'bg-light',
-                        onEnd: () => historyManager.saveState()
-                    });
-                });
-            }
-        }
-
-        // --- Toolbar Drag & Drop Logic ---
-        const toolbarItems = document.querySelectorAll('.draggable-tool');
         const sectionsContainer = document.getElementById('invitationSectionsContainer');
-
-        toolbarItems.forEach(item => {
-            item.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('toolType', item.dataset.type);
-                e.dataTransfer.effectAllowed = 'copy';
-            });
-        });
 
         sectionsContainer.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
             sectionsContainer.style.border = '2px dashed var(--primary)';
 
-            // Auto-scroll logic
-            const scrollSpeed = 15; // pixels
-            const scrollZone = window.innerHeight * 0.15; // 15% of viewport height
+            const scrollSpeed = 15;
+            const scrollZone = window.innerHeight * 0.15;
 
             if (e.clientY < scrollZone) {
                 window.scrollBy(0, -scrollSpeed);
@@ -620,7 +704,6 @@
             if (type) {
                 historyManager.saveState();
                 
-                // Check if dropped inside a nested container
                 const nestedContainer = e.target.closest('.section-blocks-container');
                 const targetContainer = nestedContainer || sectionsContainer;
                 
@@ -629,8 +712,31 @@
             }
         });
 
+        // --- Initialize Sortable ---
+        function initSortable() {
+            const sortableContainer = document.getElementById('invitationSectionsContainer');
+            if (typeof Sortable !== 'undefined') {
+                if (sortableContainer) new Sortable(sortableContainer, {
+                    group: 'nested',
+                    animation: 150,
+                    handle: '.section-drag-handle',
+                    ghostClass: 'bg-light',
+                    onEnd: () => historyManager.saveState()
+                });
+                
+                document.querySelectorAll('.section-blocks-container').forEach(el => {
+                    new Sortable(el, {
+                        group: 'nested',
+                        animation: 150,
+                        handle: '.section-drag-handle',
+                        ghostClass: 'bg-light',
+                        onEnd: () => historyManager.saveState()
+                    });
+                });
+            }
+        }
+
         function getDragAfterElement(container, y) {
-            // Only consider direct children to avoid confusion with nested elements
             const draggableElements = [...container.children].filter(child => 
                 child.classList.contains('invitation-section') && !child.classList.contains('dragging')
             );
@@ -654,17 +760,12 @@
             div.dataset.section = uniqueId;
             div.dataset.type = type;
             
-            // Common Drag Handle
             const dragHandle = `<div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary" style="z-index: 10;"><i class="bi bi-grip-vertical"></i></div>`;
-            
-            // Delete Button
             const deleteBtn = `<button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 text-danger btn-delete-section shadow-sm" style="z-index: 10;"><i class="bi bi-trash"></i></button>`;
 
             let content = '';
             
-            // Helper to get event data safely
             const eventTitle = currentEventData ? currentEventData.title : 'Event Title';
-            const eventDate = currentEventData ? new Date(currentEventData.start_datetime).toLocaleString() : 'Date & Time';
             const eventVenue = currentEventData ? (currentEventData.venue_name || 'Unknown Venue') : 'Location';
 
             switch(type) {
@@ -703,7 +804,7 @@
                     break;
                 case 'image':
                     const imgSrc = (data && data.image) ? data.image : 'https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Image';
-                    div.className = 'invitation-section'; // Reset padding for image
+                    div.className = 'invitation-section';
                     content = `
                         <div class="position-relative bg-light" style="min-height: 200px;">
                             <img src="${imgSrc}" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;">
@@ -741,6 +842,25 @@
                         <div class="form-builder-wrapper">
                             <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">${formTitle}</h4>
                             <div class="form-fields-list"></div>
+                            <div class="d-grid mt-3">
+                                <button class="btn btn-primary" disabled>Confirm RSVP</button>
+                            </div>
+                            <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
+                                <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
+                                <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rsvp_form':
+                    const rsvpTitle = (data && data.title) ? data.title : 'Please confirm your details:';
+                    content = `
+                        <div class="form-builder-wrapper">
+                            <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">${rsvpTitle}</h4>
+                            <div class="form-fields-list"></div>
+                            <div class="d-grid mt-3">
+                                <button class="btn btn-primary" disabled>Confirm RSVP</button>
+                            </div>
                             <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
                                 <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
                                 <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
@@ -764,34 +884,18 @@
                                 </select>
                             </div>
                             <div class="question-answer-area" data-options='${(data && data.options) ? JSON.stringify(data.options) : "[]"}'></div>
-                            <div class="question-buttons-list mt-3 d-flex flex-wrap gap-2"></div>
+                            <div class="question-buttons-list mt-3 d-flex flex-wrap gap-2">
+                            </div>
                             <div class="mt-3 border-top pt-2" style="border-color: var(--border-color) !important;">
                                 <button class="btn btn-sm btn-outline-secondary btn-add-question-btn"><i class="bi bi-plus-square"></i> Add Button</button>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'rsvp_question':
-                    content = `
-                        <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
-                            <h4 class="mb-3 text-center" style="color: var(--text-main);">Will you be attending?</h4>
-                            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-0">
-                                <button type="button" class="btn btn-success btn-lg px-4 gap-3">Yes, I'll be there!</button>
-                                <button type="button" class="btn btn-outline-secondary btn-lg px-4">No, I can't make it</button>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'rsvp_form':
-                    // Treat legacy rsvp_form as the new form builder
-                    div.dataset.type = 'form'; // Upgrade the type for future saves
-                    content = `
-                        <div class="form-builder-wrapper p-4 rounded" style="background-color: var(--bg-muted);">
-                            <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">Please confirm your details:</h4>
-                            <div class="form-fields-list"></div>
-                            <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
-                                <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
-                                <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
+                                 <div class="dropdown d-inline-block ms-2">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Bind to Section
+                                    </button>
+                                    <ul class="dropdown-menu bind-section-dropdown" style="background-color: var(--bg-panel); color: var(--text-main);">
+                                        <li><a class="dropdown-item" href="#">None</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -800,26 +904,22 @@
 
             div.innerHTML = dragHandle + deleteBtn + content;
             
-            // Bind Delete
             div.querySelector('.btn-delete-section').addEventListener('click', () => {
                 historyManager.saveState();
                 div.remove();
             });
             
-            // Bind logic for newly created question sections
             if (type === 'question') {
+                populateBindSectionDropdowns();
                 const questionBlock = div.querySelector('.question-block');
                 if (questionBlock) {
-                    // Initial render of the answer area
                        renderQuestionInput(questionBlock);
 
-                    // Bind the dropdown to re-render on change
                     const typeSelect = questionBlock.querySelector('.question-type-select');
                     if (typeSelect) {
                         typeSelect.addEventListener('change', () => { historyManager.saveState(); renderQuestionInput(questionBlock); });
                     }
 
-                    // Bind Add Button Logic
                     const btnList = questionBlock.querySelector('.question-buttons-list');
                     const addBtn = questionBlock.querySelector('.btn-add-question-btn');
                     
@@ -859,45 +959,16 @@
                 }
             }
 
-            // Bind Form Builder Logic
             if (type === 'form' || type === 'rsvp_form') {
                 const builderWrapper = div.querySelector('.form-builder-wrapper');
-                let fields;
-                if (type === 'rsvp_form') {
-                    // Default fields for the legacy rsvp_form
-                    fields = [
-                        {type: 'text', label: 'Full Name'},
-                        {type: 'text', label: 'Email Address'},
-                        {type: 'text', label: 'Age'},
-                        {type: 'seat', viewPreference: (data && data.viewPreference) ? data.viewPreference : 'chart'}
-                    ];
-                } else {
-                    // Default fields for a new 'form' block
-                    fields = (data && data.fields && data.fields.length > 0) ? data.fields : [{type: 'text', label: 'Full Name'}, {type: 'text', label: 'Email Address'}];
-                }
+                const fields = (data && data.fields && data.fields.length > 0) ? data.fields : [{type: 'text', label: 'Full Name'}, {type: 'text', label: 'Email Address'}];
                 initFormBuilder(builderWrapper, fields);
             }
 
-            // Re-bind banner upload if applicable
             if (type === 'banner') {
-                const uploadInput = div.querySelector(`#bannerUpload_${uniqueId}`);
-                const preview = div.querySelector(`#bannerImagePreview_${uniqueId}`);
-                if (uploadInput && preview) {
-                    uploadInput.addEventListener('change', function() {
-                        const file = this.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                preview.src = e.target.result;
-                                historyManager.saveState();
-                            }
-                            reader.readAsDataURL(file);
-                        }
-                    });
-                }
+                bindBannerUpload();
             }
 
-            // Initialize Sortable for nested section
             if (type === 'section') {
                 const innerContainer = div.querySelector('.section-blocks-container');
                 if (innerContainer && typeof Sortable !== 'undefined') {
@@ -910,7 +981,6 @@
                     });
                 }
                 
-                // Load nested blocks if any
                 if (data && data.blocks && data.blocks.length > 0) {
                     data.blocks.forEach(blockData => {
                         createNewSection(blockData.type, blockData, null, innerContainer);
@@ -925,7 +995,6 @@
             }
         }
 
-        // Add delete buttons to existing sections
         function bindSectionControls() {
             document.querySelectorAll('.invitation-section').forEach(sec => {
                 if(!sec.querySelector('.btn-delete-section')) {
@@ -939,27 +1008,37 @@
             });
         }
 
-        // --- Load Data Logic ---
+        function populateBindSectionDropdowns() {
+            document.querySelectorAll('.bind-section-dropdown').forEach(dropdown => {
+                dropdown.querySelectorAll('li:not(:first-child)').forEach(item => item.remove());
+                const allSections = Array.from(document.querySelectorAll('.invitation-section'));
+                allSections.forEach(section => {
+                    addSectionToDropdown(dropdown, section);
+                });
+            });
+        }
+
         const currentEventId = localStorage.getItem('seatlify_current_event_id');
         if (currentEventId && typeof MockDB !== 'undefined') {
-            // Fetch from MockDB instead of Backend to avoid CORS
             const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
             
             if (event) {
-                currentEventData = event; // Store for later use (sending emails)
+                currentEventData = event;
+                const container = document.getElementById('invitationSectionsContainer');
+                
+                // Check for local draft first
+                const savedDraft = localStorage.getItem(`seatlify_invitation_draft_${currentEventId}`);
 
-                // Check if we have a saved config to restore
-                if (event.invitation_config && event.invitation_config.sections && event.invitation_config.sections.length > 0) {
-                    const container = document.getElementById('invitationSectionsContainer');
-                    container.innerHTML = ''; // Clear default layout
+                if (savedDraft) {
+                    container.innerHTML = savedDraft;
+                } else if (event.invitation_config && event.invitation_config.sections && event.invitation_config.sections.length > 0) {
+                    container.innerHTML = '';
                     
                     event.invitation_config.sections.forEach(sectionData => {
                         createNewSection(sectionData.type, sectionData);
                     });
                 } else {
-                    // Fallback: Populate default fields if no custom config exists
                     const titleEl = document.getElementById('invDesignTitle');
-                    const hostEl = document.getElementById('invDesignHost');
                     const descEl = document.getElementById('invDesignDesc');
                     const dateEl = document.getElementById('invDesignDate');
                     const timeEl = document.getElementById('invDesignTime');
@@ -986,283 +1065,160 @@
             }
         }
 
-
         // --- Banner image upload preview logic ---
         function bindBannerUpload() {
-            const bannerUpload = document.getElementById('bannerUpload');
-            const bannerPreview = document.getElementById('bannerImagePreview');
-            if (bannerUpload && bannerPreview) {
-                bannerUpload.addEventListener('change', function() {
-                    const file = this.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            bannerPreview.src = e.target.result;
-                            historyManager.saveState();
-                        }
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-        }
-
-        // --- Preview Modal Logic ---
-        const modalContainer = document.getElementById('invitationPreviewModalContainer');
-        if (modalContainer) {
-            // The path is relative to dashboard.html where this content is injected.
-            fetch('invitations/invitation-preview-modal.html')
-                .then(res => {
-                    if (!res.ok) throw new Error(`Modal file not found at ${res.url}`);
-                    return res.text();
-                })
-                .then(html => {
-                    modalContainer.innerHTML = html;
-                    bindPreviewButton();
-                })
-                .catch(err => console.error("Error loading preview modal:", err));
-        }
-
-        function bindPreviewButton() {
-            const previewBtn = document.getElementById('btnPreviewInvitation');
-            const designer = document.getElementById('invitationDesigner');
-            const modalEl = document.getElementById('invitationPreviewModal');
-            
-            if (!previewBtn || !designer || !modalEl) return;
-
-            const modal = new bootstrap.Modal(modalEl);
-            const previewWrapper = document.getElementById('previewContentWrapper');
-
-            previewBtn.addEventListener('click', () => {
-                const previewNode = designer.cloneNode(true);
-
-                // Clean up the cloned node for a pure preview
-                previewNode.removeAttribute('id'); // Avoid duplicate IDs
-                // Remove all IDs from descendant elements to prevent conflicts in the DOM
-                previewNode.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-
-                previewNode.querySelectorAll('[contenteditable="true"]').forEach(el => {
-                    el.removeAttribute('contenteditable');
-                    el.style.outline = 'none';
-                    el.style.backgroundColor = '';
-                });
-                previewNode.querySelector('.position-absolute.top-0.end-0')?.remove();
-                previewNode.querySelectorAll('.section-drag-handle').forEach(el => el.remove());
-                previewNode.querySelectorAll('.btn-delete-section').forEach(el => el.remove());
-
-                // Assemble the blocks for preview (remove editor styles)
-                previewNode.style.backgroundColor = 'var(--bg-panel)';
-                previewNode.style.borderRadius = '12px';
-                previewNode.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-                previewNode.style.overflow = 'hidden';
-
-                previewNode.querySelectorAll('.invitation-section').forEach(el => {
-                    el.style.border = 'none';
-                    el.style.margin = '0';
-                    el.style.borderRadius = '0';
-                    el.style.backgroundColor = 'transparent';
-                });
-
-                previewWrapper.innerHTML = '';
-                previewWrapper.appendChild(previewNode);
-                modal.show();
-            });
-        }
-
-        // --- Save & Share Logic ---
-        const btnSave = document.getElementById('btnSaveInvitation');
-        const shareModalEl = document.getElementById('saveShareModal');
-        const shareInput = document.getElementById('shareLinkInput');
-        const btnCopy = document.getElementById('btnCopyLink');
-        const copyAlert = document.getElementById('copySuccessAlert');
-
-        if (btnSave && shareModalEl) {
-            const shareModal = new bootstrap.Modal(shareModalEl);
-
-            // Helper to serialize a single section
-            function serializeSection(sec) {
-                const type = sec.dataset.type;
-                const data = { type: type };
-
-                if (type === 'banner' || type === 'image') {
-                    data.image = sec.querySelector('img').src;
-                } else if (type === 'header') {
-                    data.title = sec.querySelector('h1').innerHTML;
-                    data.host = sec.querySelector('.lead').innerHTML;
-                    data.description = sec.querySelector('.invitation-description').innerHTML;
-                } else if (type === 'section') {
-                    data.title = sec.querySelector('h3').innerHTML;
-                    // Recursively serialize children
-                    data.blocks = [];
-                    const innerContainer = sec.querySelector('.section-blocks-container');
-                    if (innerContainer) {
-                        // Only direct children
-                        [...innerContainer.children].forEach(child => {
-                            if (child.classList.contains('invitation-section')) {
-                                data.blocks.push(serializeSection(child));
+            document.querySelectorAll('.invitation-banner').forEach(banner => {
+                const uploadInput = banner.querySelector('input[type="file"]');
+                const preview = banner.querySelector('img');
+                if (uploadInput && preview && !uploadInput.dataset.bound) {
+                    uploadInput.dataset.bound = 'true';
+                    uploadInput.addEventListener('change', function() {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                preview.src = e.target.result;
+                                historyManager.saveState();
                             }
-                        });
-                    }
-                } else if (type === 'form') {
-                    data.title = sec.querySelector('.form-title').innerHTML;
-                    data.fields = [];
-                    sec.querySelectorAll('.form-field-item').forEach(field => {
-                        const fType = field.dataset.fieldType;
-                        if (fType === 'text') {
-                            data.fields.push({
-                                type: 'text',
-                                label: field.querySelector('label').innerHTML
-                            });
-                        } else if (fType === 'seat') {
-                            data.fields.push({
-                                type: 'seat',
-                                viewPreference: field.querySelector('.seat-view-preference').value
-                            });
+                            reader.readAsDataURL(file);
                         }
                     });
-                } else if (type === 'question') {
-                    data.question = sec.querySelector('.question-title')?.innerHTML || '';
-                    data.questionType = sec.querySelector('.question-block')?.dataset.questionType || 'short_answer';
-                    
-                    if (['multiple_choice', 'checkboxes', 'dropdown'].includes(data.questionType)) {
-                        data.options = [];
-                        sec.querySelectorAll('.question-options-list .d-flex').forEach(opt => {
-                            const label = opt.querySelector('[contenteditable="true"]')?.innerHTML || '';
-                            if (label) data.options.push(label);
-                        });
-                    }
-                    
-                    data.buttons = [];
-                    sec.querySelectorAll('.question-buttons-list .question-custom-btn').forEach(btn => {
-                        data.buttons.push(btn.textContent);
-                    });
                 }
-                return data;
-            }
-
-            btnSave.addEventListener('click', () => {
-                const eventId = localStorage.getItem('seatlify_current_event_id');
-                if (!eventId) {
-                    alert("No active event found.");
-                    return;
-                }
-
-                // Serialize Sections
-                const sections = [];
-                // Only top-level sections
-                const container = document.getElementById('invitationSectionsContainer');
-                [...container.children].forEach(sec => {
-                    if (sec.classList.contains('invitation-section')) {
-                        sections.push(serializeSection(sec));
-                    }
-                });
-
-                // Save Configuration to DB
-                const config = {
-                    // We still save these for backward compatibility or easy access, but 'sections' is the source of truth for layout
-                    host: document.getElementById('invDesignHost')?.innerHTML || '', 
-                    sections: sections
-                };
-
-                // Save to Backend (MockDB via InvitationService)
-                InvitationService.saveConfig(eventId, config)
-                .then(data => {
-                    if (data.success) {
-                        // Generate Link
-                        const uniqueId = Math.random().toString(36).substring(7);
-                        
-                        // Dynamic Link Generation (Relative to current location)
-                        let baseUrl = window.location.href.split('?')[0];
-                        baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
-                        if (!baseUrl.endsWith('/invitations/')) {
-                            baseUrl += 'invitations/';
-                        }
-                        const link = `${baseUrl}public-view-invitation.html?event=${eventId}&share=${uniqueId}`;
-                        
-                        shareInput.value = link;
-                        if(copyAlert) copyAlert.classList.add('d-none');
-                        shareModal.show();
-                    } else {
-                        alert("Failed to save configuration: " + data.message);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("Network error while saving.");
-                });
             });
+        }
 
-            if (btnCopy) {
-                btnCopy.addEventListener('click', () => {
-                    shareInput.select();
-                    shareInput.setSelectionRange(0, 99999); // For mobile devices
-                    navigator.clipboard.writeText(shareInput.value).then(() => {
-                        if(copyAlert) copyAlert.classList.remove('d-none');
-                        setTimeout(() => { if(copyAlert) copyAlert.classList.add('d-none'); }, 3000);
-                    });
-                });
+        async function initializeDesigner() {
+            const toolsContainer = document.getElementById('invitations-designer-tools-container');
+            if (toolsContainer) {
+                try {
+                    const response = await fetch('invitations/invitations-designer-tools.html');
+                    if (!response.ok) throw new Error('Failed to fetch tools');
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    const scriptTag = doc.querySelector('script');
+                    if (scriptTag) scriptTag.remove();
+                    
+                    toolsContainer.innerHTML = doc.body.innerHTML;
+
+                    // Now that the toolbar is in the DOM, we can bind its events.
+                    // The functions are defined in this script, so they are available.
+                    bindToolbarDragAndDrop();
+                    bindUndoRedoControls();
+                    bindGlobalUndoRedoKeys();
+
+                } catch (error) {
+                    console.error('Failed to load invitation designer tools:', error);
+                    toolsContainer.innerHTML = '<div class="alert alert-danger">Failed to load designer tools.</div>';
+                }
+            }
+            
+            historyManager.init(rebindAllInvitationEvents);
+
+            const saveModalContainer = document.getElementById('saveShareModalContainer');
+            if (saveModalContainer) {
+                fetch('invitations/save-invitation-modal.html')
+                    .then(res => res.ok ? res.text() : Promise.reject('Save modal HTML not found'))
+                    .then(saveModalHtml => {
+                        const tempSaveDiv = document.createElement('div');
+                        tempSaveDiv.innerHTML = saveModalHtml;
+                        const saveScriptTag = tempSaveDiv.querySelector('script');
+                        if (saveScriptTag) saveScriptTag.remove();
+                        saveModalContainer.innerHTML = tempSaveDiv.innerHTML;
+
+                        if (saveScriptTag && saveScriptTag.textContent) {
+                            const script = document.createElement('script');
+                            script.textContent = saveScriptTag.textContent;
+                            document.body.appendChild(script).remove();
+                            if (typeof bindSaveAndShare === 'function') bindSaveAndShare(currentEventData, InvitationService);
+                        }
+                    })
+                    .catch(err => console.error("Error loading save modal:", err));
+            }
+            
+            const modalContainer = document.getElementById('invitationPreviewModalContainer');
+            if (modalContainer) {
+                fetch('invitations/invitation-preview-modal.html')
+                    .then(res => res.ok ? res.text() : Promise.reject('Preview modal HTML not found'))
+                    .then(modalHtml => {
+                        modalContainer.innerHTML = modalHtml;
+                        bindPreviewButton();
+                    })
+                    .catch(err => console.error("Error loading preview modal:", err));
             }
 
-            // --- Send Email Logic ---
-            const btnSendInvite = document.getElementById('btnSendInvite');
-            if (btnSendInvite) {
-                btnSendInvite.addEventListener('click', async () => {
-                    const email = document.getElementById('inviteEmailInput').value;
-                    const link = shareInput.value;
-                    
-                    if (!email || !link) {
-                        alert("Please enter an email address.");
-                        return;
-                    }
+            // Use rebindAllInvitationEvents to ensure everything is hooked up (including drafts)
+            rebindAllInvitationEvents();
 
-                    // Use the data fetched from backend
-                    const title = currentEventData ? currentEventData.title : 'Event';
-                    const date = currentEventData ? currentEventData.start_datetime : '';
+            const defaultFormBuilder = document.querySelector('[data-section="rsvp_form"] .form-builder-wrapper');
+            if (defaultFormBuilder) {
+                // Only populate default fields if the list is empty (fresh load, no draft)
+                if (defaultFormBuilder.querySelector('.form-fields-list').children.length === 0) {
+                    const defaultFields = [
+                        {type: 'text', label: 'Full Name'},
+                        {type: 'text', label: 'Email Address'},
+                        {type: 'text', label: 'Age'},
+                        {type: 'seat', viewPreference: 'chart'}
+                    ];
+                    initFormBuilder(defaultFormBuilder, defaultFields);
+                }
+            }
 
-                    const originalText = btnSendInvite.innerHTML;
-                    btnSendInvite.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-                    btnSendInvite.disabled = true;
+            historyManager.clear();
+            setTimeout(() => historyManager.saveState(), 100);
 
-                    const res = await InvitationService.sendInvite(email, title, date, link);
-                    
-                    btnSendInvite.innerHTML = originalText;
-                    btnSendInvite.disabled = false;
+            document.getElementById('invitationSectionsContainer').addEventListener('blur', (e) => {
+                if (e.target.isContentEditable) historyManager.saveState();
+            }, true);
+        }
 
-                    if (res.success) {
-                        alert("Invitation sent successfully!");
-                        document.getElementById('inviteEmailInput').value = '';
-                    } else {
-                        alert("Failed to send: " + res.message);
-                    }
+        function addSectionToDropdown(dropdown, section) {
+            if(!dropdown || !section) return;
+            const sectionType = section.dataset.type;
+            const sectionName = section.dataset.section || sectionType;
+
+            if (sectionType !== 'question') {
+                const dropdownItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.className = 'dropdown-item';
+                link.href = '#';
+                link.textContent = sectionName;
+                link.style.color = 'var(--text-main)';
+                dropdownItem.appendChild(link);
+
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const questionBlock = dropdown.closest('.question-block');
+                     if(questionBlock) {
+                        dropdown.querySelectorAll('.dropdown-item').forEach(item => item.classList.remove('active'));
+                        link.classList.add('active');
+                        questionBlock.dataset.bindSection = sectionName;
+                        historyManager.saveState();
+                     }
                 });
+                dropdown.appendChild(dropdownItem);
             }
         }
 
-        // --- Initial Setup ---
-        initSortable();
-        bindSectionControls();
-        bindBannerUpload();
-        bindUndoRedoControls();
-
-        // Initialize the default RSVP form as a builder, if it exists
-        const defaultFormBuilder = document.querySelector('[data-section="rsvp_form"] .form-builder-wrapper');
-        if (defaultFormBuilder) {
-            const defaultFields = [
-                {type: 'text', label: 'Full Name'},
-                {type: 'text', label: 'Email Address'},
-                {type: 'text', label: 'Age'},
-                {type: 'seat', viewPreference: 'chart'}
-            ];
-            initFormBuilder(defaultFormBuilder, defaultFields);
+        function addNoneOption(dropdown) {
+            const noneItem = document.createElement('li');
+            const noneLink = document.createElement('a');
+            noneLink.className = 'dropdown-item';
+            noneLink.href = '#';
+            noneLink.textContent = 'None';
+            noneLink.style.color = 'var(--text-main)';
+            noneLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const questionBlock = dropdown.closest('.question-block');
+                questionBlock.dataset.bindSection = '';
+                historyManager.saveState();
+            });
+            noneItem.appendChild(noneLink);
+            dropdown.appendChild(noneItem);
         }
-
-        // Save initial state
-        historyManager.clear();
-        setTimeout(() => historyManager.saveState(), 100); // Timeout to allow initial render
-
-        // Save state on text edit
-        document.getElementById('invitationSectionsContainer').addEventListener('blur', (e) => {
-            if (e.target.isContentEditable) historyManager.saveState();
-        }, true);
-
+        
+        // --- START ---
+        await initializeDesigner();
     })();
 </script>
