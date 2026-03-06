@@ -67,7 +67,6 @@ export function initDashboard() {
         let html5QrCode; // To hold the scanner instance
 
         const onScanSuccess = (decodedText, decodedResult) => {
-            // Handle the scanned code here.
             console.log(`Code matched = ${decodedText}`, decodedResult);
 
             const currentEventId = localStorage.getItem('seatlify_current_event_id');
@@ -76,19 +75,38 @@ export function initDashboard() {
                 return;
             }
 
-            // In a real app, you'd parse `decodedText` to get ticket/guest info.
-            // For this simulation, we'll just check-in a guest for the current event.
-            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
-            const result = MockDB.checkInAttendee(currentEventId);
+            let eventId, guestId;
 
-            if (result.success) {
-                alert(`Check-in successful for "${event.title}"!\nTotal Checked-in: ${result.checkedIn}`);
-            } else {
-                alert(`Check-in failed: ${result.message}`);
+            // Try to parse as a URL
+            try {
+                const url = new URL(decodedText);
+                if (url.hostname === 'seatlify.web.app' && url.pathname === '/checkin') {
+                    eventId = url.searchParams.get('event_id');
+                    guestId = url.searchParams.get('guest_id');
+                }
+            } catch (e) {
+                // Not a valid URL
             }
 
+            if (!eventId || !guestId) {
+                alert(`Invalid QR code format. Scanned data: ${decodedText}`);
+                return;
+            }
+
+            if (eventId !== currentEventId) {
+                const event = MockDB.getEvents().find(e => e.event_id == eventId);
+                const eventName = event ? event.title : `another event (ID: ${eventId})`;
+                alert(`This ticket is for ${eventName}. Please switch to the correct event to check-in.`);
+                return;
+            }
+
+            // --- Perform Check-in ---
+            const result = MockDB.checkInGuest(eventId, guestId);
+
+            alert(result.message); // Display the specific message from the DB function
+
             // Hide the modal after a scan attempt
-            const modal = bootstrap.Modal.getInstance(qrScannerModalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
             if (modal) {
                 modal.hide();
             }
@@ -99,14 +117,34 @@ export function initDashboard() {
         };
 
         qrScannerModalEl.addEventListener('shown.bs.modal', () => {
-            if (typeof Html5Qrcode !== 'undefined') {
+            if (typeof Html5Qrcode !== 'undefined' && typeof navigator.mediaDevices !== 'undefined') {
                 html5QrCode = new Html5Qrcode("qr-reader");
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
-                .catch(err => {
-                    console.error("Unable to start QR scanner", err);
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+                // Manually create a media stream using the Media Capture and Streams API
+                const createStream = () => {
+                    const constraints = {
+                        video: {
+                            facingMode: "environment" // Prefer the rear camera
+                        }
+                    };
+                    return navigator.mediaDevices.getUserMedia(constraints);
+                };
+
+                // Pass the function that returns the stream to the scanner library
+                html5QrCode.start(
+                    createStream, // The library will execute this function to get the MediaStream
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                ).catch(err => {
+                    console.error("Unable to start QR scanner with custom stream", err);
                     const readerEl = document.getElementById('qr-reader');
                     if(readerEl) readerEl.innerHTML = `<div class="alert alert-danger">Error: Could not start camera. Please grant camera permissions.</div>`;
                 });
+            } else {
+                const readerEl = document.getElementById('qr-reader');
+                if(readerEl) readerEl.innerHTML = `<div class="alert alert-warning">QR Scanner not supported on this browser.</div>`;
             }
         });
 
@@ -637,15 +675,27 @@ function renderGuestList(event) {
             ? new Date(guest.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
             : 'N/A';
 
+        const checkedInInfo = guest.checked_in
+            ? `<div class="mt-2 text-end">
+                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Checked-in</span>
+                    <small class="d-block text-muted" style="font-size: 0.75em;">at ${new Date(guest.checked_in_timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+               </div>`
+            : '';
+
         item.innerHTML = `
-            <div>
-                <div class="fw-bold">${guest.name} ${seatInfo}</div>
-                <small class="text-muted">${guest.email}</small>
-                <small class="text-muted d-block mt-1" style="font-size: 0.8em;">Added: ${creationTime}</small>
+            <div class="w-100">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fw-bold">${guest.name} ${seatInfo}</div>
+                        <small class="text-muted">${guest.email}</small>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.8em;">Added: ${creationTime}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger btn-delete-guest" title="Remove Guest">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                ${checkedInInfo}
             </div>
-            <button class="btn btn-sm btn-outline-danger btn-delete-guest" title="Remove Guest">
-                <i class="bi bi-trash"></i>
-            </button>
         `;
         
         item.querySelector('.btn-delete-guest').addEventListener('click', () => {

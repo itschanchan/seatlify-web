@@ -119,11 +119,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-        <label class="form-label">Grid Size</label>
-        <input type="range" class="form-range mb-3">
+        <label for="gridSizeInput" class="form-label">Grid Size</label>
+        <input type="range" class="form-range mb-3" id="gridSizeInput">
 
-        <label class="form-label">Seat Size</label>
-        <input type="number" class="form-control mb-3">
+        <label for="seatSizeInput" class="form-label">Seat Size</label>
+        <input type="number" class="form-control mb-3" id="seatSizeInput">
 
         <button class="btn btn-danger w-100">Clear Canvas</button>
     </div>
@@ -246,7 +246,7 @@
                         </div>
                     </div>
                     <div id="editTicketTiersWrapper" style="display: none;">
-                        <label class="form-label" style="color: var(--text-muted);">Ticket Tiers</label>
+                        <h6 class="form-label" style="color: var(--text-muted);">Ticket Tiers</h6>
                         <div id="editTiersList"></div>
                         <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="btnEditAddTier" style="border-color: var(--border-color); color: var(--text-muted);">
                             <i class="bi bi-plus"></i> Add Tier

@@ -56,6 +56,9 @@
         <!-- Left Group: Tools and History -->
         <div class="d-flex flex-wrap align-items-center gap-2">
             <!-- Toolbox Buttons -->
+            <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="banner" title="Banner Image">
+                <i class="bi bi-card-image"></i> <span class="d-none d-md-inline">Banner</span>
+            </button>
             <button class="btn btn-outline-secondary d-flex align-items-center gap-2 draggable-tool" draggable="true" data-type="header" title="Header & Description">
                 <i class="bi bi-fonts"></i> <span class="d-none d-md-inline">Header</span>
             </button>
@@ -136,8 +139,9 @@
                 <div class="card mb-4 border-0" style="background-color: var(--bg-muted);">
                     <div class="card-body">
                         <h5 class="card-title" style="color: var(--text-main);">When & Where</h5>
-                        <p id="invDesignTime" class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>October 26, 2026 at 7:00 PM</p>
-                        <p id="invDesignVenue" class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>The Grand Auditorium, 123 Main St</p>
+                        <p id="invDesignDate" class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i></p>
+                        <p id="invDesignTime" class="card-text mb-2" style="color: var(--text-muted);"><i class="bi bi-clock me-2"></i></p>
+                        <p id="invDesignVenue" class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i></p>
                     </div>
                 </div>
             </div>
@@ -156,40 +160,15 @@
             </div>
 
             <!-- SECTION: RSVP Form -->
-            <div class="invitation-section p-4 p-md-5" data-section="rsvp_form" data-type="rsvp_form">
+            <div class="invitation-section p-4 p-md-5" data-section="rsvp_form" data-type="form">
                 <div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>
                 
-                <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
-                    <div class="rsvp-form">
-                        <h5 class="mb-3" style="color: var(--text-main);">Please confirm your details:</h5>
-                        <div class="mb-3">
-                            <label for="guestName" class="form-label" style="color: var(--text-muted);">Full Name</label>
-                            <input type="text" class="form-control" id="guestName" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                        </div>
-                        <div class="mb-3">
-                            <label for="guestEmail" class="form-label" style="color: var(--text-muted);">Email Address</label>
-                            <input type="email" class="form-control" id="guestEmail" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                        </div>
-                        <div class="mb-3">
-                            <label for="guestAge" class="form-label" style="color: var(--text-muted);">Age</label>
-                            <input type="number" class="form-control" id="guestAge" placeholder="Enter your age" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" style="color: var(--text-muted);">Seat Reservation</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder="No seat selected" readonly style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                <button class="btn btn-outline-primary dropdown-toggle btn-seat-view-config" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-grid-3x3"></i> Reserve Seat (Chart)
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><h6 class="dropdown-header">Guest View Preference</h6></li>
-                                    <li><a class="dropdown-item active" href="#" data-view="chart">Chart View</a></li>
-                                    <li><a class="dropdown-item" href="#" data-view="table">Table View</a></li>
-                                    <li><a class="dropdown-item" href="#" data-view="map">Map View</a></li>
-                                </ul>
-                            </div>
-                            <input type="hidden" class="seat-view-preference" value="chart">
-                        </div>
+                <div class="form-builder-wrapper p-4 rounded" style="background-color: var(--bg-muted);">
+                    <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">Please confirm your details:</h4>
+                    <div class="form-fields-list"></div>
+                    <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
+                        <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
+                        <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
                     </div>
                 </div>
             </div>
@@ -203,7 +182,7 @@
 <div id="invitationPreviewModalContainer"></div>
 
 <!-- Save & Share Modal -->
-<div class="modal fade" id="saveShareModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="saveShareModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
             <div class="modal-header border-bottom-0">
@@ -219,7 +198,7 @@
                     </button>
                 </div>
                 <hr class="my-3" style="border-color: var(--border-color);">
-                <label class="form-label text-muted">Send via Email</label>
+                <label for="inviteEmailInput" class="form-label text-muted">Send via Email</label>
                 <div class="input-group">
                     <input type="email" class="form-control" id="inviteEmailInput" placeholder="guest@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                     <button class="btn btn-outline-primary" type="button" id="btnSendInvite">
@@ -343,15 +322,262 @@
             });
         }
 
+        function bindQuestionOptionEvents(context) {
+            // Add Option button
+            context.querySelectorAll('.btn-add-option').forEach(btn => {
+                // Use a clone to prevent multiple listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+
+                newBtn.addEventListener('click', (e) => {
+                    historyManager.saveState();
+                    const answerArea = e.target.closest('.question-answer-area');
+                    const list = answerArea.querySelector('.question-options-list');
+                    const questionBlock = e.target.closest('.question-block');
+                    const type = questionBlock.dataset.questionType;
+                    const isRadio = type === 'multiple_choice';
+                    const inputType = isRadio ? 'radio' : 'checkbox';
+                    const optionName = list.querySelector('input')?.name || `option_${Date.now()}`;
+
+                    const optionWrapper = document.createElement('div');
+                    optionWrapper.className = 'd-flex align-items-center mb-2';
+                    optionWrapper.innerHTML = `
+                        <input class="form-check-input" type="${inputType}" name="${optionName}" disabled>
+                        <div contenteditable="true" class="ms-2 flex-grow-1" style="color: var(--text-main);">New Option</div>
+                        <button class="btn btn-sm btn-link text-danger btn-remove-option" title="Remove option"><i class="bi bi-x-circle"></i></button>
+                    `;
+                    if (type === 'dropdown') {
+                        optionWrapper.querySelector('input').style.display = 'none';
+                    }
+                    list.appendChild(optionWrapper);
+                    bindQuestionOptionEvents(list); // Re-bind for the new remove button
+                });
+            });
+
+            // Remove Option buttons
+            context.querySelectorAll('.btn-remove-option').forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    historyManager.saveState();
+                    e.target.closest('.d-flex').remove();
+                });
+            });
+        }
+
+        function renderQuestionInput(questionBlock) {
+            const answerArea = questionBlock.querySelector('.question-answer-area');
+            const typeSelect = questionBlock.querySelector('.question-type-select');
+            if (!answerArea || !typeSelect) return;
+
+            const type = typeSelect.value;
+            const savedOptions = JSON.parse(answerArea.dataset.options || '[]');
+            answerArea.dataset.options = '[]'; 
+
+            questionBlock.dataset.questionType = type;
+            answerArea.innerHTML = ''; 
+
+            switch(type) {
+                case 'short_answer':
+                    answerArea.innerHTML = `<input type="text" class="form-control" placeholder="Short answer text" disabled style="background-color: var(--bg-input); border-color: var(--border-color);">`;
+                    break;
+                case 'paragraph':
+                    answerArea.innerHTML = `<textarea class="form-control" rows="3" placeholder="Long answer text" disabled style="background-color: var(--bg-input); border-color: var(--border-color);"></textarea>`;
+                    break;
+                case 'multiple_choice':
+                case 'checkboxes':
+                case 'dropdown':
+                    const isRadio = type === 'multiple_choice';
+                    const inputType = isRadio ? 'radio' : 'checkbox';
+                    const optionName = `option_${Date.now()}`;
+
+                    const optionsContainer = document.createElement('div');
+                    optionsContainer.className = 'question-options-list';
+                    
+                    const optionsToRender = savedOptions.length > 0 ? savedOptions : ['Option 1', 'Option 2'];
+
+                    optionsToRender.forEach(optText => {
+                        const optionWrapper = document.createElement('div');
+                        optionWrapper.className = 'd-flex align-items-center mb-2';
+                        optionWrapper.innerHTML = `
+                            <input class="form-check-input" type="${inputType}" name="${optionName}" disabled>
+                            <div contenteditable="true" class="ms-2 flex-grow-1" style="color: var(--text-main);">${optText}</div>
+                            <button class="btn btn-sm btn-link text-danger btn-remove-option" title="Remove option"><i class="bi bi-x-circle"></i></button>
+                        `;
+                        optionsContainer.appendChild(optionWrapper);
+                    });
+
+                    answerArea.appendChild(optionsContainer);
+
+                    const addOptionBtn = document.createElement('button');
+                    addOptionBtn.className = 'btn btn-sm btn-outline-secondary mt-2 btn-add-option';
+                    addOptionBtn.innerHTML = '<i class="bi bi-plus"></i> Add Option';
+                    answerArea.appendChild(addOptionBtn);
+
+                    if (type === 'dropdown') {
+                        optionsContainer.querySelectorAll('input').forEach(inp => inp.style.display = 'none');
+                        const dropdownInfo = document.createElement('div');
+                        dropdownInfo.className = 'form-text text-muted mt-2';
+                        dropdownInfo.innerHTML = '<i class="bi bi-info-circle"></i> Options will be displayed as a dropdown list for guests.';
+                        answerArea.appendChild(dropdownInfo);
+                    }
+                    break;
+            }
+            bindQuestionOptionEvents(answerArea);
+        }
+
+        function initFormBuilder(builderWrapper, defaultFields) {
+            if (!builderWrapper) return;
+            
+            const list = builderWrapper.querySelector('.form-fields-list');
+            if (!list) return;
+
+            // Populate with default fields
+            defaultFields.forEach(f => addFieldToBuilder(list, f));
+
+            // Check if a seat field already exists and disable the button
+            const hasSeatField = defaultFields.some(f => f.type === 'seat');
+            const addSeatBtnInitial = builderWrapper.querySelector('.btn-add-seat-res');
+            if (addSeatBtnInitial && hasSeatField) {
+                addSeatBtnInitial.disabled = true;
+            }
+
+            // Initialize SortableJS for the fields
+            if (typeof Sortable !== 'undefined') {
+                new Sortable(list, {
+                    animation: 150,
+                    ghostClass: 'bg-light',
+                    handle: '.form-field-drag-handle', // Specify the handle
+                    onEnd: () => historyManager.saveState()
+                });
+            }
+
+            // Bind add buttons
+            const addFieldBtn = builderWrapper.querySelector('.btn-add-form-field');
+            if (addFieldBtn) {
+                addFieldBtn.addEventListener('click', () => {
+                    historyManager.saveState();
+                    addFieldToBuilder(list, {type: 'text', label: 'New Field'});
+                });
+            }
+            
+            const addSeatBtn = builderWrapper.querySelector('.btn-add-seat-res');
+            if (addSeatBtn) {
+                addSeatBtn.addEventListener('click', () => {
+                    historyManager.saveState();
+                    addFieldToBuilder(list, {type: 'seat', viewPreference: 'chart'});
+                });
+            }
+        }
+
+        function addFieldToBuilder(container, fieldData) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-field-item mb-3 position-relative p-3 border rounded';
+            wrapper.style.backgroundColor = 'var(--bg-muted)';
+            wrapper.style.paddingLeft = '2.5rem'; // Make space for handle
+            wrapper.dataset.fieldType = fieldData.type;
+
+            let innerHTML = '';
+            if (fieldData.type === 'text') {
+                innerHTML = `
+                    <label class="form-label" contenteditable="true" style="color: var(--text-muted);">${fieldData.label}</label>
+                    <input type="text" class="form-control" disabled placeholder="Input field" style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                `;
+            } else if (fieldData.type === 'seat') {
+                const pref = fieldData.viewPreference || 'chart';
+                innerHTML = `
+                    <label class="form-label" style="color: var(--text-muted);">Seat Reservation</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="No seat selected" disabled style="background-color: var(--bg-panel); border-color: var(--border-color);">
+                        <button class="btn btn-outline-primary dropdown-toggle btn-seat-view-config" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-grid-3x3"></i> Config View
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Guest View Preference</h6></li>
+                            <li><a class="dropdown-item ${pref==='chart'?'active':''}" href="#" data-view="chart">Chart View</a></li>
+                            <li><a class="dropdown-item ${pref==='table'?'active':''}" href="#" data-view="table">Table View</a></li>
+                            <li><a class="dropdown-item ${pref==='map'?'active':''}" href="#" data-view="map">Map View</a></li>
+                        </ul>
+                    </div>
+                    <input type="hidden" class="seat-view-preference" value="${pref}">
+                `;
+            }
+
+            wrapper.innerHTML = innerHTML;
+
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'form-field-drag-handle position-absolute top-50 start-0 translate-middle-y ms-2 text-muted';
+            dragHandle.innerHTML = '<i class="bi bi-grip-vertical"></i>';
+            dragHandle.style.cursor = 'grab';
+            wrapper.prepend(dragHandle);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-sm btn-link text-danger position-absolute top-0 end-0';
+            deleteBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+            deleteBtn.title = "Remove Field";
+            deleteBtn.onclick = () => { historyManager.saveState(); wrapper.remove(); };
+            deleteBtn.onclick = () => { 
+                historyManager.saveState(); 
+                // If we are deleting a seat reservation field, re-enable the add button
+                if (fieldData.type === 'seat') {
+                    const builderWrapper = wrapper.closest('.form-builder-wrapper');
+                    if (builderWrapper) {
+                        const addSeatBtn = builderWrapper.querySelector('.btn-add-seat-res');
+                        if (addSeatBtn) addSeatBtn.disabled = false;
+                    }
+                }
+                wrapper.remove(); 
+            };
+            wrapper.appendChild(deleteBtn);
+
+            if (fieldData.type === 'seat') {
+                const dropdownItems = wrapper.querySelectorAll('.dropdown-item');
+                const hiddenInput = wrapper.querySelector('.seat-view-preference');
+                dropdownItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        historyManager.saveState();
+                        hiddenInput.value = item.dataset.view;
+                        wrapper.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                    });
+                });
+            }
+
+            container.appendChild(wrapper);
+
+            // If a seat reservation field was just added, disable the button
+            if (fieldData.type === 'seat') {
+                const builderWrapper = container.closest('.form-builder-wrapper');
+                if (builderWrapper) {
+                    const addSeatBtn = builderWrapper.querySelector('.btn-add-seat-res');
+                    if (addSeatBtn) addSeatBtn.disabled = true;
+                }
+            }
+        }
+
         // --- Initialize Sortable ---
         function initSortable() {
             const sortableContainer = document.getElementById('invitationSectionsContainer');
-            if (sortableContainer && typeof Sortable !== 'undefined') {
-                new Sortable(sortableContainer, {
+            if (typeof Sortable !== 'undefined') {
+                // Main container
+                if (sortableContainer) new Sortable(sortableContainer, {
+                    group: 'nested',
                     animation: 150,
                     handle: '.section-drag-handle',
                     ghostClass: 'bg-light',
                     onEnd: () => historyManager.saveState()
+                });
+                
+                // Nested containers
+                document.querySelectorAll('.section-blocks-container').forEach(el => {
+                    new Sortable(el, {
+                        group: 'nested',
+                        animation: 150,
+                        handle: '.section-drag-handle',
+                        ghostClass: 'bg-light',
+                        onEnd: () => historyManager.saveState()
+                    });
                 });
             }
         }
@@ -371,6 +597,16 @@
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
             sectionsContainer.style.border = '2px dashed var(--primary)';
+
+            // Auto-scroll logic
+            const scrollSpeed = 15; // pixels
+            const scrollZone = window.innerHeight * 0.15; // 15% of viewport height
+
+            if (e.clientY < scrollZone) {
+                window.scrollBy(0, -scrollSpeed);
+            } else if (e.clientY > window.innerHeight - scrollZone) {
+                window.scrollBy(0, scrollSpeed);
+            }
         });
 
         sectionsContainer.addEventListener('dragleave', (e) => {
@@ -383,11 +619,35 @@
             const type = e.dataTransfer.getData('toolType');
             if (type) {
                 historyManager.saveState();
-                createNewSection(type);
+                
+                // Check if dropped inside a nested container
+                const nestedContainer = e.target.closest('.section-blocks-container');
+                const targetContainer = nestedContainer || sectionsContainer;
+                
+                const afterElement = getDragAfterElement(targetContainer, e.clientY);
+                createNewSection(type, null, afterElement, targetContainer);
             }
         });
 
-        function createNewSection(type, data = null) {
+        function getDragAfterElement(container, y) {
+            // Only consider direct children to avoid confusion with nested elements
+            const draggableElements = [...container.children].filter(child => 
+                child.classList.contains('invitation-section') && !child.classList.contains('dragging')
+            );
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function createNewSection(type, data = null, insertBeforeNode = null, parentContainer = null) {
+            const container = parentContainer || sectionsContainer;
             const div = document.createElement('div');
             const uniqueId = type + '_' + Date.now();
             div.className = 'invitation-section p-4 p-md-5';
@@ -395,7 +655,7 @@
             div.dataset.type = type;
             
             // Common Drag Handle
-            const dragHandle = `<div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary"><i class="bi bi-grip-vertical"></i></div>`;
+            const dragHandle = `<div class="section-drag-handle position-absolute top-0 start-0 m-2 p-2 rounded shadow-sm text-secondary" style="z-index: 10;"><i class="bi bi-grip-vertical"></i></div>`;
             
             // Delete Button
             const deleteBtn = `<button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 text-danger btn-delete-section shadow-sm" style="z-index: 10;"><i class="bi bi-trash"></i></button>`;
@@ -436,10 +696,9 @@
                     break;
                 case 'section':
                     const secTitle = (data && data.title) ? data.title : 'New Section';
-                    const secContent = (data && data.content) ? data.content : '<p>Add your content here.</p>';
                     content = `
                         <h3 contenteditable="true" style="color: var(--text-main);">${secTitle}</h3>
-                        <div contenteditable="true" style="color: var(--text-main);">${secContent}</div>
+                        <div class="section-blocks-container p-3 border rounded" style="min-height: 100px; background-color: var(--bg-muted);"></div>
                     `;
                     break;
                 case 'image':
@@ -452,33 +711,62 @@
                     `;
                     break;
                 case 'details':
+                    const start = currentEventData ? new Date(currentEventData.start_datetime) : null;
+                    const end = currentEventData && currentEventData.end_datetime ? new Date(currentEventData.end_datetime) : null;
+
+                    const eventDateStr = start ? start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Date';
+                    
+                    let eventTimeStr = 'Time';
+                    if (start) {
+                        eventTimeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                        if (end) {
+                            eventTimeStr += ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                        }
+                    }
+
                     content = `
                         <div class="card border-0" style="background-color: var(--bg-muted);">
                             <div class="card-body">
                                 <h5 class="card-title" style="color: var(--text-main);">Event Details</h5>
-                                <p class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>${eventDate}</p>
+                                <p class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>${eventDateStr}</p>
+                                <p class="card-text mb-2" style="color: var(--text-muted);"><i class="bi bi-clock me-2"></i>${eventTimeStr}</p>
                                 <p class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>${eventVenue}</p>
                             </div>
                         </div>
                     `;
                     break;
                 case 'form':
-                    const label = (data && data.label) ? data.label : 'Label';
+                    const formTitle = (data && data.title) ? data.title : 'Registration Form';
                     content = `
-                        <div class="mb-3">
-                            <label class="form-label" contenteditable="true" style="color: var(--text-muted);">${label}</label>
-                            <input type="text" class="form-control" disabled placeholder="Input field">
+                        <div class="form-builder-wrapper">
+                            <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">${formTitle}</h4>
+                            <div class="form-fields-list"></div>
+                            <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
+                                <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
+                                <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
+                            </div>
                         </div>
                     `;
                     break;
                 case 'question':
-                    const question = (data && data.question) ? data.question : 'Question?';
+                    const question = (data && data.question) ? data.question : 'Your Question Here';
+                    const questionType = (data && data.questionType) ? data.questionType : 'short_answer';
                     content = `
-                        <div class="text-center">
-                            <h4 contenteditable="true" class="mb-3" style="color: var(--text-main);">${question}</h4>
-                            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                                <button class="btn btn-success">Yes</button>
-                                <button class="btn btn-secondary">No</button>
+                        <div class="question-block" data-question-type="${questionType}">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 contenteditable="true" class="mb-0 question-title" style="color: var(--text-main);">${question}</h5>
+                                <select class="form-select form-select-sm question-type-select" style="width: auto; background-color: var(--bg-input); color: var(--text-main); border-color: var(--border-color);">
+                                    <option value="short_answer" ${questionType === 'short_answer' ? 'selected' : ''}>Short Answer</option>
+                                    <option value="paragraph" ${questionType === 'paragraph' ? 'selected' : ''}>Paragraph</option>
+                                    <option value="multiple_choice" ${questionType === 'multiple_choice' ? 'selected' : ''}>Multiple Choice</option>
+                                    <option value="checkboxes" ${questionType === 'checkboxes' ? 'selected' : ''}>Checkboxes</option>
+                                    <option value="dropdown" ${questionType === 'dropdown' ? 'selected' : ''}>Drop Down</option>
+                                </select>
+                            </div>
+                            <div class="question-answer-area" data-options='${(data && data.options) ? JSON.stringify(data.options) : "[]"}'></div>
+                            <div class="question-buttons-list mt-3 d-flex flex-wrap gap-2"></div>
+                            <div class="mt-3 border-top pt-2" style="border-color: var(--border-color) !important;">
+                                <button class="btn btn-sm btn-outline-secondary btn-add-question-btn"><i class="bi bi-plus-square"></i> Add Button</button>
                             </div>
                         </div>
                     `;
@@ -495,42 +783,15 @@
                     `;
                     break;
                 case 'rsvp_form':
-                    const pref = (data && data.viewPreference) ? data.viewPreference : 'chart';
-                    const labelMap = { 'chart': 'Chart View', 'table': 'Table View', 'map': 'Map View' };
-                    const btnLabel = labelMap[pref] || 'Chart View';
-                    
+                    // Treat legacy rsvp_form as the new form builder
+                    div.dataset.type = 'form'; // Upgrade the type for future saves
                     content = `
-                        <div class="guest-form-section p-4 rounded" style="background-color: var(--bg-muted);">
-                            <div class="rsvp-form">
-                                <h5 class="mb-3" style="color: var(--text-main);">Please confirm your details:</h5>
-                                <div class="mb-3">
-                                    <label class="form-label" style="color: var(--text-muted);">Full Name</label>
-                                    <input type="text" class="form-control" id="guestName_${uniqueId}" placeholder="John Doe" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" style="color: var(--text-muted);">Email Address</label>
-                                    <input type="email" class="form-control" id="guestEmail_${uniqueId}" placeholder="john.doe@example.com" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" style="color: var(--text-muted);">Age</label>
-                                    <input type="number" class="form-control" id="guestAge_${uniqueId}" placeholder="Enter your age" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" style="color: var(--text-muted);">Seat Reservation</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" placeholder="No seat selected" readonly style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                                        <button class="btn btn-outline-primary dropdown-toggle btn-seat-view-config" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="bi bi-grid-3x3"></i> Reserve Seat (${btnLabel})
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><h6 class="dropdown-header">Guest View Preference</h6></li>
-                                            <li><a class="dropdown-item ${pref==='chart'?'active':''}" href="#" data-view="chart">Chart View</a></li>
-                                            <li><a class="dropdown-item ${pref==='table'?'active':''}" href="#" data-view="table">Table View</a></li>
-                                            <li><a class="dropdown-item ${pref==='map'?'active':''}" href="#" data-view="map">Map View</a></li>
-                                        </ul>
-                                    </div>
-                                    <input type="hidden" class="seat-view-preference" value="${pref}">
-                                </div>
+                        <div class="form-builder-wrapper p-4 rounded" style="background-color: var(--bg-muted);">
+                            <h4 contenteditable="true" class="mb-3 form-title" style="color: var(--text-main);">Please confirm your details:</h4>
+                            <div class="form-fields-list"></div>
+                            <div class="d-flex gap-2 mt-3 border-top pt-3" style="border-color: var(--border-color) !important;">
+                                <button class="btn btn-sm btn-outline-secondary btn-add-form-field"><i class="bi bi-plus"></i> Add Text Field</button>
+                                <button class="btn btn-sm btn-outline-primary btn-add-seat-res"><i class="bi bi-grid-3x3"></i> Add Seat Reservation</button>
                             </div>
                         </div>
                     `;
@@ -545,6 +806,78 @@
                 div.remove();
             });
             
+            // Bind logic for newly created question sections
+            if (type === 'question') {
+                const questionBlock = div.querySelector('.question-block');
+                if (questionBlock) {
+                    // Initial render of the answer area
+                       renderQuestionInput(questionBlock);
+
+                    // Bind the dropdown to re-render on change
+                    const typeSelect = questionBlock.querySelector('.question-type-select');
+                    if (typeSelect) {
+                        typeSelect.addEventListener('change', () => { historyManager.saveState(); renderQuestionInput(questionBlock); });
+                    }
+
+                    // Bind Add Button Logic
+                    const btnList = questionBlock.querySelector('.question-buttons-list');
+                    const addBtn = questionBlock.querySelector('.btn-add-question-btn');
+                    
+                    const addButtonToUI = (text = 'Submit') => {
+                        const btnWrapper = document.createElement('div');
+                        btnWrapper.className = 'position-relative d-inline-block me-2 mb-2';
+                        
+                        const theBtn = document.createElement('div');
+                        theBtn.className = 'btn btn-primary question-custom-btn';
+                        theBtn.contentEditable = true;
+                        theBtn.textContent = text;
+                        theBtn.style.minWidth = '80px';
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex align-items-center justify-content-center';
+                        delBtn.style.width = '20px';
+                        delBtn.style.height = '20px';
+                        delBtn.style.fontSize = '12px';
+                        delBtn.innerHTML = '<i class="bi bi-x"></i>';
+                        delBtn.onclick = () => { historyManager.saveState(); btnWrapper.remove(); };
+                        
+                        btnWrapper.appendChild(theBtn);
+                        btnWrapper.appendChild(delBtn);
+                        btnList.appendChild(btnWrapper);
+                    };
+
+                    if (data && data.buttons) {
+                        data.buttons.forEach(btnText => addButtonToUI(btnText));
+                    }
+
+                    if (addBtn) {
+                        addBtn.addEventListener('click', () => {
+                            historyManager.saveState();
+                            addButtonToUI('Button');
+                        });
+                    }
+                }
+            }
+
+            // Bind Form Builder Logic
+            if (type === 'form' || type === 'rsvp_form') {
+                const builderWrapper = div.querySelector('.form-builder-wrapper');
+                let fields;
+                if (type === 'rsvp_form') {
+                    // Default fields for the legacy rsvp_form
+                    fields = [
+                        {type: 'text', label: 'Full Name'},
+                        {type: 'text', label: 'Email Address'},
+                        {type: 'text', label: 'Age'},
+                        {type: 'seat', viewPreference: (data && data.viewPreference) ? data.viewPreference : 'chart'}
+                    ];
+                } else {
+                    // Default fields for a new 'form' block
+                    fields = (data && data.fields && data.fields.length > 0) ? data.fields : [{type: 'text', label: 'Full Name'}, {type: 'text', label: 'Email Address'}];
+                }
+                initFormBuilder(builderWrapper, fields);
+            }
+
             // Re-bind banner upload if applicable
             if (type === 'banner') {
                 const uploadInput = div.querySelector(`#bannerUpload_${uniqueId}`);
@@ -564,31 +897,32 @@
                 }
             }
 
-            // Bind Dropdown Logic for Seat View
-            if (type === 'rsvp_form') {
-                const dropdownItems = div.querySelectorAll('.dropdown-item[data-view]');
-                const hiddenInput = div.querySelector('.seat-view-preference');
-                const btn = div.querySelector('.btn-seat-view-config');
-
-                dropdownItems.forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const view = item.dataset.view;
-                        const label = item.textContent;
-                        
-                        hiddenInput.value = view;
-                        btn.innerHTML = `<i class="bi bi-grid-3x3"></i> Reserve Seat (${label})`;
-                        
-                        // Update active state
-                        div.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                        item.classList.add('active');
-                        
-                        historyManager.saveState();
+            // Initialize Sortable for nested section
+            if (type === 'section') {
+                const innerContainer = div.querySelector('.section-blocks-container');
+                if (innerContainer && typeof Sortable !== 'undefined') {
+                    new Sortable(innerContainer, {
+                        group: 'nested',
+                        animation: 150,
+                        handle: '.section-drag-handle',
+                        ghostClass: 'bg-light',
+                        onEnd: () => historyManager.saveState()
                     });
-                });
+                }
+                
+                // Load nested blocks if any
+                if (data && data.blocks && data.blocks.length > 0) {
+                    data.blocks.forEach(blockData => {
+                        createNewSection(blockData.type, blockData, null, innerContainer);
+                    });
+                }
             }
 
-            sectionsContainer.appendChild(div);
+            if (insertBeforeNode) {
+                container.insertBefore(div, insertBeforeNode);
+            } else {
+                container.appendChild(div);
+            }
         }
 
         // Add delete buttons to existing sections
@@ -627,15 +961,24 @@
                     const titleEl = document.getElementById('invDesignTitle');
                     const hostEl = document.getElementById('invDesignHost');
                     const descEl = document.getElementById('invDesignDesc');
+                    const dateEl = document.getElementById('invDesignDate');
                     const timeEl = document.getElementById('invDesignTime');
                     const venueEl = document.getElementById('invDesignVenue');
 
                     if(titleEl) titleEl.textContent = event.title;
                     
                     const start = new Date(event.start_datetime);
-                    if(timeEl) timeEl.innerHTML = `<i class="bi bi-calendar3 me-2"></i>${start.toLocaleString()}`;
+                    const end = event.end_datetime ? new Date(event.end_datetime) : null;
+
+                    if(dateEl) dateEl.innerHTML = `<i class="bi bi-calendar3 me-2"></i>${start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                     
-                    const venueName = event.venue_name || 'Unknown Venue';
+                    if(timeEl) {
+                        let timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                        if (end) timeStr += ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                        timeEl.innerHTML = `<i class="bi bi-clock me-2"></i>${timeStr}`;
+                    }
+                    
+                    const venueName = event.venue_name || (MockDB.getVenueById(event.venue_id) || {}).name || 'Unknown Venue';
                     if(venueEl) venueEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i>${venueName}`;
 
                     if(descEl) descEl.innerHTML = `<p>${event.description || 'Join us for this event!'}</p>`;
@@ -694,6 +1037,9 @@
 
                 // Clean up the cloned node for a pure preview
                 previewNode.removeAttribute('id'); // Avoid duplicate IDs
+                // Remove all IDs from descendant elements to prevent conflicts in the DOM
+                previewNode.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+
                 previewNode.querySelectorAll('[contenteditable="true"]').forEach(el => {
                     el.removeAttribute('contenteditable');
                     el.style.outline = 'none';
@@ -732,6 +1078,67 @@
         if (btnSave && shareModalEl) {
             const shareModal = new bootstrap.Modal(shareModalEl);
 
+            // Helper to serialize a single section
+            function serializeSection(sec) {
+                const type = sec.dataset.type;
+                const data = { type: type };
+
+                if (type === 'banner' || type === 'image') {
+                    data.image = sec.querySelector('img').src;
+                } else if (type === 'header') {
+                    data.title = sec.querySelector('h1').innerHTML;
+                    data.host = sec.querySelector('.lead').innerHTML;
+                    data.description = sec.querySelector('.invitation-description').innerHTML;
+                } else if (type === 'section') {
+                    data.title = sec.querySelector('h3').innerHTML;
+                    // Recursively serialize children
+                    data.blocks = [];
+                    const innerContainer = sec.querySelector('.section-blocks-container');
+                    if (innerContainer) {
+                        // Only direct children
+                        [...innerContainer.children].forEach(child => {
+                            if (child.classList.contains('invitation-section')) {
+                                data.blocks.push(serializeSection(child));
+                            }
+                        });
+                    }
+                } else if (type === 'form') {
+                    data.title = sec.querySelector('.form-title').innerHTML;
+                    data.fields = [];
+                    sec.querySelectorAll('.form-field-item').forEach(field => {
+                        const fType = field.dataset.fieldType;
+                        if (fType === 'text') {
+                            data.fields.push({
+                                type: 'text',
+                                label: field.querySelector('label').innerHTML
+                            });
+                        } else if (fType === 'seat') {
+                            data.fields.push({
+                                type: 'seat',
+                                viewPreference: field.querySelector('.seat-view-preference').value
+                            });
+                        }
+                    });
+                } else if (type === 'question') {
+                    data.question = sec.querySelector('.question-title')?.innerHTML || '';
+                    data.questionType = sec.querySelector('.question-block')?.dataset.questionType || 'short_answer';
+                    
+                    if (['multiple_choice', 'checkboxes', 'dropdown'].includes(data.questionType)) {
+                        data.options = [];
+                        sec.querySelectorAll('.question-options-list .d-flex').forEach(opt => {
+                            const label = opt.querySelector('[contenteditable="true"]')?.innerHTML || '';
+                            if (label) data.options.push(label);
+                        });
+                    }
+                    
+                    data.buttons = [];
+                    sec.querySelectorAll('.question-buttons-list .question-custom-btn').forEach(btn => {
+                        data.buttons.push(btn.textContent);
+                    });
+                }
+                return data;
+            }
+
             btnSave.addEventListener('click', () => {
                 const eventId = localStorage.getItem('seatlify_current_event_id');
                 if (!eventId) {
@@ -741,30 +1148,12 @@
 
                 // Serialize Sections
                 const sections = [];
-                // Use strict scoping to the designer container to avoid selecting from previews/modals
-                document.querySelectorAll('#invitationDesigner #invitationSectionsContainer > .invitation-section').forEach(sec => {
-                    const type = sec.dataset.type;
-                    const data = { type: type };
-
-                    if (type === 'banner' || type === 'image') {
-                        data.image = sec.querySelector('img').src;
-                    } else if (type === 'header') {
-                        data.title = sec.querySelector('h1').innerHTML;
-                        data.host = sec.querySelector('.lead').innerHTML;
-                        data.description = sec.querySelector('.invitation-description').innerHTML;
-                    } else if (type === 'section') {
-                        data.title = sec.querySelector('h3').innerHTML;
-                        data.content = sec.querySelector('div[contenteditable]').innerHTML;
-                    } else if (type === 'form') {
-                        data.label = sec.querySelector('label').innerHTML;
-                    } else if (type === 'question') {
-                        data.question = sec.querySelector('h4').innerHTML;
-                    } else if (type === 'rsvp_form') {
-                        data.viewPreference = sec.querySelector('.seat-view-preference').value;
+                // Only top-level sections
+                const container = document.getElementById('invitationSectionsContainer');
+                [...container.children].forEach(sec => {
+                    if (sec.classList.contains('invitation-section')) {
+                        sections.push(serializeSection(sec));
                     }
-                    // details, rsvp_question, rsvp_form rely on event data or static logic, so just type is enough
-
-                    sections.push(data);
                 });
 
                 // Save Configuration to DB
@@ -854,6 +1243,18 @@
         bindBannerUpload();
         bindUndoRedoControls();
 
+        // Initialize the default RSVP form as a builder, if it exists
+        const defaultFormBuilder = document.querySelector('[data-section="rsvp_form"] .form-builder-wrapper');
+        if (defaultFormBuilder) {
+            const defaultFields = [
+                {type: 'text', label: 'Full Name'},
+                {type: 'text', label: 'Email Address'},
+                {type: 'text', label: 'Age'},
+                {type: 'seat', viewPreference: 'chart'}
+            ];
+            initFormBuilder(defaultFormBuilder, defaultFields);
+        }
+
         // Save initial state
         historyManager.clear();
         setTimeout(() => historyManager.saveState(), 100); // Timeout to allow initial render
@@ -863,28 +1264,5 @@
             if (e.target.isContentEditable) historyManager.saveState();
         }, true);
 
-        // Bind initial dropdown logic for the default RSVP form
-        const defaultRsvp = document.querySelector('[data-section="rsvp_form"]');
-        if (defaultRsvp) {
-            const dropdownItems = defaultRsvp.querySelectorAll('.dropdown-item[data-view]');
-            const hiddenInput = defaultRsvp.querySelector('.seat-view-preference');
-            const btn = defaultRsvp.querySelector('.btn-seat-view-config');
-
-            dropdownItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const view = item.dataset.view;
-                    const label = item.textContent;
-                    
-                    hiddenInput.value = view;
-                    btn.innerHTML = `<i class="bi bi-grid-3x3"></i> Reserve Seat (${label})`;
-                    
-                    defaultRsvp.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                    item.classList.add('active');
-                    
-                    historyManager.saveState();
-                });
-            });
-        }
     })();
 </script>

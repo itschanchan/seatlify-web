@@ -112,6 +112,37 @@ const MockDB = {
         }
     },
 
+    checkInGuest: (eventId, guestId) => {
+        const events = MockDB.getEvents();
+        const eventIndex = events.findIndex(e => e.event_id == eventId);
+        if (eventIndex === -1) {
+            return { success: false, message: 'Event not found.' };
+        }
+
+        const event = events[eventIndex];
+        if (!event.guests || event.guests.length === 0) {
+            return { success: false, message: 'No guests found for this event.' };
+        }
+
+        const guestIndex = event.guests.findIndex(g => g.id == guestId);
+        if (guestIndex === -1) {
+            return { success: false, message: 'Guest not found.' };
+        }
+
+        if (events[eventIndex].guests[guestIndex].checked_in) {
+            return { success: false, message: `Guest '${events[eventIndex].guests[guestIndex].name}' is already checked in.` };
+        }
+
+        events[eventIndex].guests[guestIndex].checked_in = true;
+        events[eventIndex].guests[guestIndex].checked_in_timestamp = new Date().toISOString();
+        events[eventIndex].checked_in_count = (events[eventIndex].checked_in_count || 0) + 1;
+
+        localStorage.setItem('seatlify_events', JSON.stringify(events));
+        window.dispatchEvent(new CustomEvent('db-events-updated'));
+
+        return { success: true, message: `Guest '${events[eventIndex].guests[guestIndex].name}' checked in successfully.` };
+    },
+
     deleteEvent: (id) => {
         let events = MockDB.getEvents();
         const eventToDelete = events.find(e => e.event_id == id);
@@ -200,7 +231,8 @@ const MockDB = {
                         name: `Guest ${guestId.toString().slice(-4)}`,
                         email: `guest${guestId}@example.com`,
                         ticket_type: 'Standard',
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        checked_in: false
                     });
                 }
 
@@ -247,7 +279,8 @@ const MockDB = {
                     email: guestInfo.email || '',
                     seat_row: seatRow,
                     seat_col: seatColumn,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    checked_in: false
                 });
 
                 localStorage.setItem('seatlify_events', JSON.stringify(events));
@@ -309,6 +342,9 @@ const MockDB = {
             if (event.guests) {
                 const guest = event.guests.find(g => g.id == guestId);
                 if (guest) {
+                    if (guest.checked_in) {
+                        event.checked_in_count = Math.max(0, (event.checked_in_count || 0) - 1);
+                    }
                     event.guests = event.guests.filter(g => g.id != guestId);
                     event.sold = Math.max(0, (event.sold || 0) - 1);
 

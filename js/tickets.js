@@ -69,8 +69,10 @@ function renderTicketDetails() {
         const qrContainer = document.querySelector('.qr-code-container');
         if (qrContainer) {
             // Create a data string for the QR code
-            const qrData = `EVENT:${event.event_id}|TICKET:GUEST-001|SEAT:A-12`;
-            const qrUrl = MockDB.generateQRCodeUrl(qrData);
+            const checkinUrlBase = 'https://seatlify.web.app/checkin';
+            const guestId = 'PREVIEW_GUEST_001'; // Placeholder for design preview
+            const qrData = `${checkinUrlBase}?event_id=${event.event_id}&guest_id=${guestId}`;
+            const qrUrl = MockDB.generateQRCodeUrl(qrData); // Using the helper from simulated-db
             
             qrContainer.innerHTML = `<img src="${qrUrl}" alt="Ticket QR Code" class="img-fluid" style="border-radius: 8px; max-width: 100%;">`;
         }

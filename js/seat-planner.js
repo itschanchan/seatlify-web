@@ -549,8 +549,21 @@ function removeLastRowFromChart() {
 
     const groups = container.querySelectorAll('.chart-group');
     if (groups.length > 0) {
-        chartHistoryManager.saveState();
         const lastGroup = groups[groups.length - 1];
+
+        // Check for reserved seats in this row
+        const label = lastGroup.querySelector('.row-label')?.textContent;
+        const currentEventId = localStorage.getItem('seatlify_current_event_id');
+        if (label && currentEventId && typeof MockDB !== 'undefined') {
+            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+            if (event && event.reservations && event.reservations.some(r => r.row === label)) {
+                if (!confirm(`The row "${label}" contains RESERVED seats. Deleting it will remove these seats from the layout. Continue?`)) {
+                    return;
+                }
+            }
+        }
+
+        chartHistoryManager.saveState();
         if (selectedChartGroup === lastGroup) {
             deselectAllChartGroups();
         }
@@ -1414,7 +1427,25 @@ function bindClearChartButton() {
     const btn = document.getElementById('btnClearChart');
     if (btn) {
         btn.addEventListener('click', () => {
-            if(confirm("Clear all rows in the chart view?")) {
+            // Check for any reserved seats in the current chart
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            let hasReserved = false;
+            if (currentEventId && typeof MockDB !== 'undefined') {
+                const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+                if (event && event.reservations) {
+                    const container = document.getElementById('seatPlannerRowContainer');
+                    if (container) {
+                        const labels = Array.from(container.querySelectorAll('.row-label')).map(el => el.textContent);
+                        hasReserved = event.reservations.some(r => labels.includes(r.row));
+                    }
+                }
+            }
+
+            const msg = hasReserved 
+                ? "Warning: There are RESERVED seats in this chart. Clearing it will remove these seats from the layout. Continue?" 
+                : "Clear all rows in the chart view?";
+
+            if(confirm(msg)) {
                 chartHistoryManager.saveState();
                 const container = document.getElementById('seatPlannerRowContainer');
                 if(container) container.innerHTML = '';
@@ -2077,11 +2108,24 @@ function createChartReduceSeatBtn() {
         const seats = seatsDiv.querySelectorAll('.chart-seat');
         
         if (seats.length > 0) {
-            chartHistoryManager.saveState();
-            seats[seats.length - 1].remove();
-            
+            const seatToRemove = seats[seats.length - 1];
+            const seatNum = parseInt(seatToRemove.textContent);
             const rowCard = seatsDiv.closest('.chart-group');
-            if (rowCard) {
+            const label = rowCard ? rowCard.querySelector('.row-label')?.textContent : null;
+
+            const currentEventId = localStorage.getItem('seatlify_current_event_id');
+            if (label && currentEventId && typeof MockDB !== 'undefined') {
+                if (MockDB.isSeatReserved(currentEventId, label, seatNum)) {
+                    if (!confirm(`Seat ${seatNum} in "${label}" is RESERVED. Deleting it will remove this seat from the layout. Continue?`)) {
+                        return;
+                    }
+                }
+            }
+
+            chartHistoryManager.saveState();
+            seatToRemove.remove();
+            
+            if (rowCard) { // Use the existing 'rowCard' variable
                 const badge = rowCard.querySelector('.badge');
                 if(badge) badge.textContent = `${seats.length - 1} seats`;
             }

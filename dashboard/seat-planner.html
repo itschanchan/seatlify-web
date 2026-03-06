@@ -274,7 +274,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label" style="color: var(--text-muted);">Type</label>
+                        <label for="bulkType" class="form-label" style="color: var(--text-muted);">Type</label>
                         <select class="form-select" id="bulkType" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                             <option value="chair">Chairs</option>
                             <option value="rect">Tables (Rect)</option>
@@ -282,7 +282,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="color: var(--text-muted);">Quantity</label>
+                        <label for="bulkQty" class="form-label" style="color: var(--text-muted);">Quantity</label>
                         <input type="number" class="form-control" id="bulkQty" value="10" min="1" max="100" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                     </div>
                     <button type="button" class="btn btn-primary w-100" id="confirmBulkAdd" data-bs-dismiss="modal" style="background-color: var(--primary); border-color: var(--primary);">Add Items</button>

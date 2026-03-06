@@ -196,7 +196,9 @@
                 this.disabled = true;
 
                 // Generate QR URL for the test
-                const qrData = `EVENT:${currentEventData.event_id}|TEST_TICKET`;
+                const checkinUrlBase = 'https://seatlify.web.app/checkin';
+                const guestId = `TEST-${Date.now()}`; // A unique ID for the test ticket
+                const qrData = `${checkinUrlBase}?event_id=${currentEventData.event_id}&guest_id=${guestId}`;
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
                 // Format Dates
@@ -207,7 +209,7 @@
                 const templateParams = {
                     to_email: email, // Required for sending
                     attendee_name: "Test User",
-                    ticket_id: `TEST-${Date.now()}`,
+                    ticket_id: guestId,
                     qr_code_url: qrUrl,
                     event_name: currentEventData.title,
                     event_date: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),

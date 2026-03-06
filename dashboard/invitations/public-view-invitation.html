@@ -300,9 +300,16 @@
                 `;
                 break;
             case 'section':
+                let blocksHtml = '';
+                if (data.blocks && data.blocks.length > 0) {
+                    data.blocks.forEach(block => {
+                        blocksHtml += renderSection(block, event).outerHTML;
+                    });
+                }
                 div.innerHTML = `
                     <h3 class="text-dark">${data.title}</h3>
-                    <div class="text-dark">${data.content}</div>
+                    <div class="text-dark">${data.content || ''}</div>
+                    <div class="mt-3">${blocksHtml}</div>
                 `;
                 break;
             case 'details':
@@ -319,10 +326,40 @@
                 `;
                 break;
             case 'form':
+                const formTitle = data.title || 'Form';
+                let fieldsHtml = '';
+                
+                // Handle legacy single-field format if necessary, or assume new format
+                const fields = data.fields || (data.label ? [{type: 'text', label: data.label}] : []);
+
+                fields.forEach((field) => {
+                    if (field.type === 'text') {
+                        fieldsHtml += `
+                            <div class="mb-3">
+                                <label class="form-label text-muted">${field.label}</label>
+                                <input type="text" class="form-control" placeholder="Input field">
+                            </div>
+                        `;
+                    } else if (field.type === 'seat') {
+                        const pref = field.viewPreference || 'chart';
+                        fieldsHtml += `
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Seat Reservation</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="No seat selected" readonly style="background-color: #fff;">
+                                    <button class="btn btn-outline-primary" type="button" onclick="openSeatModal('${pref}')">
+                                        <i class="bi bi-grid-3x3"></i> Reserve Seat
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
                 div.innerHTML = `
-                    <div class="mb-3">
-                        <label class="form-label text-muted">${data.label}</label>
-                        <input type="text" class="form-control" placeholder="Input field">
+                    <div class="p-4 rounded bg-light">
+                        <h4 class="mb-3 text-dark">${formTitle}</h4>
+                        ${fieldsHtml}
                     </div>
                 `;
                 break;
