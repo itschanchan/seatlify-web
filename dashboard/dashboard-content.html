@@ -238,51 +238,20 @@
         </div>
     </div>
 
-    <!-- Analytics Section -->
-    <div class="mt-5">
-        <div class="analytic-header-container">
-            <h3 class="analytic-header">Event Analytics</h3>
-        </div>
+    <br><hr>
 
-        <div class="analytic-content-container mt-4">
-            <div class="row g-4">
-                <!-- Ticket Sales Chart -->
-                <div class="col-12 col-lg-8">
-                    <div class="chart-card">
-                        <h5 class="mb-3" style="color: var(--text-main);">Event Overview</h5>
-                        <canvas id="ticketSalesChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Attendee Demographics Chart -->
-                <!-- <div class="col-12 col-lg-4">
-                    <div class="chart-card">
-                        <h5 class="mb-3" style="color: var(--text-main);">Attendee Age Group</h5>
-                        <canvas id="attendeeDemographicsChart"></canvas>
-                    </div>
-                </div> -->
-            </div>
-
-            <!-- Guest List Section -->
-            <div class="row g-4 mt-2">
-                <div class="col-12">
-                    <div class="chart-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0" style="color: var(--text-main);">Guest List</h5>
-                            <div class="input-group" style="max-width: 250px;">
-                                <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
-                                <input type="text" id="guestListSearch" class="form-control" placeholder="Search guests..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                            </div>
-                        </div>
-                        <div id="analyticsGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Container for Guest List -->
+    <div id="guest-list-container" class="mt-4">
+        <!-- guest-list.html will be loaded here -->
     </div>
+
+    <br><hr>
+
+    <!-- Container for Event Analytics -->
+    <div id="event-analytics-container" class="mt-5">
+        <!-- event-analytics.html will be loaded here -->
     </div>
+
 </div>
 
 <style>

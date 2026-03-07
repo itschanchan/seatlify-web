@@ -98,7 +98,7 @@ async function handleNavClick(e, link) {
         await loadLazyModule(container, "dashboard", "dashboard-content.html", "../js/dashboard.js", "initDashboard");
     }
     else if (target === "seat-planner") {
-        await loadLazyModule(container, "seat-planner", "seat-planner.html", "../js/seat-planner.js", "initSeatPlanner", true);
+        await loadLazyModule(container, "seat-planner", "seat-planner/seat-planner.html", "../js/seat-planner.js", "initSeatPlanner", true);
     }
     else if (target === "tickets") {
         await loadLazyModule(container, "tickets", "ticket.html", "../js/tickets.js", "initTickets");

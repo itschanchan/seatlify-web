@@ -362,6 +362,47 @@ const MockDB = {
         }
     },
 
+    bulkDeleteGuests: (eventId, guestIds) => {
+        const events = MockDB.getEvents();
+        const index = events.findIndex(e => e.event_id == eventId);
+        if (index !== -1) {
+            const event = events[index];
+            if (!event.guests) return; // No guests to delete
+
+            const guestIdSet = new Set(guestIds);
+            const guestsToDelete = event.guests.filter(g => guestIdSet.has(g.id));
+            
+            if (guestsToDelete.length === 0) return; // No matching guests found
+
+            const numToDelete = guestsToDelete.length;
+            const numCheckedInToDelete = guestsToDelete.filter(g => g.checked_in).length;
+            
+            // Filter out the guests to be deleted
+            event.guests = event.guests.filter(g => !guestIdSet.has(g.id));
+
+            // Update stats
+            event.sold = Math.max(0, (event.sold || 0) - numToDelete);
+            event.checked_in_count = Math.max(0, (event.checked_in_count || 0) - numCheckedInToDelete);
+
+            // If guests had reserved seats, remove their reservations
+            if (event.reservations && event.reservations.length > 0) {
+                const seatsOfDeletedGuests = new Set();
+                guestsToDelete.forEach(g => {
+                    if (g.seat_row && g.seat_col) {
+                        seatsOfDeletedGuests.add(`${g.seat_row}::${g.seat_col}`);
+                    }
+                });
+
+                if (seatsOfDeletedGuests.size > 0) {
+                    event.reservations = event.reservations.filter(r => !seatsOfDeletedGuests.has(`${r.row}::${r.column}`));
+                }
+            }
+
+            localStorage.setItem('seatlify_events', JSON.stringify(events));
+            window.dispatchEvent(new CustomEvent('db-events-updated'));
+        }
+    },
+
     resetSales: (eventId) => {
         const events = MockDB.getEvents();
         const index = events.findIndex(e => e.event_id == eventId);
@@ -888,4 +929,17 @@ window.openCreateEventModal = async function() {
         // Reset form
         document.querySelector('#createEventModal form').reset();
     });
+};
+
+// Global Helper for Simulate Sale
+window.simulateSale = function() {
+    const currentEventId = localStorage.getItem('seatlify_current_event_id');
+    if (currentEventId) {
+        const result = MockDB.sellTicket(currentEventId, 1);
+        if (!result.success) {
+            alert(result.message);
+        }
+    } else {
+        alert("Please select an event first to simulate a sale.");
+    }
 };

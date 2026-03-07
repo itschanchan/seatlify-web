@@ -1,0 +1,43 @@
+<div class="analytic-header-container" style="border-bottom: none;">
+    <h3 class="analytic-header">Guest List</h3>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0" style="color: var(--text-main);">Guest List</h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="guestListFilterStatus" class="form-select form-select-sm" style="max-width: 130px; background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        <option value="all">All Status</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="checked-in">Checked-in</option>
+                        <option value="no-show">No Show</option>
+                    </select>
+                    <!-- Bulk Actions (Hidden by default) -->
+                    <div id="guestBulkActions" style="display: none;" class="align-items-center gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="guestSelectAllCheckbox" style="transform: scale(1.2);">
+                            <label class="form-check-label small" for="guestSelectAllCheckbox">Select All</label>
+                        </div>
+                        <span id="guestSelectedCount" class="text-muted small me-2">0 selected</span>
+                        <button class="btn btn-sm btn-danger" id="btnBulkDeleteGuests"><i class="bi bi-trash me-1"></i>Delete</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnCancelGuestSelection">Cancel</button>
+                    </div>
+                    <div id="guestSearchInputGroup" class="input-group input-group-sm" style="max-width: 200px;">
+                        <span class="input-group-text" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-search"></i></span>
+                        <input type="text" id="guestListSearch" class="form-control" placeholder="Search..." style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                    </div>
+                </div>
+            </div>
+            <div id="analyticsGuestList" class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    #analyticsGuestList .list-group-item-action:hover {
+        filter: brightness(0.95);
+    }
+</style>

@@ -1,0 +1,86 @@
+<div class="analytic-header-container" style="border-bottom: none;">
+    <h3 class="analytic-header">Event Analytics</h3>
+</div>
+
+<div class="analytic-content-container mt-4">
+    <div class="row g-4">
+        <!-- Ticket Sales Chart -->
+        <div class="col-12 col-lg-8">
+            <div class="chart-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0" style="color: var(--text-main);">Event Overview</h5>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnSalesChartHistory"><i class="bi bi-clock-history me-1"></i>View History</button>
+                </div>
+                <canvas id="ticketSalesChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+        <!-- Key Metrics -->
+        <div class="col-12 col-lg-4">
+            <div class="chart-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0" style="color: var(--text-main);">Key Metrics</h5>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnExportKeyMetrics"><i class="bi bi-download me-1"></i>Export</button>
+                </div>
+                <div id="analyticsKeyMetrics">
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 mb-2">
+                        <span class="text-muted">Peak Sales Day</span>
+                        <strong id="analyticsPeakDay" class="text-main">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 mb-2">
+                        <span class="text-muted">Tickets on Peak Day</span>
+                        <strong id="analyticsPeakDaySales" class="text-main">0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 mb-2">
+                        <span class="text-muted">Total Tickets Sold</span>
+                        <strong id="analyticsTotalSold" class="text-main">0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <span class="text-muted">Total Revenue (Est.)</span>
+                        <strong id="analyticsTotalRevenue" class="text-main">₱0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Metrics Modal -->
+<div class="modal fade" id="exportMetricsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Export Key Metrics</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="text-muted">Choose your desired export format.</p>
+                <div class="d-grid gap-2 col-8 mx-auto">
+                    <button class="btn btn-danger" id="btnExportPdf"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Export as PDF</button>
+                    <button class="btn btn-success" id="btnExportExcel"><i class="bi bi-file-earmark-excel-fill me-2"></i>Export as Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales History Modal -->
+<div class="modal fade" id="salesHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Daily Sales History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table" style="color: var(--text-main);">
+                    <thead>
+                        <tr><th>Date</th><th>Tickets Sold</th></tr>
+                    </thead>
+                    <tbody id="salesHistoryTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
