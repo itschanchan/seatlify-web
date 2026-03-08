@@ -447,6 +447,7 @@ function renderDashboardEvent(id) {
     const totalCapacity = parseInt(event.total_seats) || 0;
     const ticketsSold = event.sold || 0;
     const designedSeats = parseInt(event.designed_seats) || 0;
+    const overallEventCapacity = parseInt(event.attendees) || 0;
     const checkedIn = event.checked_in_count || 0;
     
     let revenue = 0;
@@ -462,8 +463,9 @@ function renderDashboardEvent(id) {
      // Update Seats Available
     const seatsEl = document.getElementById('dashboardSeatsAvailable');
     if (seatsEl) {
-        seatsEl.textContent = `${designedSeats} / ${totalCapacity}`;
-        const percentage = totalCapacity > 0 ? Math.round((designedSeats / totalCapacity) * 100) : 0;
+        const displayCapacity = overallEventCapacity > 0 ? overallEventCapacity : totalCapacity;
+        seatsEl.textContent = `${designedSeats} / ${displayCapacity}`;
+        const percentage = displayCapacity > 0 ? Math.round((designedSeats / displayCapacity) * 100) : 0;
         const smallEl = seatsEl.nextElementSibling;
         if (smallEl) {
             smallEl.innerHTML = `<i class="bi bi-bar-chart-fill"></i> ${percentage}% designed`;
@@ -488,7 +490,8 @@ function renderDashboardEvent(id) {
         ticketsEl.textContent = ticketsSold;
         const targetEl = document.getElementById('dashboardTicketsTarget');
         if (targetEl) {
-            targetEl.textContent = `Target: ${totalCapacity}`;
+            const displayTarget = overallEventCapacity > 0 ? overallEventCapacity : totalCapacity;
+            targetEl.textContent = `Target: ${displayTarget}`;
         }
     }
 
