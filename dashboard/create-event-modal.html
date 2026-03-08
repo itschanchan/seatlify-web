@@ -1,0 +1,470 @@
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); color: var(--text-main);">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Create New Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Stepper -->
+                <div class="d-flex justify-content-between mb-4 position-relative mx-3">
+                    <div class="position-absolute top-50 start-0 w-100 translate-middle-y" style="height: 2px; background-color: var(--border-color); z-index: 0;"></div>
+                    <div class="position-absolute top-50 start-0 translate-middle-y" id="stepperProgress" style="height: 2px; background-color: var(--primary); z-index: 0; width: 0%; transition: width 0.3s;"></div>
+                    
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator1">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-primary text-white" style="width: 30px; height: 30px;">1</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Create Event</small>
+                    </div>
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator2">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-secondary text-white" style="width: 30px; height: 30px;">2</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Seats</small>
+                    </div>
+                    <div class="step-indicator position-relative z-1 text-center" id="stepIndicator3">
+                        <div class="step-circle rounded-circle d-flex align-items-center justify-content-center mx-auto bg-secondary text-white" style="width: 30px; height: 30px;">3</div>
+                        <small class="fw-bold px-1" style="background-color: var(--bg-panel);">Tickets</small>
+                    </div>
+                </div>
+
+                <form>
+                    <!-- Step 1: Event Details -->
+                    <div id="step1">
+                        <div class="mb-3">
+                            <label for="eventName" class="form-label" style="color: var(--text-muted);">Event Name</label>
+                            <input type="text" class="form-control" id="eventName" placeholder="e.g. Tech Conference 2026" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="row">
+                            <div class="col-12 col-lg-4 mb-3">
+                                <label for="eventDate" class="form-label" style="color: var(--text-muted);">Date</label>
+                                <input type="text" class="form-control" id="eventDate" placeholder="Select Date" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div class="col-6 col-lg-4 mb-3">
+                                <label for="eventTime" class="form-label" style="color: var(--text-muted);">Start Time</label>
+                                <input type="text" class="form-control" id="eventTime" placeholder="Select Time" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                            <div class="col-6 col-lg-4 mb-3">
+                                <label for="eventEndTime" class="form-label" style="color: var(--text-muted);">End Time</label>
+                                <input type="text" class="form-control" id="eventEndTime" placeholder="Select Time" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventVenue" class="form-label" style="color: var(--text-muted);">Venue</label>
+                            <input type="text" class="form-control" id="eventVenue" placeholder="Enter venue name" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventAttendees" class="form-label" style="color: var(--text-muted);">Total Capacity</label>
+                            <input type="number" class="form-control" id="eventAttendees" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventDescription" class="form-label" style="color: var(--text-muted);">Description</label>
+                            <textarea class="form-control" id="eventDescription" rows="3" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Seat Planning -->
+                    <div id="step2" style="display: none;">
+                        <h6 class="mb-3" style="color: var(--text-muted);">Seat Planning Setup</h6>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="seatingByTableSwitch">
+                            <label class="form-check-label" for="seatingByTableSwitch" style="color: var(--text-main);">Seating by Table</label>
+                        </div>
+
+                        <div id="totalSeatsContainer">
+                            <label for="eventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Number of Seats</label>
+                            <input type="number" class="form-control" id="eventTotalSeats" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        </div>
+
+                        <div id="tableSeatingContainer" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="eventTotalTables" class="form-label" style="color: var(--text-muted);">Number of Tables</label>
+                                    <input type="number" class="form-control" id="eventTotalTables" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="eventSeatsPerTable" class="form-label" style="color: var(--text-muted);">Seats per Table</label>
+                                    <input type="number" class="form-control" id="eventSeatsPerTable" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                </div>
+                                <div id="createTableCapacityWarning" class="text-danger small fw-bold mb-3" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Calculated seats exceed total capacity!</div>
+                            </div>
+                        </div>
+                        <small id="seatCountIndicator" class="form-text text-muted d-block mt-2">Current number of seats: 0 / 0</small>
+
+                        <!-- <div class="alert alert-info bg-opacity-10 border-0" style="background-color: var(--primary); color: var(--text-main);">
+                            <i class="bi bi-info-circle me-2"></i> You can customize the seat plan fully in the Seat Planner module after creating the event.
+                        </div> -->
+                    </div>
+
+                    <!-- Step 3: Ticket Setup -->
+                    <div id="step3" style="display: none;">
+                        <h6 class="mb-3" style="color: var(--text-muted);">Ticket Setup</h6>
+                        <div class="mb-3">
+                            <h6 class="form-label d-block" style="color: var(--text-muted);">Event Type</h6>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="eventType" id="typeFree" value="free" checked>
+                                <label class="form-check-label" for="typeFree" style="color: var(--text-main);">Free Event</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="eventType" id="typePaid" value="paid">
+                                <label class="form-check-label" for="typePaid" style="color: var(--text-main);">Paid Event</label>
+                            </div>
+                        </div>
+
+                        <div id="ticketTiersContainer" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="form-label mb-0" style="color: var(--text-muted);">Ticket Tiers</h6>
+                                <small id="tierSeatCounter" class="text-muted fw-bold"></small>
+                            </div>
+                            <div id="tiersList">
+                                <div class="row g-2 mb-2 tier-row">
+                                    <div class="col-5">
+                                        <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name (e.g. VIP)" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                    <div class="col-3">
+                                        <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="addTierBtn" style="border-color: var(--border-color); color: var(--text-muted);"><i class="bi bi-plus"></i> Add Tier</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" id="btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="btnBack" style="display: none;">Back</button>
+                <button type="button" class="btn btn-primary" id="btnNext" style="background-color: var(--primary); border-color: var(--primary);">Next</button>
+                <button type="button" class="btn btn-primary" id="btnCreate" style="background-color: var(--primary); border-color: var(--primary); display: none;">Create Event</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    // ─── State ───────────────────────────────────────────────────────────────
+    let currentStep = 1;
+    const TOTAL_STEPS = 3;
+
+    // ─── Entry point (called by dashboard.js after injecting this file) ───────
+    window.initCreateEventModal = function () {
+        _initFlatpickr();
+        _bindControls();
+        _bindModalReset();
+    };
+
+    // ─── Flatpickr ───────────────────────────────────────────────────────────
+    function _initFlatpickr() {
+        if (typeof flatpickr === 'undefined') return;
+        flatpickr('#eventDate',    { dateFormat: 'Y-m-d', allowInput: true });
+        flatpickr('#eventTime',    { enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true });
+        flatpickr('#eventEndTime', { enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true });
+    }
+
+    // ─── Stepper UI ──────────────────────────────────────────────────────────
+    function _goToStep(step) {
+        currentStep = step;
+
+        // Show / hide step panels
+        for (let i = 1; i <= TOTAL_STEPS; i++) {
+            const panel = document.getElementById('step' + i);
+            if (panel) panel.style.display = (i === step) ? '' : 'none';
+        }
+
+        // Update step-circle colours and content
+        for (let i = 1; i <= TOTAL_STEPS; i++) {
+            const indicator = document.getElementById('stepIndicator' + i);
+            if (!indicator) continue;
+            const circle = indicator.querySelector('.step-circle');
+            if (!circle) continue;
+            // Replace whichever bg- class is there
+            circle.className = circle.className.replace(/bg-\S+/, i < step ? 'bg-success' : i === step ? 'bg-primary' : 'bg-secondary');
+            if (i < step) {
+                circle.innerHTML = '<i class="bi bi-check-lg"></i>';
+            } else {
+                circle.textContent = i;
+            }
+        }
+
+        // Progress bar: 0% → 50% → 100%
+        const progress = document.getElementById('stepperProgress');
+        if (progress) {
+            const pct = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
+            progress.style.width = pct + '%';
+        }
+
+        // Button visibility
+        const btnBack   = document.getElementById('btnBack');
+        const btnNext   = document.getElementById('btnNext');
+        const btnCreate = document.getElementById('btnCreate');
+        if (btnBack)   btnBack.style.display   = (step > 1)            ? '' : 'none';
+        if (btnNext)   btnNext.style.display   = (step < TOTAL_STEPS)  ? '' : 'none';
+        if (btnCreate) btnCreate.style.display = (step === TOTAL_STEPS) ? '' : 'none';
+    }
+
+    // ─── Step 1 validation ───────────────────────────────────────────────────
+    function _validateStep1() {
+        const name  = (document.getElementById('eventName')?.value  || '').trim();
+        const date  = (document.getElementById('eventDate')?.value  || '').trim();
+        const time  = (document.getElementById('eventTime')?.value  || '').trim();
+        const venue = (document.getElementById('eventVenue')?.value  || '').trim();
+        if (!name)  { alert('Please enter an event name.');  return false; }
+        if (!date)  { alert('Please select a date.');        return false; }
+        if (!time)  { alert('Please select a start time.');  return false; }
+        if (!venue) { alert('Please enter a venue.');       return false; }
+        return true;
+    }
+
+    // ─── Seating toggle & live seat counter ──────────────────────────────────
+    function _updateSeatIndicator() {
+        const indicator = document.getElementById('seatCountIndicator');
+        const capacity  = parseInt(document.getElementById('eventAttendees')?.value) || 0;
+        const byTable   = document.getElementById('seatingByTableSwitch')?.checked;
+
+        let calculated = 0;
+        if (byTable) {
+            const tables   = parseInt(document.getElementById('eventTotalTables')?.value)   || 0;
+            const perTable = parseInt(document.getElementById('eventSeatsPerTable')?.value) || 0;
+            calculated = tables * perTable;
+            const warning = document.getElementById('createTableCapacityWarning');
+            if (warning) warning.style.display = (capacity > 0 && calculated > capacity) ? '' : 'none';
+        } else {
+            calculated = parseInt(document.getElementById('eventTotalSeats')?.value) || 0;
+        }
+
+        if (indicator) indicator.textContent = 'Current number of seats: ' + calculated + ' / ' + capacity;
+    }
+
+    function _bindSeatingToggle() {
+        const toggle             = document.getElementById('seatingByTableSwitch');
+        const totalSeatsContainer = document.getElementById('totalSeatsContainer');
+        const tableContainer     = document.getElementById('tableSeatingContainer');
+        if (!toggle) return;
+
+        toggle.addEventListener('change', function () {
+            const on = toggle.checked;
+            if (totalSeatsContainer) totalSeatsContainer.style.display = on ? 'none' : '';
+            if (tableContainer)      tableContainer.style.display      = on ? ''     : 'none';
+            _updateSeatIndicator();
+        });
+
+        ['eventTotalSeats', 'eventTotalTables', 'eventSeatsPerTable', 'eventAttendees'].forEach(function (id) {
+            document.getElementById(id)?.addEventListener('input', _updateSeatIndicator);
+        });
+    }
+
+    // ─── Ticket tiers ────────────────────────────────────────────────────────
+    function _updateTierSeatCounter() {
+        const totalSeats = parseInt(document.getElementById('eventAttendees')?.value) || 0;
+
+        const allQty = Array.from(document.querySelectorAll('#tiersList .tier-qty'))
+            .reduce(function (sum, el) { return sum + (parseInt(el.value) || 0); }, 0);
+
+        const counter = document.getElementById('tierSeatCounter');
+        if (counter) {
+            counter.textContent = allQty + ' / ' + totalSeats + ' seats allocated';
+            counter.className   = (totalSeats > 0 && allQty > totalSeats)
+                ? 'text-danger fw-bold small'
+                : 'text-muted fw-bold small';
+        }
+    }
+
+    function _addCreateTierRow() {
+        const list = document.getElementById('tiersList');
+        if (!list) return;
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 tier-row';
+        row.innerHTML =
+            '<div class="col-5">' +
+                '<input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name (e.g. VIP)" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+            '</div>' +
+            '<div class="col-3">' +
+                '<input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+            '</div>' +
+            '<div class="col-4">' +
+                '<div class="input-group input-group-sm">' +
+                    '<input type="number" class="form-control tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+                    '<button type="button" class="btn btn-outline-danger btn-remove-tier"><i class="bi bi-x"></i></button>' +
+                '</div>' +
+            '</div>';
+        row.querySelector('.btn-remove-tier').addEventListener('click', function () {
+            row.remove();
+            _updateTierSeatCounter();
+        });
+        row.querySelector('.tier-qty').addEventListener('input', _updateTierSeatCounter);
+        list.appendChild(row);
+    }
+
+    function _bindTicketSection() {
+        const typePaid       = document.getElementById('typePaid');
+        const typeFree       = document.getElementById('typeFree');
+        const tiersContainer = document.getElementById('ticketTiersContainer');
+        const addTierBtn     = document.getElementById('addTierBtn');
+
+        if (typePaid && typeFree && tiersContainer) {
+            typePaid.addEventListener('change', function () {
+                tiersContainer.style.display = typePaid.checked ? '' : 'none';
+                _updateTierSeatCounter();
+            });
+            typeFree.addEventListener('change', function () {
+                tiersContainer.style.display = 'none';
+            });
+        }
+
+        if (addTierBtn) {
+            addTierBtn.addEventListener('click', _addCreateTierRow);
+        }
+
+        // Attach counter update to the initial default tier row
+        document.querySelector('#tiersList .tier-qty')
+            ?.addEventListener('input', _updateTierSeatCounter);
+
+        document.getElementById('eventAttendees')?.addEventListener('input', _updateTierSeatCounter);
+    }
+
+    // ─── Create event ────────────────────────────────────────────────────────
+    function _submitCreateEvent() {
+        const date    = document.getElementById('eventDate')?.value    || '';
+        const time    = document.getElementById('eventTime')?.value    || '';
+        const endTime = document.getElementById('eventEndTime')?.value || '';
+        const isPaid  = document.getElementById('typePaid')?.checked   || false;
+        const byTable = document.getElementById('seatingByTableSwitch')?.checked || false;
+
+        const tables   = parseInt(document.getElementById('eventTotalTables')?.value)   || 0;
+        const perTable = parseInt(document.getElementById('eventSeatsPerTable')?.value) || 0;
+
+        const venueName = (document.getElementById('eventVenue')?.value || '').trim();
+        const venues = typeof MockDB !== 'undefined' ? MockDB.getVenues() : [];
+        const venue = venues.find(v => v.name.toLowerCase() === venueName.toLowerCase());
+        const venueId = venue ? venue.venue_id : null;
+
+        let tickets = [];
+        if (isPaid) {
+            document.querySelectorAll('#tiersList .tier-row').forEach(function (row) {
+                const name  = (row.querySelector('.tier-name')?.value  || '').trim();
+                const price = parseFloat(row.querySelector('.tier-price')?.value) || 0;
+                const qty   = parseInt(row.querySelector('.tier-qty')?.value)    || 0;
+                if (name) tickets.push({ name: name, price: price, qty: qty });
+            });
+        }
+
+        const newEvent = {
+            title:             (document.getElementById('eventName')?.value      || '').trim(),
+            start_datetime:    date + 'T' + time,
+            end_datetime:      endTime ? date + 'T' + endTime : null,
+            venue_id:          venueId,
+            venue_name:        venueName,
+            description:       (document.getElementById('eventDescription')?.value || '').trim(),
+            attendees:         parseInt(document.getElementById('eventAttendees')?.value) || 0,
+            total_seats:       byTable
+                                   ? tables * perTable
+                                   : (parseInt(document.getElementById('eventTotalSeats')?.value) || 0),
+            total_tables:      tables,
+            seats_per_table:   perTable,
+            seating_by_table:  byTable,
+            layout_preference: 'empty',
+            is_paid:           isPaid,
+            tickets:           tickets,
+            status:            'draft'
+        };
+
+        if (!newEvent.title) { alert('Event name is required.'); return; }
+
+        if (typeof MockDB !== 'undefined') {
+            MockDB.addEvent(newEvent);
+        }
+
+        const modalEl = document.getElementById('createEventModal');
+        const modal   = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        window.dispatchEvent(new CustomEvent('db-events-updated'));
+    }
+
+    // ─── Full form reset ─────────────────────────────────────────────────────
+    function _resetModal() {
+        // Clear text/number inputs
+        ['eventName', 'eventDate', 'eventTime', 'eventEndTime',
+         'eventAttendees', 'eventDescription',
+         'eventTotalSeats', 'eventTotalTables', 'eventSeatsPerTable'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        // Clear flatpickr displayed values
+        ['eventDate', 'eventTime', 'eventEndTime'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el && el._flatpickr) el._flatpickr.clear();
+        });
+
+        // Venue
+        const venueInput = document.getElementById('eventVenue');
+        if (venueInput) venueInput.value = '';
+
+        // Seating
+        const toggle = document.getElementById('seatingByTableSwitch');
+        if (toggle) toggle.checked = false;
+        const totalSeatsContainer = document.getElementById('totalSeatsContainer');
+        const tableContainer      = document.getElementById('tableSeatingContainer');
+        if (totalSeatsContainer) totalSeatsContainer.style.display = '';
+        if (tableContainer)      tableContainer.style.display      = 'none';
+        const warning = document.getElementById('createTableCapacityWarning');
+        if (warning) warning.style.display = 'none';
+        const indicator = document.getElementById('seatCountIndicator');
+        if (indicator) indicator.textContent = 'Current number of seats: 0 / 0';
+
+        // Tickets — reset to free + one blank row
+        const typeFree = document.getElementById('typeFree');
+        const typePaid = document.getElementById('typePaid');
+        if (typeFree) typeFree.checked = true;
+        if (typePaid) typePaid.checked = false;
+        const tiersContainer = document.getElementById('ticketTiersContainer');
+        if (tiersContainer) tiersContainer.style.display = 'none';
+        const tiersList = document.getElementById('tiersList');
+        if (tiersList) {
+            tiersList.innerHTML =
+                '<div class="row g-2 mb-2 tier-row">' +
+                    '<div class="col-5">' +
+                        '<input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name (e.g. VIP)" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+                    '</div>' +
+                    '<div class="col-3">' +
+                        '<input type="number" class="form-control form-control-sm tier-price" placeholder="Price" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+                    '</div>' +
+                    '<div class="col-4">' +
+                        '<input type="number" class="form-control form-control-sm tier-qty" placeholder="Qty" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">' +
+                    '</div>' +
+                '</div>';
+            tiersList.querySelector('.tier-qty')?.addEventListener('input', _updateTierSeatCounter);
+        }
+        const tierSeatCounter = document.getElementById('tierSeatCounter');
+        if (tierSeatCounter) tierSeatCounter.textContent = '';
+
+        // Return to step 1
+        _goToStep(1);
+    }
+
+    // ─── Bind all controls ───────────────────────────────────────────────────
+    function _bindControls() {
+        document.getElementById('btnNext')?.addEventListener('click', function () {
+            if (currentStep === 1 && !_validateStep1()) return;
+            if (currentStep < TOTAL_STEPS) _goToStep(currentStep + 1);
+        });
+
+        document.getElementById('btnBack')?.addEventListener('click', function () {
+            if (currentStep > 1) _goToStep(currentStep - 1);
+        });
+
+        document.getElementById('btnCreate')?.addEventListener('click', _submitCreateEvent);
+
+        _bindSeatingToggle();
+        _bindTicketSection();
+        _goToStep(1);
+    }
+
+    // ─── Reset on modal close ────────────────────────────────────────────────
+    function _bindModalReset() {
+        const modalEl = document.getElementById('createEventModal');
+        if (modalEl) modalEl.addEventListener('hidden.bs.modal', _resetModal);
+    }
+})();
+</script>

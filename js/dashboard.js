@@ -306,7 +306,6 @@ function getNotificationIcon(type) {
         case 'ticket_sold': return 'bi bi-ticket-perforated-fill text-success';
         case 'event_created': return 'bi bi-calendar-plus text-primary';
         case 'event_published': return 'bi bi-megaphone-fill text-info';
-        case 'event_published': return 'bi bi-megaphone-fill text-danger';
         case 'event_cancelled': return 'bi bi-x-circle-fill text-danger';
         case 'event_deleted': return 'bi bi-trash-fill text-muted';
         default: return 'bi bi-bell';
@@ -447,6 +446,7 @@ function renderDashboardEvent(id) {
     // --- NEW STATS LOGIC ---
     const totalCapacity = parseInt(event.total_seats) || 0;
     const ticketsSold = event.sold || 0;
+    const designedSeats = parseInt(event.designed_seats) || 0;
     const checkedIn = event.checked_in_count || 0;
     
     let revenue = 0;
@@ -462,13 +462,12 @@ function renderDashboardEvent(id) {
      // Update Seats Available
     const seatsEl = document.getElementById('dashboardSeatsAvailable');
     if (seatsEl) {
-        const available = totalCapacity - ticketsSold;
-        seatsEl.textContent = `${available} / ${totalCapacity}`;
-        const percentage = totalCapacity > 0 ? Math.round((available / totalCapacity) * 100) : 0;
+        seatsEl.textContent = `${designedSeats} / ${totalCapacity}`;
+        const percentage = totalCapacity > 0 ? Math.round((designedSeats / totalCapacity) * 100) : 0;
         const smallEl = seatsEl.nextElementSibling;
         if (smallEl) {
-            smallEl.textContent = `${percentage}% left`;
-            smallEl.className = percentage > 20 ? 'text-success' : 'text-warning';
+            smallEl.innerHTML = `<i class="bi bi-bar-chart-fill"></i> ${percentage}% designed`;
+            smallEl.className = percentage > 80 ? 'text-warning' : 'text-success';
         }
     }
 
@@ -637,72 +636,39 @@ function initEventManager() {
     currentEventView = 'table';
     renderEventView();
 
-    // Bind Save Changes button for Edit Modal (Re-bind every time HTML is loaded)
-    const btnSaveEdit = document.getElementById('btnSaveEdit');
-    if (btnSaveEdit) {
-        const newBtn = btnSaveEdit.cloneNode(true); // Remove old listeners
-        btnSaveEdit.parentNode.replaceChild(newBtn, btnSaveEdit);
-        newBtn.addEventListener('click', saveEventChanges);
-    }
-
-    // Bind Add Tier button in Edit Modal
-    const btnAddTier = document.getElementById('btnEditAddTier');
-    if (btnAddTier) {
-        const newBtn = btnAddTier.cloneNode(true);
-        btnAddTier.parentNode.replaceChild(newBtn, btnAddTier);
-        newBtn.addEventListener('click', () => addEditTierRow());
-    }
-
-    // Bind Radio Buttons for Ticket Type
-    const radioPaid = document.getElementById('editTypePaid');
-    const radioFree = document.getElementById('editTypeFree');
-    const tiersWrapper = document.getElementById('editTicketTiersWrapper');
-    
-    if(radioPaid && radioFree && tiersWrapper) {
-        // Clone to remove old listeners to prevent stacking
-        const newRadioPaid = radioPaid.cloneNode(true);
-        const newRadioFree = radioFree.cloneNode(true);
-        radioPaid.parentNode.replaceChild(newRadioPaid, radioPaid);
-        radioFree.parentNode.replaceChild(newRadioFree, radioFree);
-
-        newRadioPaid.addEventListener('change', () => tiersWrapper.style.display = 'block');
-        newRadioFree.addEventListener('change', () => tiersWrapper.style.display = 'none');
-    }
-
-    // Bind View Toggles
-    const btnCalendar = document.getElementById('btnViewCalendar');
-    const btnTable = document.getElementById('btnViewTable');
-    const btnSimplified = document.getElementById('btnViewSimplified');
-    if (btnCalendar && btnTable && btnSimplified) {
-        // Clone to strip old listeners
-        const newBtnCalendar = btnCalendar.cloneNode(true);
-        const newBtnTable = btnTable.cloneNode(true);
-        const newBtnSimplified = btnSimplified.cloneNode(true);
-        btnCalendar.parentNode.replaceChild(newBtnCalendar, btnCalendar);
-        btnTable.parentNode.replaceChild(newBtnTable, btnTable);
-        btnSimplified.parentNode.replaceChild(newBtnSimplified, btnSimplified);
-
-        newBtnCalendar.addEventListener('click', () => setEventView('calendar'));
-        newBtnTable.addEventListener('click', () => setEventView('table'));
-        newBtnSimplified.addEventListener('click', () => setEventView('simplified'));
-    }
-
-    // Re-bind Sortable (DOM is fresh every time)
-    const tbody = document.getElementById("eventTableBody");
-    if (tbody && typeof Sortable !== 'undefined') {
-        new Sortable(tbody, {
-            animation: 150,
-            handle: '.bi-grip-vertical',
-            ghostClass: 'table-active'
-        });
-    }
-
-    if (eventManagerInitialized) return;
-
-    // Listen for DB updates (e.g. new event added) - Global listener, add once
-    window.addEventListener('db-events-updated', renderEventView);
+    // Load the create event modal fragment once
+    loadCreateEventModal();
 
     eventManagerInitialized = true;
+}
+
+async function loadCreateEventModal() {
+    const container = document.getElementById('createEventModalContainer');
+    if (!container) return;
+
+    // Only load once
+    if (document.getElementById('createEventModal')) return;
+
+    try {
+        const res = await fetch('create-event-modal.html');
+        if (!res.ok) throw new Error('Failed to load create-event-modal.html');
+        container.innerHTML = await res.text();
+
+        // innerHTML does not execute <script> tags — re-run them manually
+        // so the modal's IIFE (window.initCreateEventModal) is registered.
+        container.querySelectorAll('script').forEach(oldScript => {
+            const newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            document.body.appendChild(newScript);
+            newScript.remove();
+        });
+
+        if (typeof window.initCreateEventModal === 'function') {
+            window.initCreateEventModal();
+        }
+    } catch (err) {
+        console.error('Failed to load create event modal:', err);
+    }
 }
 
 function setEventView(view) {
@@ -1030,125 +996,40 @@ function renderCalendar(container, events) {
     container.appendChild(wrapper);
 }
 
-function openEditModal(eventId) {
-    // Set as the globally active event for other modules like seat planner
-    localStorage.setItem('seatlify_current_event_id', eventId);
-
-    const event = MockDB.getEvents().find(e => e.event_id == eventId);
-    if (!event) return;
-
-    // Populate Fields
-    document.getElementById('editEventId').value = event.event_id;
-    document.getElementById('editEventName').value = event.title;
-    
-    const startParts = event.start_datetime.split('T');
-    document.getElementById('editEventDate').value = startParts[0];
-    document.getElementById('editEventTime').value = startParts[1];
-
-    if (event.end_datetime) {
-        const endParts = event.end_datetime.split('T');
-        document.getElementById('editEventEndTime').value = endParts[1];
-    } else {
-        document.getElementById('editEventEndTime').value = '';
+async function openEditModal(eventId) {
+    const container = document.getElementById('editEventModalContainer');
+    if (!container) {
+        console.error('editEventModalContainer not found!');
+        return;
     }
 
-    document.getElementById('editEventStatus').value = event.status;
-    document.getElementById('editEventDescription').value = event.description || '';
-    document.getElementById('editEventTotalSeats').value = event.total_seats || '';
-    document.getElementById('editEventTotalTables').value = event.total_tables || '';
-    document.getElementById('editSeatLayout').value = event.layout_preference || 'empty';
-    document.getElementById('editEventAttendees').value = event.attendees || '';
-    document.getElementById('editEventVenue').value = event.venue_name || (MockDB.getVenueById(event.venue_id) || {}).name || '';
+    // Load and inject the modal HTML fragment once
+    if (!document.getElementById('editEventModal')) {
+        try {
+            const res = await fetch('edit-event-modal.html');
+            if (!res.ok) throw new Error('Failed to load edit-event-modal.html');
+            container.innerHTML = await res.text();
 
-    // Ticket Config
-    const radioPaid = document.getElementById('editTypePaid');
-    const radioFree = document.getElementById('editTypeFree');
-    const tiersWrapper = document.getElementById('editTicketTiersWrapper');
-    const tiersList = document.getElementById('editTiersList');
-
-    radioPaid.checked = event.is_paid;
-    radioFree.checked = !event.is_paid;
-    tiersWrapper.style.display = event.is_paid ? 'block' : 'none';
-
-    tiersList.innerHTML = '';
-    if (event.tickets && event.tickets.length > 0) {
-        event.tickets.forEach(ticket => addEditTierRow(ticket));
+            // innerHTML does not execute <script> tags — re-run them manually
+            // so the modal's IIFE (bindings + window.populateEditEventModal) is registered.
+            container.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                newScript.textContent = oldScript.textContent;
+                document.body.appendChild(newScript);
+                newScript.remove();
+            });
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `<p class="text-danger">Error loading edit modal.</p>`;
+            return;
+        }
     }
 
-    // Show Modal
-    const modalEl = document.getElementById('editEventModal');
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-function addEditTierRow(ticket = null) {
-    const list = document.getElementById('editTiersList');
-    const row = document.createElement('div');
-    row.className = 'row g-2 mb-2 tier-row';
-    
-    const nameVal = ticket ? ticket.name : '';
-    const priceVal = ticket ? ticket.price : '';
-    const qtyVal = ticket ? ticket.qty : '';
-
-    row.innerHTML = `
-        <div class="col-5">
-            <input type="text" class="form-control form-control-sm tier-name" placeholder="Tier Name" value="${nameVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-        </div>
-        <div class="col-3">
-            <input type="number" class="form-control form-control-sm tier-price" placeholder="Price" value="${priceVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-        </div>
-        <div class="col-4">
-            <div class="input-group input-group-sm">
-                <input type="number" class="form-control tier-qty" placeholder="Qty" value="${qtyVal}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
-                <button type="button" class="btn btn-outline-danger btn-remove-tier"><i class="bi bi-x"></i></button>
-            </div>
-        </div>
-    `;
-
-    row.querySelector('.btn-remove-tier').addEventListener('click', () => row.remove());
-    list.appendChild(row);
-}
-
-function saveEventChanges() {
-    const id = document.getElementById('editEventId').value;
-    const date = document.getElementById('editEventDate').value;
-    const time = document.getElementById('editEventTime').value;
-    const endTime = document.getElementById('editEventEndTime').value;
-    
-    let tickets = [];
-    if (document.getElementById('editTypePaid').checked) {
-        document.querySelectorAll('#editTiersList .tier-row').forEach(row => {
-            const tName = row.querySelector('.tier-name').value;
-            const tPrice = row.querySelector('.tier-price').value;
-            const tQty = row.querySelector('.tier-qty').value;
-            if (tName) tickets.push({ name: tName, price: tPrice, qty: tQty });
-        });
+    // Delegate all field population and modal show logic to the modal's own controller
+    if (typeof window.populateEditEventModal === 'function') {
+        window.populateEditEventModal(eventId);
     }
-
-    const updateData = {
-        title: document.getElementById('editEventName').value,
-        start_datetime: `${date}T${time}`,
-        end_datetime: endTime ? `${date}T${endTime}` : null,
-        venue_name: document.getElementById('editEventVenue').value,
-        description: document.getElementById('editEventDescription').value,
-        attendees: document.getElementById('editEventAttendees').value,
-        total_seats: document.getElementById('editEventTotalSeats').value,
-        total_tables: document.getElementById('editEventTotalTables').value,
-        seating_by_table: document.getElementById('editSeatingByTableSwitch').checked,
-        seats_per_table: document.getElementById('editEventSeatsPerTable').value,
-        layout_preference: document.getElementById('editSeatLayout').value,
-        is_paid: document.getElementById('editTypePaid').checked,
-        tickets: tickets,
-        status: document.getElementById('editEventStatus').value
-    };
-
-    MockDB.updateEvent(id, updateData);
-    
-    const modalEl = document.getElementById('editEventModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
 }
 
-// Expose functions globally for Dashboard usage
+// Expose globally so dynamically-rendered buttons (table rows, calendar badges, etc.) can call it
 window.openEditModal = openEditModal;
-window.saveEventChanges = saveEventChanges;

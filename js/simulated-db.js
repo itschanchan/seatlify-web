@@ -448,7 +448,7 @@ window.openCreateEventModal = async function() {
     
     // Load HTML if not present
     if (!container.innerHTML.trim()) {
-        const res = await fetch('create-new-event.html');
+        const res = await fetch('create-event-modal.html');
         container.innerHTML = await res.text();
 
         // Convert Venue Select to Text Input dynamically
@@ -635,11 +635,11 @@ window.openCreateEventModal = async function() {
 
     // --- SEAT COUNTER LOGIC ---
     const updateTierSeatCounter = () => {
-        const totalSeatsInput = document.getElementById('eventTotalSeats');
+        const totalSeatsInput = document.getElementById('eventAttendees');
         const counterEl = document.getElementById('tierSeatCounter');
-        if (!totalSeatsInput || !counterEl) return;
+        if (!counterEl) return;
 
-        const totalSeats = parseInt(totalSeatsInput.value) || 0;
+        const totalSeats = parseInt(totalSeatsInput?.value) || 0;
         let allocatedSeats = 0;
         document.querySelectorAll('#tiersList .tier-qty').forEach(input => {
             allocatedSeats += parseInt(input.value) || 0;
@@ -721,7 +721,7 @@ window.openCreateEventModal = async function() {
     const tiersContainer = document.getElementById('ticketTiersContainer');
 
     // Add listener for seat total changes
-    const totalSeatsInputForCounter = document.getElementById('eventTotalSeats');
+    const totalSeatsInputForCounter = document.getElementById('eventAttendees');
     if (totalSeatsInputForCounter) {
         totalSeatsInputForCounter.addEventListener('input', updateTierSeatCounter);
     }
