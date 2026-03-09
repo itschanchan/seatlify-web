@@ -246,8 +246,9 @@
         if (alreadyReserved) {
             return { success: false, message: 'Seat already reserved.' };
         }
-        currentEvent.reservations.push({ row, column: seatNumber, ...guestInfo });
-        return { success: true, fallback: true };
+        const guestId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        currentEvent.reservations.push({ guestId, row, column: seatNumber, ...guestInfo });
+        return { success: true, fallback: true, guestId: guestId };
     }
 
     function buildPublicEventApiUrl(eventId) {
@@ -785,18 +786,21 @@
                 return; // Stop if seat is already taken
             }
 
+            const transactionId = reservationResult.guestId;
+
             // Generate QR Code URL
-            const qrData = `EVENT:${currentEvent.event_id}|GUEST:${name}|SEAT:${seatDisplay}`;
+            const qrData = `EVENT:${currentEvent.event_id}|TID:${transactionId}|GUEST:${name}|SEAT:${seatDisplay}`;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
             // Generate Ticket HTML for display AND email
-            const ticketHtml = generateTicketHtml(currentEvent, name, seatDisplay, qrUrl);
+            const ticketHtml = generateTicketHtml(currentEvent, name, seatDisplay, qrUrl, transactionId);
 
             // Prepare data for EmailJS template
             const startDate = new Date(currentEvent.start_datetime);
             const endDate = currentEvent.end_datetime ? new Date(currentEvent.end_datetime) : null;
 
             const templateParams = {
+                ticket_id: transactionId,
                 attendee_name: name,
                 to_email: email,
                 qr_code_url: qrUrl,
@@ -806,8 +810,7 @@
                 event_end_time: endDate ? endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
                 event_venue: currentEvent.venue_name || 'Unknown Venue',
                 seat_label: seatDisplay,
-                ticket_price: seatPrice // You can now use {{ticket_price}} in your EmailJS template
-                // ticket_id: ... (add if you have ticket_id)
+                ticket_price: seatPrice
             };
 
             // Replace these with your actual Service ID and Template ID from EmailJS
@@ -828,6 +831,7 @@
                         <div class="text-center mb-4">
                             <i class="bi bi-check-circle-fill text-success display-1"></i>
                             <h4 class="mt-3">RSVP Confirmed!</h4>
+                            <p class="text-muted mb-1">Your Transaction ID is: <strong class="text-dark">#${transactionId}</strong></p>
                             <p class="text-muted">A copy of this ticket has been sent to <strong>${email}</strong></p>
                         </div>
                         ${ticketHtml}
@@ -853,7 +857,7 @@
         }
     }
 
-    function generateTicketHtml(event, guestName, seatInfo, providedQrUrl) {
+    function generateTicketHtml(event, guestName, seatInfo, providedQrUrl, transactionId) {
         let qrUrl = providedQrUrl;
         if (!qrUrl) {
             const qrData = `EVENT:${event.event_id}|GUEST:${guestName}|SEAT:${seatInfo}`;
@@ -865,6 +869,10 @@
         const timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const venueName = event.venue_name || 'Unknown Venue';
 
+        const transactionIdHtml = transactionId
+            ? `<div class="ticket-info-row"><span class="ticket-info-label">Ticket ID</span><span class="ticket-info-value">#${transactionId}</span></div>`
+            : '';
+
         return `
             <div class="ticket-container mx-auto" style="max-width: 100%; padding: 1.5rem; box-shadow: none; border: 1px solid var(--border-color);">
                 <div class="ticket-header-container mb-3">
@@ -875,6 +883,7 @@
                 </div>
                 <div class="ticket-divider mb-3"></div>
                 <div class="ticket-info-container">
+                    ${transactionIdHtml}
                     <div class="ticket-info-row"><span class="ticket-info-label">Event</span><span class="ticket-info-value">${event.title}</span></div>
                     <div class="ticket-info-row"><span class="ticket-info-label">Guest</span><span class="ticket-info-value">${guestName}</span></div>
                     <div class="ticket-info-row"><span class="ticket-info-label">Date</span><span class="ticket-info-value">${dateStr}</span></div>

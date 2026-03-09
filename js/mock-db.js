@@ -12,7 +12,7 @@ const MockDB = {
 
     /** Generates a unique 12-digit guest/transaction ID.
      *  Format: 9 timestamp digits (ms precision) + 3 random digits */
-    _generateGuestId: () => {
+    generateGuestId: () => {
         const ts   = (Date.now() % 1_000_000_000).toString().padStart(9, '0');
         const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         return parseInt(ts + rand);
@@ -259,7 +259,7 @@ const MockDB = {
         if (!events[index].guests) events[index].guests = [];
 
         for (let i = 0; i < quantity; i++) {
-            const guestId = MockDB._generateGuestId();
+            const guestId = MockDB.generateGuestId();
             events[index].guests.push({
                 id:          guestId,
                 name:        `Guest ${guestId.toString().slice(-4)}`,
@@ -333,8 +333,9 @@ const MockDB = {
         event.sold = (event.sold || 0) + 1;
 
         if (!event.guests) event.guests = [];
+        const guestId = MockDB.generateGuestId();
         event.guests.push({
-            id:         MockDB._generateGuestId(),
+            id:         guestId,
             name:       guestInfo.name  || 'Guest',
             email:      guestInfo.email || '',
             seat_row:   seatRow,
@@ -345,7 +346,7 @@ const MockDB = {
 
         localStorage.setItem('seatlify_events', JSON.stringify(events));
         window.dispatchEvent(new CustomEvent('db-events-updated'));
-        return { success: true };
+        return { success: true, guestId: guestId };
     },
 
     isSeatReserved: (eventId, seatRow, seatColumn) => {
@@ -432,12 +433,34 @@ const MockDB = {
     // ─── API Utilities ───────────────────────────────────
 
     /** Calls the backend endpoint to send a ticket confirmation email. */
-    sendTicketEmail: (email, ticketData) => {
-        return fetch('../backend/send_email.php', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ to: email, eventTitle: ticketData.event, eventDate: ticketData.date })
-        }).then(res => res.json());
+    sendTicketEmail: async (email, ticketData) => {
+        if (typeof emailjs === 'undefined') {
+            console.error('EmailJS SDK not loaded.');
+            return { success: false, message: 'EmailJS SDK not loaded.' };
+        }
+
+        const templateParams = {
+            to_email:         email,
+            ticket_id:        ticketData.transaction_id || 'N/A', // Connected transaction_id
+            attendee_name:    ticketData.attendee_name || 'Valued Guest',
+            event_name:       ticketData.event_name || ticketData.event || 'Event',
+            event_date:       ticketData.event_date || ticketData.date || '',
+            event_start_time: ticketData.event_start_time || '',
+            event_end_time:   ticketData.event_end_time || '',
+            event_venue:      ticketData.event_venue || '',
+            seat_label:       ticketData.seat_label || 'General Admission',
+            ticket_price:     ticketData.ticket_price || 'Free',
+            qr_code_url:      ticketData.qr_code_url || ''
+        };
+
+        try {
+            // Using Service ID "service_ryl56ps" and placeholder Template ID "template_ticket_confirmation"
+            await emailjs.send("service_ryl56ps", "template_ticket_confirmation", templateParams);
+            return { success: true, message: 'Ticket email sent successfully via EmailJS.' };
+        } catch (error) {
+            console.error('EmailJS Send Error:', error);
+            return { success: false, message: 'Failed to send email via EmailJS.' };
+        }
     },
 
     /** Generates a QR code image URL for the given data string. */

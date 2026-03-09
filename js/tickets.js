@@ -100,7 +100,36 @@ function renderTicketDetails() {
                     newBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
                     newBtn.disabled = true;
 
-                    MockDB.sendTicketEmail(email, { event: event.title, date: event.start_datetime })
+                    // Prepare rich data for the ticket template
+                    const start = new Date(event.start_datetime);
+                    const end   = event.end_datetime ? new Date(event.end_datetime) : null;
+                    
+                    let venueName = 'Unknown Venue';
+                    if (event.venue_name) venueName = event.venue_name;
+                    else if (event.venue_id) {
+                        const v = MockDB.getVenueById(event.venue_id);
+                        if (v) venueName = v.name;
+                    }
+
+                    let price = 'Free';
+                    if (event.is_paid && event.tickets && event.tickets.length > 0) {
+                        price = event.tickets[0].price;
+                    }
+
+                    const ticketData = {
+                        transaction_id:   MockDB.generateGuestId(),
+                        attendee_name:    'Guest Preview',
+                        event_name:       event.title,
+                        event_date:       start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                        event_start_time: start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}),
+                        event_end_time:   end ? end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) : '',
+                        event_venue:      venueName,
+                        seat_label:       'Row A, Seat 1 (Preview)',
+                        ticket_price:     price,
+                        qr_code_url:      MockDB.generateQRCodeUrl(`https://seatlify.web.app/checkin?event_id=${event.event_id}&guest_id=TEST`)
+                    };
+
+                    MockDB.sendTicketEmail(email, ticketData)
                         .then(response => {
                             if (response && response.success) {
                                 alert(`Ticket successfully emailed to ${email}!`);

@@ -553,6 +553,13 @@ function getVisibleGuests(event) {
 
     let guests = event.guests || [];
 
+    // Sort by timestamp descending (newest first)
+    guests.sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+
     if (filter) {
         guests = guests.filter(g =>
             g.name.toLowerCase().includes(filter) ||
