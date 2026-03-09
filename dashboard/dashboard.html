@@ -101,7 +101,6 @@
 
         <div class="demo-wrapper">
             <div class="demo-content">
-                <!-- Dashboard Content -->
                 <div id="dashboard-content">
                     <!-- Default content will load here -->
                     <div class="demo-panel p-3">Loading...</div>
@@ -174,14 +173,19 @@
 <!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-<!-- Simulated Database -->
-<script src="../js/simulated-db.js"></script>
-<script>
-    // Polyfill for missing QR code function in MockDB to prevent tickets.js errors
-    if (typeof MockDB !== 'undefined' && typeof MockDB.generateQRCodeUrl === 'undefined') {
-        MockDB.generateQRCodeUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data)}`;
-    }
-</script>
+<!-- Database layer (must load first) -->
+<script src="../js/mock-db.js"></script>
+
+<!-- Create Event sub-modules (load order matters) -->
+<script src="../js/event-seat-config.js"></script>
+<script src="../js/event-date-pickers.js"></script>
+<script src="../js/event-ticket-tiers.js"></script>
+<script src="../js/event-wizard.js"></script>
+<script src="../js/event-creator.js"></script>
+<script src="../js/create-event-controller.js"></script>
+
+<!-- Simulate Sale helper -->
+<script src="../js/simulate-sale.js"></script>
 
 <!-- Dashboard Loader (SPA Logic) -->
 <script src="../js/dashboard-loader.js"></script>
