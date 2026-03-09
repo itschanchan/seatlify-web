@@ -118,7 +118,7 @@ export function renderQuickStats(event) {
         const smallEl = seatsEl.nextElementSibling;
         if (smallEl) { //Show reservationPercentage instead of designedSeats
              smallEl.innerHTML  = `<i class="bi bi-bar-chart-fill"></i> ${reservationPercentage}% reserved`;
-            smallEl.className  = percentage > 80 ? 'text-warning' : 'text-success';
+            smallEl.className  = reservationPercentage > 80 ? 'text-warning' : 'text-success';
         }
     }
 
@@ -170,4 +170,5 @@ export function clearQuickStats() {
 
     const percentageEl = document.getElementById('dashboardAttendeesPercentage');
     if (percentageEl) percentageEl.textContent = '0% of total';
+
 }

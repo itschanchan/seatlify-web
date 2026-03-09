@@ -116,7 +116,16 @@ export function initSeatMapper() {
         isChartEditMode   = savedMode === 'false' ? false : true;
 
         const savedLayout = localStorage.getItem(`seatlify_chart_layout_mode_${currentEventId}`);
-        if (savedLayout) chartLayoutMode = savedLayout;
+        if (savedLayout) {
+            chartLayoutMode = savedLayout;
+        } else if (typeof MockDB !== 'undefined') {
+            // Rule 2: Default to table mode when the event uses table-based seating
+            const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+            if (event?.seating_by_table) {
+                chartLayoutMode = 'table';
+                localStorage.setItem(`seatlify_chart_layout_mode_${currentEventId}`, 'table');
+            }
+        }
     }
 
     updateChartGroupingButtonsUI();
@@ -675,20 +684,37 @@ export function saveChartState(silent = false) {
         if (originalLabel) {
             newLayoutData.push({ label: originalLabel, seats });
             const ticketIndex = tickets.findIndex(t => t.original_name === originalLabel);
+
+            // Rule 1: Build the canonical tier name = label + seat count suffix
+            const seatSuffix   = `(${seats} seat${seats !== 1 ? 's' : ''})`;
+            const hasCount     = (name) => /\(\d+ seats?\)$/.test(name);
+            const canonicalName = hasCount(currentDomLabel)
+                ? currentDomLabel
+                : `${currentDomLabel} ${seatSuffix}`;
+
             if (currentDomLabel !== originalLabel) {
                 if (ticketIndex !== -1) {
-                    tickets[ticketIndex].name = currentDomLabel;
+                    tickets[ticketIndex].name = canonicalName;
+                    tickets[ticketIndex].qty  = seats;
                 } else {
                     tickets.push({
-                        name:          currentDomLabel,
+                        name:          canonicalName,
                         original_name: originalLabel,
                         price: 0,
                         qty:   seats
                     });
                 }
             } else {
-                if (ticketIndex !== -1 && !tickets[ticketIndex].price) {
-                    tickets.splice(ticketIndex, 1);
+                if (ticketIndex !== -1) {
+                    // Sync the name format and qty even for unchanged labels
+                    if (!hasCount(tickets[ticketIndex].name)) {
+                        tickets[ticketIndex].name = canonicalName;
+                    }
+                    tickets[ticketIndex].qty = seats;
+                    // Remove zero-price entries that have no customisation
+                    if (!tickets[ticketIndex].price) {
+                        tickets.splice(ticketIndex, 1);
+                    }
                 }
             }
         } else {
@@ -1067,7 +1093,7 @@ function _autoGenerateLayout(container, totalSeats, event, currentEventId) {
     if (chartLayoutMode === 'table') {
         container.className     = 'd-flex flex-wrap gap-4 justify-content-center';
         const seatsPerTable     = (event && parseInt(event.seats_per_table)) || 10;
-        const numTables         = Math.ceil(totalSeats / seatsPerTable);
+        const numTables         = (event && parseInt(event.total_tables)) || Math.ceil(totalSeats / seatsPerTable);
         let seatsRendered       = 0;
 
         for (let i = 0; i < numTables; i++) {

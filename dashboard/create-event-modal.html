@@ -157,9 +157,9 @@
     // ─── Flatpickr ───────────────────────────────────────────────────────────
     function _initFlatpickr() {
         if (typeof flatpickr === 'undefined') return;
-        flatpickr('#eventDate',    { dateFormat: 'Y-m-d', allowInput: true });
-        flatpickr('#eventTime',    { enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true });
-        flatpickr('#eventEndTime', { enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true });
+        flatpickr('#eventDate',    { dateFormat: 'Y-m-d', altInput: true, altFormat: 'F j, Y', allowInput: true });
+        flatpickr('#eventTime',    { enableTime: true, noCalendar: true, dateFormat: 'H:i', altInput: true, altFormat: 'h:i K', time_24hr: false, allowInput: true });
+        flatpickr('#eventEndTime', { enableTime: true, noCalendar: true, dateFormat: 'H:i', altInput: true, altFormat: 'h:i K', time_24hr: false, allowInput: true });
     }
 
     // ─── Stepper UI ──────────────────────────────────────────────────────────
@@ -179,9 +179,9 @@
             const circle = indicator.querySelector('.step-circle');
             if (!circle) continue;
             // Replace whichever bg- class is there
-            circle.className = circle.className.replace(/bg-\S+/, i < step ? 'bg-success' : i === step ? 'bg-primary' : 'bg-secondary');
+            circle.className = circle.className.replace(/bg-\S+/, i < step ? 'bg-danger' : i === step ? 'bg-primary' : 'bg-secondary');
             if (i < step) {
-                circle.innerHTML = '<i class="bi bi-check-lg"></i>';
+                circle.innerHTML = '<i class="bi bi-check-lg" style="color: white;"></i>';
             } else {
                 circle.textContent = i;
             }

@@ -126,7 +126,7 @@ function renderFinanceReport() {
                 }
 
                 tr.innerHTML = `
-                    <td class="text-muted"><small>#TXN-${guest.id}</small></td>
+                    <td class="text-muted"><small>#TXN-${String(guest.id).padStart(12, '0')}</small></td>
                     <td>${date.toLocaleDateString()} <small class="text-muted">${date.toLocaleTimeString()}</small></td>
                     <td>${guest.name}</td>
                     <td><span class="badge bg-light text-dark border">${type}</span></td>

@@ -5,6 +5,14 @@
 const MockDB = {
     _notifications: [],
 
+    // Generates a unique 12-digit guest/transaction ID
+    // Format: 9 timestamp digits (ms precision) + 3 random digits
+    _generateGuestId: () => {
+        const ts   = (Date.now() % 1_000_000_000).toString().padStart(9, '0');
+        const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        return parseInt(ts + rand);
+    },
+
     init: function() {
         // 📍 VENUES
         if (!localStorage.getItem('seatlify_venues')) {
@@ -227,7 +235,7 @@ const MockDB = {
                 // Add Sample Guest(s)
                 if (!events[index].guests) events[index].guests = [];
                 for(let i=0; i<quantity; i++) {
-                    const guestId = Date.now() + Math.floor(Math.random() * 1000) + i;
+                    const guestId = MockDB._generateGuestId();
                     events[index].guests.push({
                         id: guestId,
                         name: `Guest ${guestId.toString().slice(-4)}`,
@@ -270,6 +278,17 @@ const MockDB = {
         return { success: false, message: 'Event not found.' };
     },
 
+    clearInvitationConfig: (eventId) => {
+        const events = MockDB.getEvents();
+        const index = events.findIndex(e => e.event_id == eventId);
+        if (index !== -1) {
+            events[index].invitation_config = null; // Or set to an empty object: {}
+            localStorage.setItem('seatlify_events', JSON.stringify(events));
+            window.dispatchEvent(new CustomEvent('db-events-updated'));
+            return { success: true, message: 'Invitation config cleared successfully.' };
+        }
+        return { success: false, message: 'Event not found.' };
+    },
     reserveSeat: (eventId, seatRow, seatColumn, guestInfo = {}) => {
         const events = MockDB.getEvents();
         const index = events.findIndex(e => e.event_id == eventId);
@@ -292,7 +311,7 @@ const MockDB = {
                 // 3. Add to Guest List
                 if (!event.guests) event.guests = [];
                 event.guests.push({
-                    id: Date.now(),
+                    id: MockDB._generateGuestId(),
                     name: guestInfo.name || 'Guest',
                     email: guestInfo.email || '',
                     seat_row: seatRow,

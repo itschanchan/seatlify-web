@@ -177,6 +177,11 @@
         const container = document.getElementById('invitationSectionsContainer');
         if (!container) return;
 
+        // Clear stale image keys and reset counter BEFORE serializing so that
+        // base64 uploads are stored in dedicated keys instead of inside the
+        // seatlify_events blob (prevents localStorage quota errors).
+        save.beginSave(eventId);
+
         const sections  = [];
         [...container.children].forEach(sec => {
             if (sec.classList.contains('invitation-section')) {
@@ -473,7 +478,9 @@
                 if (event.invitation_config?.sections?.length > 0) {
                     console.log("Loading layout from persistent event.invitation_config.");
                     container.innerHTML = ''; // Clear default content
-                    event.invitation_config.sections.forEach(sectionData => {
+                    // Resolve __imgref: pointers back to base64 data before rendering
+                    const resolvedSections = save.resolveImageRefs(event.invitation_config.sections);
+                    resolvedSections.forEach(sectionData => {
                         builder.createNewSection(sectionData.type, sectionData);
                     });
                 } else {

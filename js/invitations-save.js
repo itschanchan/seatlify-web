@@ -9,12 +9,119 @@ window.InvDesigner = window.InvDesigner || { state: {} };
 
 window.InvDesigner.save = (() => {
 
+    // -------------------------------------------------------------------------
+    // Image Storage Helpers
+    // Uploaded images (base64 data URLs) are kept in their own localStorage
+    // keys so they never bloat the shared `seatlify_events` key.
+    // The config stores a lightweight "__imgref:<key>" pointer instead.
+    // -------------------------------------------------------------------------
+
+    const _IMG_KEY_PREFIX = 'seatlify_inv_img_';
+    const _IMG_REF_MARKER = '__imgref:';
+    const _IMG_SIZE_LIMIT = 3 * 1024 * 1024; // 3 MB – warn above this
+    let   _imgSaveCounter = 0;
+
+    /**
+     * Remove every image key that belongs to the given event.
+     * Call this at the START of a save pass so stale keys don't pile up.
+     */
+    function _clearEventImages(eventId) {
+        const prefix   = `${_IMG_KEY_PREFIX}${eventId}_`;
+        const toRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(prefix)) toRemove.push(k);
+        }
+        toRemove.forEach(k => localStorage.removeItem(k));
+    }
+
+    /**
+     * Persist one base64 image in its own key.
+     * Returns a "__imgref:<key>" reference string, or '' when storage fails.
+     */
+    function _storeImage(eventId, base64Data) {
+        if (base64Data.length > _IMG_SIZE_LIMIT) {
+            console.warn(
+                `InvDesigner: uploaded image is ${(base64Data.length / 1024 / 1024).toFixed(1)} MB. ` +
+                'Consider using a smaller image to avoid storage limits.'
+            );
+        }
+
+        const key = `${_IMG_KEY_PREFIX}${eventId}_${_imgSaveCounter++}`;
+        try {
+            localStorage.setItem(key, base64Data);
+            return `${_IMG_REF_MARKER}${key}`;
+        } catch (e) {
+            console.error(
+                'InvDesigner: localStorage quota exceeded while storing image. ' +
+                'The image will not be persisted across sessions.', e
+            );
+            return ''; // Graceful degradation — don't crash the save
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API for the designer orchestrator (invitations-designer.js)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Must be called ONCE before every save pass.
+     * Clears previous image keys for the event and resets the counter so that
+     * keys are deterministic and old data does not accumulate.
+     */
+    function beginSave(eventId) {
+        _clearEventImages(eventId);
+        _imgSaveCounter = 0;
+    }
+
+    /**
+     * Walk a sections array (as returned by MockDB) and replace every
+     * "__imgref:<key>" placeholder with the actual base64 data from localStorage.
+     * Call this when loading a saved config before passing sections to the builder.
+     */
+    function resolveImageRefs(sections) {
+        if (!Array.isArray(sections)) return sections;
+        return sections.map(sec => {
+            const resolved = { ...sec };
+
+            if (
+                (sec.type === 'banner' || sec.type === 'image') &&
+                typeof sec.image === 'string' &&
+                sec.image.startsWith(_IMG_REF_MARKER)
+            ) {
+                const key = sec.image.slice(_IMG_REF_MARKER.length);
+                resolved.image = localStorage.getItem(key) || ''; // '' if key was evicted
+            }
+
+            // Recurse into nested section blocks
+            if (Array.isArray(sec.blocks)) {
+                resolved.blocks = resolveImageRefs(sec.blocks);
+            }
+
+            return resolved;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Section Serializer
+    // -------------------------------------------------------------------------
+
     function serializeSection(sec) {
         const type = sec.dataset.type;
         const data = { type };
 
         if (type === 'banner' || type === 'image') {
-            data.image = sec.querySelector('img').src;
+            const imgEl  = sec.querySelector('img');
+            const imgSrc = imgEl ? imgEl.src : '';
+
+            if (imgSrc.startsWith('data:')) {
+                // Base64 upload — store separately to keep the events key small
+                const eventId = localStorage.getItem('seatlify_current_event_id');
+                data.image = eventId ? _storeImage(eventId, imgSrc) : '';
+            } else {
+                // External URL — safe to store inline
+                data.image = imgSrc;
+            }
 
         } else if (type === 'header') {
             data.title       = sec.querySelector('h1').innerHTML;
@@ -66,6 +173,10 @@ window.InvDesigner.save = (() => {
         return data;
     }
 
+    // -------------------------------------------------------------------------
+    // Save & Share Modal Binding
+    // -------------------------------------------------------------------------
+
     function bindSaveAndShare(currentEventData, InvitationService) {
         const btnSave      = document.getElementById('btnSaveInvitation');
         const shareModalEl = document.getElementById('saveShareModal');
@@ -83,6 +194,9 @@ window.InvDesigner.save = (() => {
                 alert('No active event found.');
                 return;
             }
+
+            // Clear stale image keys and reset counter before serializing
+            beginSave(eventId);
 
             const sections  = [];
             const container = document.getElementById('invitationSectionsContainer');
@@ -153,7 +267,7 @@ window.InvDesigner.save = (() => {
         }
     }
 
-    return { bindSaveAndShare, serializeSection };
+    return { beginSave, resolveImageRefs, serializeSection, bindSaveAndShare };
 })();
 
 // Expose as a global so legacy call sites (typeof bindSaveAndShare) still work

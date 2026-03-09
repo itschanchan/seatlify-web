@@ -1,7 +1,93 @@
 <!-- Guest Info Modal -->
 <div class="modal fade" id="guestInfoModal" tabindex="-1" aria-labelledby="guestInfoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background-color: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main);">
+        <div class="modal-content" style="background-color: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); position: relative; overflow: hidden;">
+
+            <!-- =====================================================
+                 CHECK-IN SLIDE PANEL
+                 Slides up from the bottom over the modal content.
+                 Controlled via openCheckinPanel() / closeCheckinPanel()
+                 in guest-list.js
+            ===================================================== -->
+            <div id="guestCheckinPanel"
+                 style="position:absolute;inset:0;border-radius:inherit;
+                        background-color:var(--bg-panel);z-index:20;
+                        display:flex;flex-direction:column;
+                        transform:translateY(100%);
+                        transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+                        overflow:hidden;">
+
+                <!-- Panel Header -->
+                <div style="padding:1.1rem 1.25rem;border-bottom:1px solid var(--border-color);
+                            display:flex;align-items:center;gap:0.75rem;">
+                    <button id="checkinPanelBack" type="button"
+                            style="background:none;border:none;color:var(--text-main);
+                                   padding:0.2rem 0.5rem;cursor:pointer;font-size:1rem;
+                                   display:flex;align-items:center;gap:0.35rem;opacity:0.75;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <h6 id="checkinPanelTitle" class="mb-0 fw-semibold" style="font-size:0.95rem;">Check In Guest</h6>
+                </div>
+
+                <!-- Panel Body -->
+                <div style="flex:1;padding:1.5rem 1.5rem 1rem;display:flex;flex-direction:column;gap:1.1rem;overflow-y:auto;">
+
+                    <!-- Guest ID hint -->
+                    <div id="checkinPanelHint"
+                         style="border-radius:10px;padding:0.85rem 1rem;
+                                background-color:rgba(255,255,255,0.05);
+                                border:1px solid var(--border-color);
+                                display:flex;align-items:center;gap:0.75rem;">
+                        <i id="checkinPanelHintIcon" class="bi bi-fingerprint fs-5 text-muted"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Guest ID</div>
+                            <div id="checkinPanelGuestId" class="fw-semibold font-monospace" style="font-size:0.9rem;letter-spacing:0.04em;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Instruction / mode description -->
+                    <div id="checkinPanelDesc" class="text-muted" style="font-size:0.85rem;line-height:1.5;"></div>
+
+                    <!-- ID input (only shown for check-in, not undo) -->
+                    <div id="checkinPanelInputGroup">
+                        <label for="checkinPanelInput"
+                               class="form-label text-muted"
+                               style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">
+                            Enter Guest ID to confirm
+                        </label>
+                        <input id="checkinPanelInput" type="text"
+                               class="form-control font-monospace"
+                               placeholder="Enter 12-digit Guest ID"
+                               maxlength="12"
+                               style="background-color:var(--bg-secondary,rgba(255,255,255,0.07));
+                                      border-color:var(--border-color);color:var(--text-main);
+                                      letter-spacing:0.08em;font-size:0.9rem;">
+                    </div>
+
+                    <!-- Error message -->
+                    <div id="checkinPanelError"
+                         class="text-danger d-flex align-items-center gap-2"
+                         style="font-size:0.82rem;display:none!important;">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span id="checkinPanelErrorText"></span>
+                    </div>
+
+                </div>
+
+                <!-- Panel Footer -->
+                <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-color);
+                            display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button id="checkinPanelCancelAction" type="button" class="btn btn-sm btn-outline-secondary">
+                        Dismiss
+                    </button>
+                    <button id="checkinPanelConfirm" type="button" class="btn btn-sm btn-danger">
+                        <i class="bi bi-check-circle me-1"></i>Confirm Check-In
+                    </button>
+                </div>
+
+            </div>
+            <!-- END CHECK-IN SLIDE PANEL -->
 
             <!-- Header -->
             <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
@@ -22,7 +108,7 @@
             <div class="modal-body px-4 py-3">
 
                 <!-- Status Banner -->
-                <div id="guestInfoStatusBanner" class="rounded-3 p-3 mb-4 d-flex align-items-center gap-3" style="background-color: var(--bg-secondary, rgba(255,255,255,0.05));">
+                <div id="guestInfoStatusBanner" class="rounded-3 p-3 mb-4 d-flex align-items-center gap-3" style="background-color: var(--bg-secondary, rgba(255,255,255,0.05)); cursor: pointer;">
                     <i id="guestInfoStatusIcon" class="fs-4"></i>
                     <div>
                         <div id="guestInfoStatusLabel" class="fw-semibold"></div>

@@ -154,8 +154,18 @@ function updateTicketCapacityDisplay(event) {
 function createTierRow(group, event, layoutType, isNew = false) {
     const existingTier = !isNew && event.tickets ? event.tickets.find(t => (t.original_name === group.label) || (t.name === group.label)) : null;
     const price = existingTier ? existingTier.price : '';
-    const displayName = existingTier ? existingTier.name : group.label;
     const seats = group.seats || 0;
+
+    // Rule 1: Tier name = row/table label + quantity per row/table
+    const seatSuffix = `(${seats} seat${seats !== 1 ? 's' : ''})`;
+    let displayName;
+    if (existingTier && existingTier.name) {
+        // If a custom name was saved, keep it but ensure seat count suffix is present
+        const hasCount = /\(\d+ seats?\)$/.test(existingTier.name);
+        displayName = hasCount ? existingTier.name : `${existingTier.name} ${seatSuffix}`;
+    } else {
+        displayName = `${group.label} ${seatSuffix}`;
+    }
 
     const tr = document.createElement('tr');
     tr.className = 'tier-row-item';
@@ -165,8 +175,12 @@ function createTierRow(group, event, layoutType, isNew = false) {
         <td style="border-bottom-color: var(--border-color);">
             <div class="d-flex flex-column">
                 <input type="text" class="form-control bg-panel-theme text-main-theme border-secondary tier-name-input fw-bold"
-                    value="${displayName}" placeholder="Tier Name" data-original-name="${group.label}" data-seats="${seats}" disabled>
-                <small class="text-muted mt-1">${seats} seats</small>
+                    value="${displayName}" placeholder="Tier Name e.g. Row A (10 seats)"
+                    data-original-name="${group.label}" data-seats="${seats}" disabled>
+                <small class="text-muted mt-1">
+                    <span class="badge bg-secondary me-1">${layoutType === 'table' ? 'Table' : 'Row'}</span>
+                    ${group.label}
+                </small>
             </div>
         </td>
         <td style="border-bottom-color: var(--border-color);">
@@ -267,13 +281,25 @@ function renderTicketTiersEditor(event) {
         if (pillsRowsTab) pillsRowsTab.classList.toggle('disabled', !hasRowData);
         if (pillsTablesTab) pillsTablesTab.classList.toggle('disabled', !hasTableData);
 
-        // If only one type of data exists, or if the previously active tab is now disabled, switch to a valid one.
-        if (hasRowData && !hasTableData) {
-            new bootstrap.Tab(pillsRowsTab).show();
-        } else if (!hasRowData && hasTableData) {
+        // Rule 2: If seating_by_table is enabled OR only table data exists, show Table Tiers tab
+        if ((event.seating_by_table && hasTableData) || (!hasRowData && hasTableData)) {
             new bootstrap.Tab(pillsTablesTab).show();
+        } else if (hasRowData && !hasTableData) {
+            new bootstrap.Tab(pillsRowsTab).show();
         }
     }
+
+    // Rule 3: Live sync — when seat planner saves its chart state, refresh ticket tiers
+    if (window._ticketTierRefreshHandler) {
+        window.removeEventListener('db-events-updated', window._ticketTierRefreshHandler);
+    }
+    window._ticketTierRefreshHandler = () => {
+        const latestEvent = MockDB.getEvents().find(e => e.event_id == event.event_id);
+        if (latestEvent && document.getElementById('ticketTierRowsContainer')) {
+            renderTicketTiersEditor(latestEvent);
+        }
+    };
+    window.addEventListener('db-events-updated', window._ticketTierRefreshHandler);
 
     // --- Bind Add/Remove Buttons ---
     const bindActionButtons = (addBtnId, removeBtnId, container, type, title) => {
@@ -391,16 +417,21 @@ function renderTicketTiersEditor(event) {
                 const layoutType = row.dataset.layoutType;
 
                 if (name) {
-                    // Rebuild Layout Data
+                    // Rebuild Layout Data (always use originalName for layout key)
                     if (layoutType === 'row') {
                         newRowLayout.push({ label: originalName, seats: seats });
                     } else if (layoutType === 'table') {
                         newTableLayout.push({ label: originalName, seats: seats });
                     }
 
+                    // Ensure tier name includes seat count suffix (Rule 1)
+                    const seatSuffix = `(${seats} seat${seats !== 1 ? 's' : ''})`;
+                    const hasCount = /\(\d+ seats?\)$/.test(name);
+                    const tierName = hasCount ? name : `${name} ${seatSuffix}`;
+
                     // Rebuild Tickets
                     newTickets.push({
-                        name: name,
+                        name: tierName,
                         original_name: originalName,
                         price: parseInt(price) || 0,
                         qty: seats

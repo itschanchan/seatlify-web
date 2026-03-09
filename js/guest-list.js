@@ -19,6 +19,126 @@ async function injectGuestInfoModal() {
 }
 
 // -------------------------------------------------------
+// Check-In Slide Panel
+// -------------------------------------------------------
+
+/**
+ * Opens the check-in slide panel over the guest info modal.
+ * @param {object} guest  - The guest object
+ * @param {object} event  - The event object
+ * @param {'checkin'|'undo'} mode - Whether to check in or undo
+ */
+function openCheckinPanel(guest, event, mode) {
+    const panel       = document.getElementById('guestCheckinPanel');
+    const titleEl     = document.getElementById('checkinPanelTitle');
+    const guestIdEl   = document.getElementById('checkinPanelGuestId');
+    const descEl      = document.getElementById('checkinPanelDesc');
+    const inputGroup  = document.getElementById('checkinPanelInputGroup');
+    const inputEl     = document.getElementById('checkinPanelInput');
+    const confirmBtn  = document.getElementById('checkinPanelConfirm');
+    const cancelBtn   = document.getElementById('checkinPanelCancelAction');
+    const backBtn     = document.getElementById('checkinPanelBack');
+    const errorEl     = document.getElementById('checkinPanelError');
+    const errorText   = document.getElementById('checkinPanelErrorText');
+    if (!panel) return;
+
+    const formattedId = String(guest.id).padStart(12, '0');
+
+    // Reset state
+    if (inputEl)    { inputEl.value = ''; inputEl.classList.remove('is-invalid', 'is-valid'); }
+    if (errorEl)    errorEl.style.setProperty('display', 'none', 'important');
+
+    if (mode === 'checkin') {
+        if (titleEl)    titleEl.textContent = 'Check In Guest';
+        if (guestIdEl)  guestIdEl.textContent = formattedId;
+        if (descEl)     descEl.textContent =
+            `Ask the guest to provide their 12-digit Guest ID, then type it below to confirm check-in for ${guest.name}.`;
+        if (inputGroup) inputGroup.style.display = '';
+        if (confirmBtn) {
+            confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Confirm Check-In';
+            confirmBtn.className = 'btn btn-sm btn-success';
+        }
+    } else { // undo
+        if (titleEl)    titleEl.textContent = 'Cancel Check-In';
+        if (guestIdEl)  guestIdEl.textContent = formattedId;
+        if (descEl)     descEl.textContent =
+            `This will undo the check-in for ${guest.name} and revert their status back to Reserved.`;
+        if (inputGroup) inputGroup.style.display = 'none';
+        if (confirmBtn) {
+            confirmBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Cancel Check-In';
+            confirmBtn.className = 'btn btn-sm btn-danger';
+        }
+    }
+
+    // Slide panel in
+    panel.style.transform = 'translateY(0)';
+
+    // --- Confirm ---
+    const freshConfirm = confirmBtn.cloneNode(true);
+    confirmBtn.replaceWith(freshConfirm);
+    freshConfirm.addEventListener('click', () => {
+        if (mode === 'checkin') {
+            const typed = (inputEl?.value || '').trim();
+            if (typed !== formattedId) {
+                if (inputEl) {
+                    inputEl.classList.add('is-invalid');
+                    inputEl.classList.remove('is-valid');
+                }
+                if (errorEl)   errorEl.style.setProperty('display', 'flex', 'important');
+                if (errorText) errorText.textContent = 'Guest ID does not match. Please try again.';
+                inputEl?.focus();
+                return;
+            }
+            const result = MockDB.checkInGuest(event.event_id, guest.id);
+            if (!result.success) {
+                if (errorEl)   errorEl.style.setProperty('display', 'flex', 'important');
+                if (errorText) errorText.textContent = result.message;
+                return;
+            }
+        } else {
+            const result = MockDB.uncheckInGuest(event.event_id, guest.id);
+            if (!result.success) {
+                if (errorEl)   errorEl.style.setProperty('display', 'flex', 'important');
+                if (errorText) errorText.textContent = result.message;
+                return;
+            }
+        }
+
+        closeCheckinPanel();
+
+        // Refresh the parent modal with updated guest data
+        const updatedEvent = MockDB.getEvents().find(e => e.event_id == event.event_id);
+        const updatedGuest = updatedEvent?.guests?.find(g => g.id == guest.id);
+        if (updatedEvent && updatedGuest) {
+            openGuestInfoModal(updatedGuest, updatedEvent);
+        }
+    });
+
+    // --- Back / Dismiss ---
+    const freshBack   = backBtn.cloneNode(true);
+    const freshCancel = cancelBtn.cloneNode(true);
+    backBtn.replaceWith(freshBack);
+    cancelBtn.replaceWith(freshCancel);
+    freshBack.addEventListener('click',   closeCheckinPanel);
+    freshCancel.addEventListener('click', closeCheckinPanel);
+
+    // Allow Enter key to submit
+    if (inputEl) {
+        inputEl.onkeydown = (e) => { if (e.key === 'Enter') freshConfirm.click(); };
+        setTimeout(() => inputEl.focus(), 300);
+    }
+}
+
+function closeCheckinPanel() {
+    const panel   = document.getElementById('guestCheckinPanel');
+    const inputEl = document.getElementById('checkinPanelInput');
+    const errorEl = document.getElementById('checkinPanelError');
+    if (panel) panel.style.transform = 'translateY(100%)';
+    if (inputEl) { inputEl.value = ''; inputEl.classList.remove('is-invalid', 'is-valid'); }
+    if (errorEl) errorEl.style.setProperty('display', 'none', 'important');
+}
+
+// -------------------------------------------------------
 // Open Guest Info Modal
 // -------------------------------------------------------
 
@@ -48,7 +168,7 @@ function openGuestInfoModal(guest, event) {
     if (subtitleEl) subtitleEl.textContent = event.title || '';
 
     // --- Status banner ---
-    const bannerEl   = document.getElementById('guestInfoStatusBanner');
+    let bannerEl   = document.getElementById('guestInfoStatusBanner');
     const iconEl     = document.getElementById('guestInfoStatusIcon');
     const labelEl    = document.getElementById('guestInfoStatusLabel');
     const subEl      = document.getElementById('guestInfoStatusSub');
@@ -81,6 +201,34 @@ function openGuestInfoModal(guest, event) {
     if (iconEl)   iconEl.className = `${cfg.icon} fs-4`;
     if (labelEl)  labelEl.textContent = cfg.label;
     if (subEl)    subEl.textContent   = cfg.sub;
+
+    // --- Status banner click → check-in panel ---
+    if (bannerEl) {
+        const freshBanner = bannerEl.cloneNode(true);
+        bannerEl.replaceWith(freshBanner);
+
+        // Re-apply dynamic content (cloneNode copies only attributes, not DOM mutations)
+        const freshIcon  = freshBanner.querySelector('#guestInfoStatusIcon');
+        const freshLabel = freshBanner.querySelector('#guestInfoStatusLabel');
+        const freshSub   = freshBanner.querySelector('#guestInfoStatusSub');
+        freshBanner.style.backgroundColor = cfg.bg;
+        if (freshIcon)  freshIcon.className  = `${cfg.icon} fs-4`;
+        if (freshLabel) freshLabel.textContent = cfg.label;
+        if (freshSub)   freshSub.textContent   = cfg.sub;
+
+        // Show hint chevron on banner
+        freshBanner.title = status === 'checked-in'
+            ? 'Click to cancel check-in'
+            : 'Click to check in guest';
+
+        freshBanner.addEventListener('click', () => {
+            const mode = status === 'checked-in' ? 'undo' : 'checkin';
+            openCheckinPanel(guest, event, mode);
+        });
+    }
+
+    // Ensure panel is closed when (re-)opening the main modal
+    closeCheckinPanel();
 
     // --- Email ---
     const emailEl = document.getElementById('guestInfoEmail');
@@ -121,7 +269,7 @@ function openGuestInfoModal(guest, event) {
 
     // --- Guest ID ---
     const idEl = document.getElementById('guestInfoId');
-    if (idEl) idEl.textContent = guest.id || '—';
+    if (idEl) idEl.textContent = guest.id ? String(guest.id).padStart(12, '0') : '—';
 
     // --- Delete button ---
     const deleteBtn = document.getElementById('guestInfoDeleteBtn');
