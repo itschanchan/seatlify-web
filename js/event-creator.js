@@ -69,12 +69,19 @@ window.EventCreator = {
 
             if (isPaid) {
                 document.querySelectorAll('.tier-row').forEach(row => {
-                    const name  = row.querySelector('.tier-name').value;
-                    const price = row.querySelector('.tier-price').value;
-                    const qty   = row.querySelector('.tier-qty').value;
+                    const name  = (row.querySelector('.tier-name')?.value || '').trim();
+                    const price = parseFloat(row.querySelector('.tier-price')?.value) || 0;
+                    const qty   = parseInt(row.querySelector('.tier-qty')?.value, 10) || 0;
+
                     if (name) {
                         tickets.push({ name, original_name: name, price, qty });
-                        rowLayoutData.push({ label: name, seats: parseInt(qty) || 0 });
+
+                        // Sync layout seed with seating mode selected in Create Event.
+                        if (seatingByTable) {
+                            tableLayoutData.push({ label: name, seats: qty });
+                        } else {
+                            rowLayoutData.push({ label: name, seats: qty });
+                        }
                     }
                 });
 
@@ -87,8 +94,8 @@ window.EventCreator = {
 
             // ── Pre-populate table_layout_data for the Seat Planner ──
 
-            const numTables = parseInt(totalTables) || 0;
-            if (numTables > 0) {
+            const numTables = parseInt(totalTables, 10) || 0;
+            if (numTables > 0 && tableLayoutData.length === 0) {
                 for (let i = 1; i <= numTables; i++) {
                     tableLayoutData.push({
                         label: `Table ${i}`,

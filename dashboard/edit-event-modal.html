@@ -247,9 +247,9 @@
             let tickets = [];
             if (document.getElementById('editTypePaid').checked) {
                 document.querySelectorAll('#editTiersList .tier-row').forEach(row => {
-                    const tName = row.querySelector('.tier-name').value;
-                    const tPrice = row.querySelector('.tier-price').value;
-                    const tQty = row.querySelector('.tier-qty').value;
+                    const tName = (row.querySelector('.tier-name')?.value || '').trim();
+                    const tPrice = parseFloat(row.querySelector('.tier-price')?.value) || 0;
+                    const tQty = parseInt(row.querySelector('.tier-qty')?.value, 10) || 0;
                     if (tName) tickets.push({ name: tName, price: tPrice, qty: tQty });
                 });
             }
@@ -279,11 +279,23 @@
             let tableLayoutData = [];
 
             if (seatingByTable) {
-                // Table mode: one entry per table, each with seats-per-table
-                const numTables = parseInt(totalTables) || 0;
-                const seatsPer  = parseInt(seatsPerTable) || 0;
-                for (let i = 1; i <= numTables; i++) {
-                    tableLayoutData.push({ label: `Table ${i}`, seats: seatsPer });
+                // Table mode: paid events use ticket tier names as table labels.
+                if (document.getElementById('editTypePaid').checked && tickets.length > 0) {
+                    tickets.forEach(t => {
+                        if (t.name) {
+                            tableLayoutData.push({
+                                label: t.name,
+                                seats: parseInt(t.qty, 10) || 0
+                            });
+                        }
+                    });
+                } else {
+                    // Fallback for free events or no tiers: generic table labels.
+                    const numTables = parseInt(totalTables, 10) || 0;
+                    const seatsPer  = parseInt(seatsPerTable, 10) || 0;
+                    for (let i = 1; i <= numTables; i++) {
+                        tableLayoutData.push({ label: `Table ${i}`, seats: seatsPer });
+                    }
                 }
             } else {
                 // Row mode: derive from ticket tiers (paid) or a single block (free)
@@ -292,7 +304,7 @@
                         if (t.name) {
                             rowLayoutData.push({
                                 label: t.name,
-                                seats: parseInt(t.qty) || 0
+                                seats: parseInt(t.qty, 10) || 0
                             });
                         }
                     });

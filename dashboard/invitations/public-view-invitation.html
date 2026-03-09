@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="../../assets/ticket-styles.css">
 
     <!-- Mock DB -->
-    <script src="../../js/simulated-db.js"></script>
+    <script src="../../js/mock-db.js"></script>
     
     <!-- 1. Install EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -95,7 +95,7 @@
             <!-- SECTION: Banner -->
             <div class="invitation-section" data-section="banner">
                 <div class="position-relative bg-light">
-                    <img src="https://via.placeholder.com/800x300/dee2e6/6c757d.png?text=Event+Banner" class="banner-img" alt="Event Banner">
+                    <img src="https://images.pexels.com/photos/28216688/pexels-photo-28216688.png" class="banner-img" alt="Event Banner">
                 </div>
             </div>
 
@@ -174,18 +174,100 @@
 
 <script>
     let currentEvent = null;
+    const IMG_REF_MARKER = '__imgref:';
+
+    function resolveImageRef(imageValue) {
+        if (typeof imageValue !== 'string') return imageValue;
+        if (!imageValue.startsWith(IMG_REF_MARKER)) return imageValue;
+        const key = imageValue.slice(IMG_REF_MARKER.length);
+        return localStorage.getItem(key) || '';
+    }
+
+    function resolveInvitationImageRefs(sections) {
+        if (!Array.isArray(sections)) return sections;
+        return sections.map(section => {
+            const resolved = { ...section };
+            if ((resolved.type === 'banner' || resolved.type === 'image') && resolved.image) {
+                resolved.image = resolveImageRef(resolved.image) || resolved.image;
+            }
+            if (Array.isArray(resolved.blocks)) {
+                resolved.blocks = resolveInvitationImageRefs(resolved.blocks);
+            }
+            return resolved;
+        });
+    }
+
+    function getEventBannerSource(event) {
+        const directCandidates = [
+            event?.banner_image,
+            event?.banner,
+            event?.image,
+            event?.cover_image,
+            event?.hero_image
+        ].filter(Boolean);
+
+        if (directCandidates.length > 0) {
+            return resolveImageRef(directCandidates[0]) || directCandidates[0];
+        }
+
+        const sections = event?.invitation_config?.sections;
+        if (Array.isArray(sections)) {
+            const bannerSection = sections.find(s => s.type === 'banner' && s.image);
+            if (bannerSection?.image) {
+                return resolveImageRef(bannerSection.image) || bannerSection.image;
+            }
+        }
+
+        return 'https://images.pexels.com/photos/28216688/pexels-photo-28216688.png';
+    }
+
+    function getMockDBSafe() {
+        return (typeof MockDB !== 'undefined' && MockDB) ? MockDB : null;
+    }
+
+    function isSeatReservedSafe(eventId, row, seatNumber) {
+        const db = getMockDBSafe();
+        if (db && typeof db.isSeatReserved === 'function') {
+            return db.isSeatReserved(eventId, row, seatNumber);
+        }
+        const reservations = currentEvent?.reservations || [];
+        return reservations.some(r => String(r.row) === String(row) && String(r.column) === String(seatNumber));
+    }
+
+    function reserveSeatSafe(eventId, row, seatNumber, guestInfo) {
+        const db = getMockDBSafe();
+        if (db && typeof db.reserveSeat === 'function') {
+            return db.reserveSeat(eventId, row, seatNumber, guestInfo);
+        }
+        if (!currentEvent.reservations) currentEvent.reservations = [];
+        const alreadyReserved = currentEvent.reservations.some(
+            r => String(r.row) === String(row) && String(r.column) === String(seatNumber)
+        );
+        if (alreadyReserved) {
+            return { success: false, message: 'Seat already reserved.' };
+        }
+        currentEvent.reservations.push({ row, column: seatNumber, ...guestInfo });
+        return { success: true, fallback: true };
+    }
+
+    function buildPublicEventApiUrl(eventId) {
+        // Build a same-origin backend URL to avoid CORS issues.
+        const origin = window.location.origin;
+        const path = window.location.pathname || '';
+        const dashboardIndex = path.indexOf('/dashboard/');
+        const appBase = dashboardIndex >= 0 ? path.slice(0, dashboardIndex) : '';
+        return `${origin}${appBase}/backend/get_event_public.php?event_id=${encodeURIComponent(eventId)}`;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('event');
 
         if (eventId) {
-            // Determine API Base URL (Handle Live Server vs Apache)
-            const isLiveServer = window.location.port === '5500';
-            const apiBase = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
+            const apiUrl = buildPublicEventApiUrl(eventId);
 
-            // FETCH from Backend instead of MockDB
-            fetch(`${apiBase}/get_event_public.php?event_id=${eventId}`)
+            // Fetch public event from same-origin backend.
+            fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.event) {
@@ -227,14 +309,16 @@
     }
 
     function renderEventPage(event) {
+        const resolvedSections = resolveInvitationImageRefs(event?.invitation_config?.sections || []);
+
         // Check for custom sections configuration
-        if (event.invitation_config && event.invitation_config.sections) {
+        if (event.invitation_config && resolvedSections.length > 0) {
             const container = document.getElementById('publicInvitationSections');
             if (container) {
                 container.innerHTML = ''; // Force clear default layout
             }
 
-            event.invitation_config.sections.forEach(sectionData => {
+            resolvedSections.forEach(sectionData => {
                 container.appendChild(renderSection(sectionData, event));
             });
 
@@ -248,6 +332,10 @@
         } else {
             // Fallback to default layout if no config exists
             document.getElementById('invitationTitle').textContent = event.title;
+            const fallbackBanner = document.querySelector('[data-section="banner"] img');
+            if (fallbackBanner) {
+                fallbackBanner.src = getEventBannerSource(event);
+            }
             const start = new Date(event.start_datetime);
             document.getElementById('invitationTime').innerHTML = `<i class="bi bi-calendar3 me-2"></i> ${start.toLocaleString()}`;
             // Use venue_name from backend response
@@ -265,9 +353,10 @@
         switch(data.type) {
             case 'banner':
                 div.className = 'invitation-section'; // No padding for banner
+                const bannerSrc = resolveImageRef(data.image) || getEventBannerSource(event);
                 div.innerHTML = `
                     <div class="invitation-banner position-relative bg-light">
-                        <img src="${data.image}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;" alt="Event Banner">
+                        <img src="${bannerSrc}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;" alt="Event Banner">
                     </div>
                 `;
                 break;
@@ -470,7 +559,7 @@
                         if (ticket) ticketPrice = ticket.price || 0;
                     }
                     
-                    const isReserved = MockDB.isSeatReserved(currentEvent.event_id, rowLabel, seatNum);
+                    const isReserved = isSeatReservedSafe(currentEvent.event_id, rowLabel, seatNum);
                     
                     // Reset classes to ensure clean state for public view
                     chair.className = 'shape chair seat-btn d-flex align-items-center justify-content-center border rounded';
@@ -510,7 +599,7 @@
                             const ticket = currentEvent.tickets.find(t => t.name === rowLabel || t.original_name === rowLabel);
                             if (ticket) ticketPrice = ticket.price || 0;
                         }
-                        const isReserved = MockDB.isSeatReserved(currentEvent.event_id, rowLabel, seatNum);
+                        const isReserved = isSeatReservedSafe(currentEvent.event_id, rowLabel, seatNum);
 
                         el.className += ' d-flex align-items-center justify-content-center btn btn-outline-secondary seat-btn';
                         
@@ -587,7 +676,7 @@
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
                             ${Array.from({length: group.seats}, (_, i) => {
                                 // Check if seat is reserved
-                                const isReserved = MockDB.isSeatReserved(currentEvent.event_id, group.label, i + 1);
+                                const isReserved = isSeatReservedSafe(currentEvent.event_id, group.label, i + 1);
 
                                 const statusClass = isReserved ? 'seat-reserved' : 'seat-available';
                                 const clickHandler = isReserved ? '' : `onclick="selectSeat('${displayLabel}', ${i+1}, ${ticketPrice}, '${group.label}')"`;
@@ -685,7 +774,7 @@
                 email: email,
                 age: context.querySelector('.input-guest-age')?.value || ''
             };
-            const reservationResult = MockDB.reserveSeat(currentEvent.event_id, seatRow, seatColumn, guestInfo);
+            const reservationResult = reserveSeatSafe(currentEvent.event_id, seatRow, seatColumn, guestInfo);
             if (!reservationResult.success) {
                 alert(`Reservation failed: ${reservationResult.message}`);
                 if (btn) { 

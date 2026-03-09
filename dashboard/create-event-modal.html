@@ -344,13 +344,29 @@
         const venueId = venue ? venue.venue_id : null;
 
         let tickets = [];
+        let rowLayoutData = [];
+        let tableLayoutData = [];
         if (isPaid) {
             document.querySelectorAll('#tiersList .tier-row').forEach(function (row) {
                 const name  = (row.querySelector('.tier-name')?.value  || '').trim();
                 const price = parseFloat(row.querySelector('.tier-price')?.value) || 0;
                 const qty   = parseInt(row.querySelector('.tier-qty')?.value)    || 0;
-                if (name) tickets.push({ name: name, price: price, qty: qty });
+                if (name) {
+                    tickets.push({ name: name, original_name: name, price: price, qty: qty });
+                    if (byTable) {
+                        tableLayoutData.push({ label: name, seats: qty });
+                    } else {
+                        rowLayoutData.push({ label: name, seats: qty });
+                    }
+                }
             });
+
+            // Fallback for table mode paid events without named tiers.
+            if (byTable && tableLayoutData.length === 0 && tables > 0) {
+                for (let i = 1; i <= tables; i++) {
+                    tableLayoutData.push({ label: `Table ${i}`, seats: perTable });
+                }
+            }
         }
 
         const newEvent = {
@@ -370,6 +386,8 @@
             layout_preference: 'empty',
             is_paid:           isPaid,
             tickets:           tickets,
+            row_layout_data:   rowLayoutData,
+            table_layout_data: tableLayoutData,
             status:            'draft'
         };
 

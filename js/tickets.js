@@ -156,15 +156,11 @@ function createTierRow(group, event, layoutType, isNew = false) {
     const price = existingTier ? existingTier.price : '';
     const seats = group.seats || 0;
 
-    // Rule 1: Tier name = row/table label + quantity per row/table
-    const seatSuffix = `(${seats} seat${seats !== 1 ? 's' : ''})`;
     let displayName;
     if (existingTier && existingTier.name) {
-        // If a custom name was saved, keep it but ensure seat count suffix is present
-        const hasCount = /\(\d+ seats?\)$/.test(existingTier.name);
-        displayName = hasCount ? existingTier.name : `${existingTier.name} ${seatSuffix}`;
+        displayName = existingTier.name;
     } else {
-        displayName = `${group.label} ${seatSuffix}`;
+        displayName = group.label;
     }
 
     const tr = document.createElement('tr');
@@ -175,11 +171,11 @@ function createTierRow(group, event, layoutType, isNew = false) {
         <td style="border-bottom-color: var(--border-color);">
             <div class="d-flex flex-column">
                 <input type="text" class="form-control bg-panel-theme text-main-theme border-secondary tier-name-input fw-bold"
-                    value="${displayName}" placeholder="Tier Name e.g. Row A (10 seats)"
+                    value="${displayName}" placeholder="Tier Name"
                     data-original-name="${group.label}" data-seats="${seats}" disabled>
                 <small class="text-muted mt-1">
                     <span class="badge bg-secondary me-1">${layoutType === 'table' ? 'Table' : 'Row'}</span>
-                    ${group.label}
+                    ${group.label} - ${seats} seat${seats !== 1 ? 's' : ''}
                 </small>
             </div>
         </td>
@@ -424,14 +420,9 @@ function renderTicketTiersEditor(event) {
                         newTableLayout.push({ label: originalName, seats: seats });
                     }
 
-                    // Ensure tier name includes seat count suffix (Rule 1)
-                    const seatSuffix = `(${seats} seat${seats !== 1 ? 's' : ''})`;
-                    const hasCount = /\(\d+ seats?\)$/.test(name);
-                    const tierName = hasCount ? name : `${name} ${seatSuffix}`;
-
                     // Rebuild Tickets
                     newTickets.push({
-                        name: tierName,
+                        name: name,
                         original_name: originalName,
                         price: parseInt(price) || 0,
                         qty: seats

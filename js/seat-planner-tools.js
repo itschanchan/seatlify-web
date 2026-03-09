@@ -674,6 +674,7 @@ export function saveChartState(silent = false) {
 
     const newLayoutData = [];
     let tickets = event.tickets ? JSON.parse(JSON.stringify(event.tickets)) : [];
+    const labelMap = new Map();
 
     chartContainer.querySelectorAll('.p-3.border.rounded.shadow-sm').forEach(rowEl => {
         const currentDomLabel = rowEl.querySelector('.row-label')?.textContent.trim() || '';
@@ -681,46 +682,51 @@ export function saveChartState(silent = false) {
         const seats           = rowEl.querySelectorAll('.chart-seat').length;
         if (!currentDomLabel) return;
 
-        if (originalLabel) {
-            newLayoutData.push({ label: originalLabel, seats });
-            const ticketIndex = tickets.findIndex(t => t.original_name === originalLabel);
-
-            // Rule 1: Build the canonical tier name = label + seat count suffix
-            const seatSuffix   = `(${seats} seat${seats !== 1 ? 's' : ''})`;
-            const hasCount     = (name) => /\(\d+ seats?\)$/.test(name);
-            const canonicalName = hasCount(currentDomLabel)
-                ? currentDomLabel
-                : `${currentDomLabel} ${seatSuffix}`;
-
-            if (currentDomLabel !== originalLabel) {
-                if (ticketIndex !== -1) {
-                    tickets[ticketIndex].name = canonicalName;
-                    tickets[ticketIndex].qty  = seats;
-                } else {
-                    tickets.push({
-                        name:          canonicalName,
-                        original_name: originalLabel,
-                        price: 0,
-                        qty:   seats
-                    });
-                }
-            } else {
-                if (ticketIndex !== -1) {
-                    // Sync the name format and qty even for unchanged labels
-                    if (!hasCount(tickets[ticketIndex].name)) {
-                        tickets[ticketIndex].name = canonicalName;
-                    }
-                    tickets[ticketIndex].qty = seats;
-                    // Remove zero-price entries that have no customisation
-                    if (!tickets[ticketIndex].price) {
-                        tickets.splice(ticketIndex, 1);
-                    }
-                }
-            }
-        } else {
-            newLayoutData.push({ label: currentDomLabel, seats });
-        }
+        const layoutLabel = originalLabel || currentDomLabel;
+        newLayoutData.push({ label: layoutLabel, seats });
+        labelMap.set(layoutLabel, currentDomLabel);
     });
+
+    // Keep paid-event ticket tiers fully aligned with the active chart layout.
+    if (event.is_paid) {
+        const syncedModeTickets = newLayoutData.map(group => {
+            const originalName = group.label;
+            const displayName  = labelMap.get(originalName) || originalName;
+            const existingTier = tickets.find(t =>
+                t.original_name === originalName || t.name === displayName || t.name === originalName
+            );
+
+            return {
+                name: displayName,
+                original_name: originalName,
+                price: existingTier ? (parseFloat(existingTier.price) || 0) : 0,
+                qty: group.seats
+            };
+        });
+
+        const otherMode = chartLayoutMode === 'row' ? 'table' : 'row';
+        const otherLayout = event[`${otherMode}_layout_data`] || [];
+        const otherLabels = new Set(otherLayout.map(g => g.label));
+
+        const preservedOtherMode = tickets.filter(t => {
+            const key = t.original_name || t.name;
+            return key && otherLabels.has(key);
+        }).map(t => ({
+            ...t,
+            price: parseFloat(t.price) || 0,
+            qty: parseInt(t.qty, 10) || 0
+        }));
+
+        const merged = [...syncedModeTickets];
+        preservedOtherMode.forEach(t => {
+            const key = t.original_name || t.name;
+            if (!merged.some(m => (m.original_name || m.name) === key)) {
+                merged.push(t);
+            }
+        });
+
+        tickets = merged;
+    }
 
     const seatCount = newLayoutData.reduce((acc, g) => acc + g.seats, 0);
     
@@ -964,7 +970,30 @@ export function generateChartLayout(totalSeats = 0) {
     if (currentEventId && typeof MockDB !== 'undefined') {
         event = MockDB.getEvents().find(e => e.event_id == currentEventId);
     }
-    const savedLayoutData = event?.[`${chartLayoutMode}_layout_data`];
+    let savedLayoutData = event?.[`${chartLayoutMode}_layout_data`];
+
+    // Backward-compat sync: if no layout data exists yet for paid events,
+    // derive it from ticket tiers so labels and seat counts stay aligned.
+    if ((!savedLayoutData || savedLayoutData.length === 0) && event?.is_paid && event?.tickets?.length > 0) {
+        savedLayoutData = event.tickets
+            .filter(t => (t.name || t.original_name))
+            .map(t => ({
+                label: (t.original_name || t.name).toString().trim(),
+                seats: parseInt(t.qty, 10) || 0
+            }))
+            .filter(g => g.label);
+
+        if (savedLayoutData.length > 0 && typeof MockDB !== 'undefined' && currentEventId) {
+            MockDB.updateEvent(currentEventId, {
+                [`${chartLayoutMode}_layout_data`]: savedLayoutData
+            });
+            // Refresh in-memory event reference after DB update.
+            event = MockDB.getEvents().find(e => e.event_id == currentEventId) || event;
+        }
+    }
+    const resolvedTotalSeats = totalSeats > 0
+        ? totalSeats
+        : (parseInt(event?.total_seats, 10) || 0);
 
     if (savedLayoutData?.length > 0) {
         console.log(`Rendering from saved '${chartLayoutMode}' layout data.`);
@@ -988,9 +1017,9 @@ export function generateChartLayout(totalSeats = 0) {
             container.appendChild(groupDiv);
         });
 
-    } else if (totalSeats > 0) {
-        console.log(`No saved layout for '${chartLayoutMode}'. Auto-building from total seats: ${totalSeats}.`);
-        _autoGenerateLayout(container, totalSeats, event, currentEventId);
+    } else if (resolvedTotalSeats > 0) {
+        console.log(`No saved layout for '${chartLayoutMode}'. Auto-building from total seats: ${resolvedTotalSeats}.`);
+        _autoGenerateLayout(container, resolvedTotalSeats, event, currentEventId);
 
     } else {
         container.innerHTML =
