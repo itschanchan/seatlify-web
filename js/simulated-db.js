@@ -3,6 +3,8 @@
    Schema: Venues, Events
 ========================================================== */
 const MockDB = {
+    _notifications: [],
+
     init: function() {
         // 📍 VENUES
         if (!localStorage.getItem('seatlify_venues')) {
@@ -18,11 +20,6 @@ const MockDB = {
         if (!localStorage.getItem('seatlify_events')) {
             const events = [];
             localStorage.setItem('seatlify_events', JSON.stringify(events));
-        }
-
-        // 🔔 NOTIFICATIONS
-        if (!localStorage.getItem('seatlify_notifications')) {
-            localStorage.setItem('seatlify_notifications', JSON.stringify([]));
         }
 
         // Listen for cross-tab updates (Real-time sync)
@@ -184,7 +181,7 @@ const MockDB = {
     },
 
     // --- NOTIFICATION SYSTEM ---
-    getNotifications: () => JSON.parse(localStorage.getItem('seatlify_notifications') || '[]'),
+    getNotifications: () => MockDB._notifications,
 
     getUnreadNotifications: () => {
         const notifications = MockDB.getNotifications();
@@ -200,14 +197,12 @@ const MockDB = {
             ...data
         };
         notifications.push(newNotification);
-        localStorage.setItem('seatlify_notifications', JSON.stringify(notifications));
         window.dispatchEvent(new CustomEvent('db-notifications-updated'));
     },
 
     markAllNotificationsAsRead: () => {
         let notifications = MockDB.getNotifications();
         notifications.forEach(n => n.read = true);
-        localStorage.setItem('seatlify_notifications', JSON.stringify(notifications));
         window.dispatchEvent(new CustomEvent('db-notifications-updated'));
     },
 
@@ -216,8 +211,15 @@ const MockDB = {
         const index = events.findIndex(e => e.event_id == id);
         if (index !== -1) {
             const event = events[index];
-            const totalCapacity = parseInt(event.total_seats) || 0;
             const currentSold = event.sold || 0;
+
+            // Correctly determine capacity based on event type
+            let totalCapacity = 0;
+            if (event.is_paid && event.tickets && event.tickets.length > 0) {
+                totalCapacity = event.tickets.reduce((sum, tier) => sum + (parseInt(tier.qty || 0)), 0);
+            } else {
+                totalCapacity = parseInt(event.total_seats) || 0;
+            }
 
             if (currentSold + quantity <= totalCapacity) {
                 events[index].sold = currentSold + quantity;
@@ -236,7 +238,23 @@ const MockDB = {
                     });
                 }
 
-                localStorage.setItem('seatlify_events', JSON.stringify(events));
+                try {
+                    localStorage.setItem('seatlify_events', JSON.stringify(events));
+                } catch (e) {
+                    // Catch QuotaExceededError (and Firefox's equivalent)
+                    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                        // Revert the in-memory changes to prevent UI inconsistency
+                        events[index].sold = currentSold;
+                        events[index].guests.splice(-quantity); // Remove the last 'quantity' guests added
+                        
+                        // Alert the user with the cause and solution
+                        alert('Storage Full: Could not simulate sale because the browser\'s local storage is full. Please use the "Reset Sales" button on the dashboard to clear data for an event.');
+                        
+                        return { success: false, message: 'Local storage quota exceeded.' };
+                    } else {
+                        throw e; // Re-throw other unexpected errors
+                    }
+                }
                 
                 const message = quantity > 1 
                     ? `${quantity} tickets were reserved for "${event.title}"`
@@ -411,15 +429,23 @@ const MockDB = {
             events[index].guests = [];
             events[index].checked_in_count = 0;
             events[index].reservations = [];
-            localStorage.setItem('seatlify_events', JSON.stringify(events));
             
-            MockDB.addNotification({
-                message: `Sales and guest data have been reset for "${events[index].title}".`,
-                type: 'event_deleted' // using a generic icon
-            });
+            try {
+                localStorage.setItem('seatlify_events', JSON.stringify(events));
+                
+                MockDB.addNotification({
+                    message: `Sales and guest data have been reset for "${events[index].title}".`,
+                    type: 'event_deleted' // using a generic icon
+                });
 
-            window.dispatchEvent(new CustomEvent('db-events-updated'));
+                window.dispatchEvent(new CustomEvent('db-events-updated'));
+                return { success: true, message: 'Sales and guest data reset successfully.' };
+            } catch (e) {
+                console.error("Failed to reset sales:", e);
+                return { success: false, message: 'Failed to save reset data to storage.' };
+            }
         }
+        return { success: false, message: 'Event not found.' };
     },
 
     // --- API UTILITIES ---
@@ -475,6 +501,7 @@ window.openCreateEventModal = async function() {
     const eventSeatsPerTableInput = document.getElementById('eventSeatsPerTable');
     const createTableCapacityWarning = document.getElementById('createTableCapacityWarning');
     const eventTotalSeatsInput = document.getElementById('eventTotalSeats');
+    const createTotalSeatsCapacityWarning = document.getElementById('createTotalSeatsCapacityWarning');
     const seatCountIndicator = document.getElementById('seatCountIndicator');
 
     eventAttendeesInput.addEventListener('input', (e) => {
@@ -492,6 +519,8 @@ window.openCreateEventModal = async function() {
             currentSeats = tables * seatsPer;
         } else {
             currentSeats = parseInt(eventTotalSeatsInput.value) || 0;
+            if (createTotalSeatsCapacityWarning) 
+                createTotalSeatsCapacityWarning.style.display = (capacity > 0 && currentSeats > capacity) ? 'block' : 'none';
         }
         seatCountIndicator.textContent = `Current number of seats: ${currentSeats} / ${capacity}`;
     };
@@ -535,6 +564,7 @@ window.openCreateEventModal = async function() {
             if (seatingSwitch.checked) {
                 totalSeatsContainer.style.display = 'none';
                 tableSeatingContainer.style.display = 'block';
+                if (createTotalSeatsCapacityWarning) createTotalSeatsCapacityWarning.style.display = 'none';
                 validateCreateTableSeatingCapacity(); // Validate when switching to table view
                 // Add listeners for table inputs
                 eventTotalTablesInput.addEventListener('input', validateCreateTableSeatingCapacity);
@@ -865,6 +895,11 @@ window.openCreateEventModal = async function() {
             seatsPerTable = 0;
         }
 
+        if (parseInt(totalSeats) > (parseInt(attendees) || 0) && (parseInt(attendees) || 0) > 0) {
+            alert('Total seats cannot exceed total capacity.');
+            return;
+        }
+
         // Ticket Data
         const isPaid = document.getElementById('typePaid').checked;
         let tickets = [];
@@ -906,7 +941,7 @@ window.openCreateEventModal = async function() {
         const venue = venues.find(v => v.name.toLowerCase() === venueName.toLowerCase());
         const venueId = venue ? venue.venue_id : null;
 
-        MockDB.addEvent({
+        const createdEvent = MockDB.addEvent({
             title: title,
             venue_id: venueId, // Save ID if found
             venue_name: venueName, // Always save the name
@@ -923,6 +958,10 @@ window.openCreateEventModal = async function() {
             row_layout_data: rowLayoutData,
             table_layout_data: tableLayoutData
         });
+
+        if (createdEvent) {
+            localStorage.setItem('seatlify_chart_layout_mode_' + createdEvent.event_id, seatingByTable ? 'table' : 'row');
+        }
 
         modal.hide();
         

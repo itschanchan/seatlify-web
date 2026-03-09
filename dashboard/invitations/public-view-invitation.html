@@ -171,6 +171,7 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+
 <script>
     let currentEvent = null;
 
@@ -236,6 +237,14 @@
             event.invitation_config.sections.forEach(sectionData => {
                 container.appendChild(renderSection(sectionData, event));
             });
+
+            // Auto-hide RSVP form ONLY if an RSVP Question block exists
+            const hasQuestion = container.querySelector('[data-section="rsvp_question"]');
+            const rsvpForm = container.querySelector('[data-section="rsvp_form"]');
+            
+            if (hasQuestion && rsvpForm) {
+                rsvpForm.style.display = 'none';
+            }
         } else {
             // Fallback to default layout if no config exists
             document.getElementById('invitationTitle').textContent = event.title;
@@ -255,19 +264,25 @@
 
         switch(data.type) {
             case 'banner':
-                div.className = 'invitation-section'; // No padding
-                div.innerHTML = `<div class="position-relative bg-light"><img src="${data.image}" class="banner-img" alt="Event Banner"></div>`;
+                div.className = 'invitation-section'; // No padding for banner
+                div.innerHTML = `
+                    <div class="invitation-banner position-relative bg-light">
+                        <img src="${data.image}" class="img-fluid" style="object-fit: cover; width: 100%; height: 300px;" alt="Event Banner">
+                    </div>
+                `;
                 break;
             case 'image':
                 div.className = 'invitation-section'; // No padding
                 div.innerHTML = `<div class="position-relative bg-light"><img src="${data.image}" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;"></div>`;
                 break;
             case 'header':
+                // Use data from serialization to reflect edits, with fallback to event title.
+                const title = data.title || event.title;
                 div.innerHTML = `
-                    <h1 class="display-4 mb-3 text-dark">${event.title}</h1>
-                    <p class="lead text-muted">${data.host}</p>
-                    <hr class="my-4">
-                    <div class="mb-4 fs-5 text-dark">${data.description}</div>
+                    <h1 class="invitation-title display-4 mb-3" style="color: var(--text-main);">${title}</h1>
+                    <p class="lead" style="color: var(--text-muted);">${data.host}</p>
+                    <hr class="my-4" style="border-color: var(--border-color);">
+                    <div class="invitation-description mb-4 fs-5" style="color: var(--text-main);">${data.description}</div>
                 `;
                 break;
             case 'section':
@@ -278,34 +293,43 @@
                     });
                 }
                 div.innerHTML = `
-                    <h3 class="text-dark mb-3">${data.title}</h3>
-                    <div class="p-3 border rounded bg-light">
+                    <div class="section-blocks-container p-3 border rounded" style="background-color: var(--bg-muted);">
                         ${blocksHtml}
                     </div>
                 `;
                 break;
             case 'details':
                 const start = new Date(event.start_datetime);
+                const end   = event.end_datetime ? new Date(event.end_datetime) : null;
                 const venueName = event.venue_name || 'Unknown Venue';
+
+                const eventDateStr = start
+                    ? start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                    : 'Date';
+
+                let eventTimeStr = 'Time';
+                if (start) {
+                    eventTimeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                    if (end) eventTimeStr += ' - ' + end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                }
+
                 div.innerHTML = `
-                    <div class="card mb-4 border-0 bg-light">
+                    <div class="card border-0" style="background-color: var(--bg-muted);">
                         <div class="card-body">
-                            <h5 class="card-title text-dark">When & Where</h5>
-                            <p class="card-text mb-0 text-dark"><i class="bi bi-calendar3 me-2"></i>${start.toLocaleString()}</p>
-                            <p class="card-text text-dark"><i class="bi bi-geo-alt-fill me-2"></i>${venueName}</p>
+                            <h5 class="card-title" style="color: var(--text-main);">When & Where</h5>
+                            <p class="card-text mb-0" style="color: var(--text-main);"><i class="bi bi-calendar3 me-2"></i>${eventDateStr}</p>
+                            <p class="card-text mb-2" style="color: var(--text-muted);"><i class="bi bi-clock me-2"></i>${eventTimeStr}</p>
+                            <p class="card-text" style="color: var(--text-main);"><i class="bi bi-geo-alt-fill me-2"></i>${venueName}</p>
                         </div>
                     </div>
                 `;
                 break;
             case 'form':
             case 'rsvp_form':
-                const isRsvp = data.type === 'rsvp_form';
-                const formTitle = data.title || (isRsvp ? 'Please confirm your details:' : 'Form');
-                
-                if (isRsvp) div.style.display = 'none'; // Hidden initially for RSVP flow
-
                 let fieldsHtml = '';
                 const fields = data.fields || [];
+                const isRsvp = data.type === 'rsvp_form';
+                const formTitle = data.title || (isRsvp ? 'Please confirm your details:' : 'Form');
 
                 fields.forEach((field) => {
                     if (field.type === 'text') {
@@ -317,15 +341,15 @@
                         else if(lowerLabel.includes('age')) specialClass = 'input-guest-age';
 
                         fieldsHtml += `
-                            <div class="mb-3 text-start">
-                                <label class="form-label">${field.label}</label>
-                                <input type="text" class="form-control ${specialClass}" placeholder="${field.label}">
+                            <div class="mb-3">
+                                <label class="form-label" style="color: var(--text-muted);">${field.label}</label>
+                                <input type="text" class="form-control ${specialClass}" placeholder="${field.label}" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
                             </div>
                         `;
                     } else if (field.type === 'seat') {
                         const pref = field.viewPreference || 'chart';
                         fieldsHtml += `
-                            <div class="mb-3 text-start">
+                            <div class="mb-3">
                                 <label class="form-label">Seat Reservation</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control input-seat-display" placeholder="No seat selected" readonly style="background-color: #fff;">
@@ -339,13 +363,11 @@
                 });
 
                 div.innerHTML = `
-                    <div class="p-4 rounded bg-light text-center">
-                        <h4 class="mb-3 text-dark">${formTitle}</h4>
-                        <div class="mx-auto col-md-8">
-                            ${fieldsHtml}
-                            <div class="d-grid mt-4">
-                                <button class="btn btn-primary btn-lg" type="button" onclick="confirmRsvp(this)">Confirm RSVP</button>
-                            </div>
+                    <div class="form-builder-wrapper p-4 rounded" style="background-color: var(--bg-muted);">
+                        <h4 class="mb-3 form-title" style="color: var(--text-main);">${formTitle}</h4>
+                        <div class="form-fields-list">${fieldsHtml}</div>
+                        <div class="d-grid mt-3">
+                            <button class="btn btn-primary" type="button" onclick="confirmRsvp(this)">Confirm RSVP</button>
                         </div>
                     </div>
                 `;
@@ -433,19 +455,73 @@
             const mapDiv = document.createElement('div');
             mapDiv.style.cssText = 'position: relative; min-height: 500px; border: 1px solid #ddd; background-color: #f9f9f9;';
             
-            if (currentEvent.blueprint_layout && currentEvent.blueprint_layout.length > 0) {
+            // Handle HTML String format (New)
+            if (typeof currentEvent.blueprint_layout === 'string') {
+                mapDiv.innerHTML = currentEvent.blueprint_layout;
+                
+                // Process elements
+                const chairs = mapDiv.querySelectorAll('.shape.chair');
+                chairs.forEach((chair, index) => {
+                    const seatNum = index + 1;
+                    const rowLabel = 'Map Seat'; 
+                    let ticketPrice = 0;
+                    if (currentEvent.tickets) {
+                        const ticket = currentEvent.tickets.find(t => t.name === rowLabel || t.original_name === rowLabel);
+                        if (ticket) ticketPrice = ticket.price || 0;
+                    }
+                    
+                    const isReserved = MockDB.isSeatReserved(currentEvent.event_id, rowLabel, seatNum);
+                    
+                    // Reset classes to ensure clean state for public view
+                    chair.className = 'shape chair seat-btn d-flex align-items-center justify-content-center border rounded';
+                    
+                    if (isReserved) {
+                        chair.classList.add('seat-reserved');
+                        chair.title = `Seat ${seatNum} (Reserved)`;
+                        chair.onclick = null;
+                    } else {
+                        chair.classList.add('seat-available');
+                        chair.title = `Seat ${seatNum} (Available)`;
+                        chair.style.cursor = 'pointer';
+                        chair.onclick = () => selectSeat(rowLabel, seatNum, ticketPrice);
+                    }
+                    chair.textContent = seatNum;
+                });
+                
+                // Cleanup editor artifacts
+                mapDiv.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                mapDiv.querySelectorAll('.resizer').forEach(el => el.remove());
+                mapDiv.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+
+            } else if (Array.isArray(currentEvent.blueprint_layout) && currentEvent.blueprint_layout.length > 0) {
+                // Legacy Array Format
+                let chairCount = 0;
                 currentEvent.blueprint_layout.forEach(shape => {
                     const el = document.createElement('div');
                     el.style.cssText = `position: absolute; left: ${shape.left}; top: ${shape.top}; width: ${shape.width}; height: ${shape.height};`;
                     el.className = `border rounded`;
                     
                     if (shape.type === 'chair') {
+                        chairCount++;
+                        const seatNum = chairCount;
+                        const rowLabel = 'Map Seat';
+                        let ticketPrice = 0;
+                        if (currentEvent.tickets) {
+                            const ticket = currentEvent.tickets.find(t => t.name === rowLabel || t.original_name === rowLabel);
+                            if (ticket) ticketPrice = ticket.price || 0;
+                        }
+                        const isReserved = MockDB.isSeatReserved(currentEvent.event_id, rowLabel, seatNum);
+
                         el.className += ' d-flex align-items-center justify-content-center btn btn-outline-secondary seat-btn';
-                        // All seats available
-                        el.className += ' seat-available';
                         
-                        el.textContent = 'S'; // Placeholder for seat number
-                        el.onclick = () => selectSeat('Map Seat', 'N/A', 0);
+                        if (isReserved) {
+                            el.className += ' seat-reserved';
+                        } else {
+                            el.className += ' seat-available';
+                            el.onclick = () => selectSeat(rowLabel, seatNum, ticketPrice);
+                        }
+                        
+                        el.textContent = seatNum;
                     } else if (shape.type === 'rect') {
                         el.style.backgroundColor = '#e9ecef';
                     } else if (shape.type === 'circle') {
@@ -640,7 +716,8 @@
                 event_start_time: startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
                 event_end_time: endDate ? endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
                 event_venue: currentEvent.venue_name || 'Unknown Venue',
-                seat_label: seatDisplay
+                seat_label: seatDisplay,
+                ticket_price: seatPrice // You can now use {{ticket_price}} in your EmailJS template
                 // ticket_id: ... (add if you have ticket_id)
             };
 

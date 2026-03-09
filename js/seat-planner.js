@@ -33,7 +33,7 @@ let seatPlannerInitialized = false;
 /* ==========================
    INIT
 ========================== */
-export function initSeatPlanner() {
+export async function initSeatPlanner() {
     console.log('initSeatPlanner() called');
 
     loadSwiperDependencies();
@@ -49,6 +49,23 @@ export function initSeatPlanner() {
 
     seatPlannerInitialized = true;
     console.log('Seat planner DOM re-initialization');
+
+    // Inject Map View HTML
+    const mapTab = document.getElementById('pills-blueprint');
+    if (mapTab && !mapTab.querySelector('.seat-planner-container')) {
+        try {
+            const res = await fetch('seat-planner/seat-mapper.html');
+            if (res.ok) {
+                mapTab.innerHTML = await res.text();
+                // Initialize dropdowns
+                mapTab.querySelectorAll('.dropdown-toggle').forEach(el => new bootstrap.Dropdown(el));
+            } else {
+                console.error('Failed to load seat-mapper.html');
+            }
+        } catch (e) {
+            console.error('Error loading seat-mapper.html', e);
+        }
+    }
 
     const canvas    = document.getElementById('canvasInner');
     const container = document.querySelector('.seat-planner-container');
@@ -81,13 +98,37 @@ export function loadCurrentEventStats() {
             const totalCapacity = parseInt(event.total_seats) || 0;
             countEl.dataset.total = totalCapacity;
 
-            const chartTab      = document.getElementById('pills-chart-tab');
-            const isChartActive = chartTab?.classList.contains('active');
-            const currentSeats  = isChartActive
-                ? document.querySelectorAll('#seatPlannerRowContainer .chart-seat').length
-                : document.querySelectorAll('#canvasInner .shape.chair').length;
+            // 1. Calculate Chart Seats
+            let chartSeats = 0;
+            const chartTab = document.getElementById('pills-chart-tab');
+            if (chartTab?.classList.contains('active')) {
+                // If Chart tab is active, count from DOM
+                chartSeats = document.querySelectorAll('#seatPlannerRowContainer .chart-seat').length;
+            } else {
+                // Else count from DB based on preferred mode
+                const mode = localStorage.getItem(`seatlify_chart_layout_mode_${currentEventId}`) || (event.seating_by_table ? 'table' : 'row');
+                const data = mode === 'table' ? event.table_layout_data : event.row_layout_data;
+                chartSeats = (data || []).reduce((sum, g) => sum + (parseInt(g.seats) || 0), 0);
+            }
 
-            countEl.textContent = `${currentSeats} / ${totalCapacity}`;
+            // 2. Calculate Map Seats
+            let mapSeats = 0;
+            const blueprintTab = document.getElementById('pills-blueprint-tab');
+            if (blueprintTab?.classList.contains('active')) {
+                // If Map tab is active, count from DOM
+                mapSeats = document.querySelectorAll('#canvasInner .shape.chair').length;
+            } else if (event.blueprint_layout) {
+                // Else count from DB
+                if (typeof event.blueprint_layout === 'string') {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = event.blueprint_layout;
+                    mapSeats = temp.querySelectorAll('.shape.chair').length;
+                } else if (Array.isArray(event.blueprint_layout)) {
+                    mapSeats = event.blueprint_layout.filter(s => s.type === 'chair').length;
+                }
+            }
+
+            countEl.textContent = `${chartSeats + mapSeats} / ${totalCapacity}`;
         } else {
             countEl.textContent   = '0 / 0';
             countEl.dataset.total = 0;
@@ -111,7 +152,7 @@ function bindEditTotalSeats() {
         }
         const countEl    = document.getElementById('plannerTotalSeats');
         const currentTotal = countEl?.dataset.total || 0;
-        const newTotal   = prompt('Enter total expected capacity:', currentTotal);
+        const newTotal   = prompt('Enter total number of seats:', currentTotal);
         if (newTotal !== null && !isNaN(newTotal) && newTotal.trim() !== '') {
             MockDB.updateEvent(currentEventId, { total_seats: parseInt(newTotal) });
             loadCurrentEventStats();

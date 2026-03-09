@@ -82,6 +82,16 @@ export function initEventAnalytics() {
             const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
             const eventTitle = event ? event.title : "Event Analytics";
 
+            // Calculate average price for fallback
+            let averagePrice = 0;
+            if (event && event.is_paid && event.tickets && event.tickets.length > 0) {
+                const potentialRevenue = event.tickets.reduce((sum, tier) => sum + (parseFloat(tier.price || 0) * parseInt(tier.qty || 0)), 0);
+                const ticketCapacity = event.tickets.reduce((sum, tier) => sum + parseInt(tier.qty || 0), 0);
+                if (ticketCapacity > 0) {
+                    averagePrice = potentialRevenue / ticketCapacity;
+                }
+            }
+
             const workbook = new ExcelJS.Workbook();
             
             // --- Sheet 1: Guest List ---
@@ -91,6 +101,7 @@ export function initEventAnalytics() {
                 { header: 'Email', key: 'email', width: 35 },
                 { header: 'Reservation Date', key: 'res_date', width: 20 },
                 { header: 'Time', key: 'time', width: 15 },
+                { header: 'Ticket Price', key: 'price', width: 15 },
                 { header: 'Status', key: 'status', width: 15 }
             ];
             
@@ -113,11 +124,22 @@ export function initEventAnalytics() {
                         }
                     }
 
+                    let priceDisplay = 'Free';
+                    if (event.is_paid) {
+                        let price = averagePrice;
+                        if (guest.seat_row && event.tickets) {
+                            const tier = event.tickets.find(t => t.name === guest.seat_row || t.original_name === guest.seat_row);
+                            if (tier) price = parseFloat(tier.price || 0);
+                        }
+                        priceDisplay = price;
+                    }
+
                     guestSheet.addRow({
                         name: guest.name,
                         email: guest.email,
                         res_date: ts.toLocaleDateString(),
                         time: ts.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        price: priceDisplay,
                         status: status
                     });
                 });
@@ -328,11 +350,27 @@ export function updateAnalytics(event) {
                 totalSoldEl.textContent = ticketsSold;
 
                 let revenue = 0;
+                let averagePrice = 0;
+
                 if (event.is_paid && event.tickets && event.tickets.length > 0) {
-                    const potentialRevenue = event.tickets.reduce((sum, tier) => sum + (parseInt(tier.price || 0) * parseInt(tier.qty || 0)), 0);
+                    const potentialRevenue = event.tickets.reduce((sum, tier) => sum + (parseFloat(tier.price || 0) * parseInt(tier.qty || 0)), 0);
                     const ticketCapacity = event.tickets.reduce((sum, tier) => sum + parseInt(tier.qty || 0), 0);
                     if (ticketCapacity > 0) {
-                        const averagePrice = potentialRevenue / ticketCapacity;
+                        averagePrice = potentialRevenue / ticketCapacity;
+                    }
+                }
+
+                if (event.is_paid) {
+                    if (event.guests && event.guests.length > 0) {
+                        event.guests.forEach(guest => {
+                            let price = averagePrice;
+                            if (guest.seat_row && event.tickets) {
+                                const tier = event.tickets.find(t => t.name === guest.seat_row || t.original_name === guest.seat_row);
+                                if (tier) price = parseFloat(tier.price || 0);
+                            }
+                            revenue += price;
+                        });
+                    } else {
                         revenue = averagePrice * ticketsSold;
                     }
                 }

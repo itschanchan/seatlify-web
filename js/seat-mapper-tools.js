@@ -18,18 +18,21 @@ export const MAX_ZOOM   = 2;
 /* ==========================
    STATE
 ========================== */
+let scrollContainer = null;
 export let canvas      = null;
 export let container   = null;
 export let currentTool = 'select';
+export let isBlueprintEditMode = true;
 export let scale       = 1;
 
 let isPanning      = false;
+let hasPanned      = false;
 let isCreating     = false;
 let isDraggingShape = false;
 let isResizing     = false;
 
 let startX = 0, startY = 0;
-let scrollLeft = 0, scrollTop = 0;
+let panX = 0, panY = 0;
 let startDrawX = 0, startDrawY = 0;
 let tempShape = null;
 
@@ -49,28 +52,13 @@ export const historyManager = {
     },
 
     loadHistory() {
-        const key = this.getStorageKey();
-        if (!key) return;
-        try {
-            const stored = localStorage.getItem(key);
-            if (stored) {
-                const data = JSON.parse(stored);
-                this.undoStack = data.undoStack || [];
-                this.redoStack = data.redoStack || [];
-                this.updateButtons();
-            }
-        } catch (e) { console.error('Failed to load blueprint history', e); }
+        // History is now transient (in-memory only). Do not load from storage.
+        return;
     },
 
     saveHistory() {
-        const key = this.getStorageKey();
-        if (!key) return;
-        try {
-            localStorage.setItem(key, JSON.stringify({
-                undoStack: this.undoStack,
-                redoStack: this.redoStack
-            }));
-        } catch (e) { console.error('Failed to save blueprint history', e); }
+        // History is now transient (in-memory only). Do not save to storage.
+        return;
     },
 
     saveCurrentState() {
@@ -114,7 +102,9 @@ export const historyManager = {
         if (!canvasEl) return;
         canvasEl.querySelectorAll('.shape').forEach(el => {
             makeDraggable(el);
-            addResizers(el);
+            if (!el.classList.contains('chair')) {
+                addResizers(el);
+            }
         });
         loadCurrentEventStats();
         deselectAll();
@@ -141,6 +131,8 @@ export const historyManager = {
 export function initBlueprintTools(canvasEl, containerEl) {
     canvas    = canvasEl;
     container = containerEl;
+    scrollContainer = container.parentElement;
+    scrollContainer.style.overflow = 'hidden'; // Disable native scroll to use transform pan
 
     canvas.style.transformOrigin = '0 0';
     historyManager.loadHistory();
@@ -148,18 +140,13 @@ export function initBlueprintTools(canvasEl, containerEl) {
     bindUndoRedoBlueprintButtons();
     bindToolSelection();
     bindToolbarDragAndDrop();
-    bindMouseEvents();
+    bindMouseEvents(scrollContainer);
     bindGridToggle();
     bindZoomControls();
     bindClearButton();
     bindBulkAdd();
     bindSaveButton();
-
-    // Sync grid background with scroll so grid lines follow the viewport
-    container.addEventListener('scroll', () => {
-        container.style.backgroundPosition =
-            `-${container.scrollLeft}px -${container.scrollTop}px`;
-    });
+    bindEditButton();
 }
 
 /* ==========================
@@ -178,6 +165,7 @@ function bindUndoRedoBlueprintButtons() {
 export function setActiveTool(tool) {
     currentTool = tool;
     document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+    if (container) container.dataset.activeTool = tool;
 
     const shapeMainBtn = document.getElementById('shapeMainBtn');
     if (tool === 'rect' || tool === 'circle') {
@@ -212,6 +200,7 @@ function bindToolbarDragAndDrop() {
 
     document.querySelectorAll('#seatPlannerToolbar [draggable="true"]').forEach(tool => {
         tool.addEventListener('dragstart', (e) => {
+            if (!isBlueprintEditMode) return e.preventDefault();
             const toolType = e.currentTarget.id === 'shapeMainBtn'
                 ? e.currentTarget.dataset.tool
                 : tool.dataset.tool;
@@ -231,6 +220,7 @@ function bindToolbarDragAndDrop() {
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
+            if (!isBlueprintEditMode) return;
             dropZone.classList.remove('drag-over');
             const toolType = e.dataTransfer.getData('text/plain');
             if (!toolType) return;
@@ -290,7 +280,9 @@ export function createElementOnCanvas(toolType, x, y) {
 
     makeDraggable(el);
     canvas.appendChild(el);
-    addResizers(el);
+    if (toolType !== 'chair') {
+        addResizers(el);
+    }
     selectShape(el);
     if (toolType === 'chair') loadCurrentEventStats();
     return el;
@@ -299,8 +291,7 @@ export function createElementOnCanvas(toolType, x, y) {
 /* ==========================
    MOUSE EVENTS
 ========================== */
-function bindMouseEvents() {
-    const surface = canvas.parentElement;
+function bindMouseEvents(surface) {
     surface.addEventListener('mousedown', onMouseDown);
     surface.addEventListener('mousemove', onMouseMove);
     surface.addEventListener('mouseup',   onMouseUp);
@@ -311,19 +302,23 @@ function bindMouseEvents() {
 function onMouseDown(e) {
     if (e.target.closest('.ribbon') || e.target.closest('.zoom-controls')) return;
 
-    // Middle-button pan
-    if (e.button === 1) {
+    // Pan: Middle-button OR Left-click on empty space (Select tool)
+    const isMiddlePan = e.button === 1;
+    const isLeftPan   = e.button === 0 && currentTool === 'select' && !e.target.closest('.shape');
+
+    if (isMiddlePan || isLeftPan) {
         e.preventDefault();
         isPanning  = true;
+        hasPanned  = false;
         startX     = e.clientX;
         startY     = e.clientY;
-        scrollLeft = container.scrollLeft;
-        scrollTop  = container.scrollTop;
-        container.style.cursor = 'grabbing';
+        scrollContainer.style.cursor = 'grabbing';
         return;
     }
 
     if (e.button !== 0) return;
+
+    if (!isBlueprintEditMode) return;
 
     if (currentTool === 'rect' || currentTool === 'circle') {
         historyManager.saveCurrentState();
@@ -344,8 +339,15 @@ function onMouseDown(e) {
 
 function onMouseMove(e) {
     if (isPanning) {
-        container.scrollLeft = scrollLeft - (e.clientX - startX);
-        container.scrollTop  = scrollTop  - (e.clientY - startY);
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasPanned = true;
+
+        panX += dx;
+        panY += dy;
+        startX = e.clientX;
+        startY = e.clientY;
+        applyZoom(); // Re-apply transform with new pan
         return;
     }
     if (!isCreating || !tempShape) return;
@@ -366,9 +368,9 @@ function onMouseMove(e) {
 }
 
 function onMouseUp(e) {
-    if (e.button === 1) {
+    if (isPanning) {
         isPanning = false;
-        container.style.cursor = 'default';
+        scrollContainer.style.cursor = 'default';
         return;
     }
     if (isCreating && tempShape) {
@@ -381,7 +383,12 @@ function onMouseUp(e) {
 }
 
 function onCanvasClick(e) {
+    if (!isBlueprintEditMode) return;
     if (isCreating || isDraggingShape || isResizing) return;
+    if (hasPanned) {
+        hasPanned = false;
+        return;
+    }
     if (e.target.closest('.shape')) return;
 
     if (currentTool === 'select') {
@@ -405,6 +412,7 @@ function onCanvasClick(e) {
 export function makeDraggable(el) {
     el.addEventListener('mousedown', (e) => {
         if (e.target.classList.contains('resizer')) return;
+        if (!isBlueprintEditMode) return;
         if (currentTool !== 'select') return;
 
         if (!el.isContentEditable) e.preventDefault();
@@ -445,7 +453,7 @@ export function makeDraggable(el) {
    RESIZING
 ========================== */
 export function addResizers(el) {
-    ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+    ['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'].forEach(pos => {
         let resizer = el.querySelector(`.resizer.${pos}`);
         if (!resizer) {
             resizer = document.createElement('div');
@@ -457,6 +465,7 @@ export function addResizers(el) {
 }
 
 function onResizeStart(e, el, pos) {
+    if (!isBlueprintEditMode) return;
     e.stopPropagation();
     e.preventDefault();
     isResizing = true;
@@ -516,6 +525,7 @@ function onResizeStart(e, el, pos) {
 ========================== */
 export function selectShape(el) {
     deselectAll();
+    if (!isBlueprintEditMode) return;
     el.classList.add('selected');
     selectedShape = el;
 }
@@ -556,10 +566,10 @@ function onWheelZoom(e) {
 }
 
 function applyZoom() {
-    canvas.style.transform = `scale(${scale})`;
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     if (container) {
         container.style.backgroundSize     = `${gridSize * scale}px ${gridSize * scale}px`;
-        container.style.backgroundPosition = `-${container.scrollLeft}px -${container.scrollTop}px`;
+        container.style.backgroundPosition = `${panX}px ${panY}px`;
     }
 }
 
@@ -629,36 +639,70 @@ function addItemsToBlueprint(qty, type) {
         el.style.top    = `${50 + row * (itemSize + gap)}px`;
         makeDraggable(el);
         canvasEl.appendChild(el);
-        addResizers(el);
+        if (type !== 'chair') {
+            addResizers(el);
+        }
     }
+}
+
+function updateBlueprintSeatsStatus() {
+    const chairs = document.querySelectorAll('#canvasInner .shape.chair');
+    chairs.forEach((chair, index) => {
+        // Visual update
+        chair.classList.add('available');
+        
+        // Dispose old popover if exists to prevent duplication
+        const oldPopover = bootstrap.Popover.getInstance(chair);
+        if (oldPopover) oldPopover.dispose();
+
+        // Add Popover attributes
+        chair.setAttribute('data-bs-toggle', 'popover');
+        chair.setAttribute('data-bs-trigger', 'hover');
+        chair.setAttribute('data-bs-placement', 'top');
+        chair.setAttribute('data-bs-html', 'true');
+        chair.setAttribute('title', `Seat ${index + 1}`);
+        chair.setAttribute('data-bs-content', 'Status: <span class="text-success fw-bold">Available</span>');
+        
+        new bootstrap.Popover(chair);
+    });
 }
 
 /* ==========================
    SAVE / LOAD BLUEPRINT
 ========================== */
 export function saveBlueprintState(silent = false) {
-    const shapes = [];
-    document.querySelectorAll('#canvasInner .shape').forEach(el => {
-        shapes.push({
-            type:   Array.from(el.classList).find(c => c !== 'shape' && c !== 'selected' && c !== 'seat'),
-            left:   el.style.left,
-            top:    el.style.top,
-            width:  el.style.width,
-            height: el.style.height,
-            text:   el.isContentEditable ? el.innerText : null
-        });
-    });
+    const canvasEl = document.getElementById('canvasInner');
+    if (!canvasEl) return;
 
-    const chairCount = shapes.filter(s => s.type === 'chair').length;
+    // Ensure a clean state before "capturing"
+    deselectAll();
+
+    const blueprintHTML = canvasEl.innerHTML;
+    const chairCount = canvasEl.querySelectorAll('.shape.chair').length;
+
     const currentEventId = localStorage.getItem('seatlify_current_event_id');
     if (currentEventId && typeof MockDB !== 'undefined') {
+        // Get event to check Chart seats
+        const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
+        let chartSeats = 0;
+        if (event) {
+            const mode = localStorage.getItem(`seatlify_chart_layout_mode_${currentEventId}`) || (event.seating_by_table ? 'table' : 'row');
+            const data = mode === 'table' ? event.table_layout_data : event.row_layout_data;
+            chartSeats = (data || []).reduce((sum, g) => sum + (parseInt(g.seats) || 0), 0);
+        }
+
         MockDB.updateEvent(currentEventId, {
-            blueprint_layout: shapes,
-            designed_seats: chairCount
+            blueprint_layout: blueprintHTML, // Save the raw HTML
+            designed_seats: chairCount + chartSeats
         });
-        if (!silent) alert(`Blueprint saved! Total Seats: ${chairCount}`);
-        console.log('Blueprint state saved.');
+        if (!silent) alert(`Blueprint saved! Total Seats: ${chairCount + chartSeats}`);
+        console.log('Blueprint state saved as HTML.');
         loadCurrentEventStats();
+        updateBlueprintSeatsStatus();
+        if (!silent) {
+            isBlueprintEditMode = false;
+            updateBlueprintEditModeUI();
+        }
     } else if (!silent) {
         alert('Blueprint saved locally (No active event linked).');
     }
@@ -674,28 +718,81 @@ export function loadBlueprintLayout() {
     if (!currentEventId || typeof MockDB === 'undefined') return;
 
     const event = MockDB.getEvents().find(e => e.event_id == currentEventId);
-    if (!event?.blueprint_layout?.length) return;
+    if (!event?.blueprint_layout) return;
 
-    console.log('Loading from saved blueprint layout.');
-    event.blueprint_layout.forEach(shapeData => {
-        const el = document.createElement('div');
-        el.classList.add('shape', shapeData.type);
-        if (shapeData.type === 'chair') el.classList.add('seat');
-        el.style.left   = shapeData.left;
-        el.style.top    = shapeData.top;
-        el.style.width  = shapeData.width;
-        el.style.height = shapeData.height;
-        if (shapeData.text) {
-            el.contentEditable = true;
-            el.innerText       = shapeData.text;
-        }
-        makeDraggable(el);
-        canvasEl.appendChild(el);
-        addResizers(el);
-    });
+    // Check if saved layout is HTML (new format) or JSON (old format)
+    if (typeof event.blueprint_layout === 'string') {
+        console.log('Loading from saved blueprint HTML.');
+        canvasEl.innerHTML = event.blueprint_layout;
+
+        // Re-bind all events to the newly injected elements
+        canvasEl.querySelectorAll('.shape').forEach(el => {
+            makeDraggable(el);
+            // Chairs should not have resizers.
+            if (!el.classList.contains('chair')) {
+                addResizers(el);
+            }
+        });
+
+    } else if (Array.isArray(event.blueprint_layout) && event.blueprint_layout.length > 0) {
+        // --- Fallback for old JSON format ---
+        console.log('Loading from saved blueprint layout (legacy JSON format).');
+        event.blueprint_layout.forEach(shapeData => {
+            const el = document.createElement('div');
+            el.classList.add('shape', shapeData.type);
+            if (shapeData.type === 'chair') el.classList.add('seat');
+            el.style.left   = shapeData.left;
+            el.style.top    = shapeData.top;
+            el.style.width  = shapeData.width;
+            el.style.height = shapeData.height;
+            if (shapeData.text) {
+                el.contentEditable = true;
+                el.innerText       = shapeData.text;
+            }
+            makeDraggable(el);
+            canvasEl.appendChild(el);
+            if (shapeData.type !== 'chair') {
+                addResizers(el);
+            }
+        });
+    }
+
+    updateBlueprintSeatsStatus();
+    // After loading, ensure UI reflects the current edit mode
+    updateBlueprintEditModeUI();
 }
 
 function bindSaveButton() {
     document.getElementById('savePlanBtn')
         ?.addEventListener('click', () => saveBlueprintState(false));
+}
+
+function bindEditButton() {
+    document.getElementById('editPlanBtn')?.addEventListener('click', () => {
+        isBlueprintEditMode = true;
+        updateBlueprintEditModeUI();
+    });
+}
+
+function updateBlueprintEditModeUI() {
+    const saveBtn = document.getElementById('savePlanBtn');
+    const editBtn = document.getElementById('editPlanBtn');
+    const toolbar = document.getElementById('seatPlannerToolbar');
+
+    if (saveBtn) saveBtn.style.display = isBlueprintEditMode ? 'inline-block' : 'none';
+    if (editBtn) editBtn.style.display = isBlueprintEditMode ? 'none' : 'inline-block';
+
+    if (toolbar) {
+        const tools = toolbar.querySelectorAll('.tool-btn, #toggleGrid, #clearBtn, [data-bs-target="#bulkAddModal"], #btnUndoBlueprint, #btnRedoBlueprint, .dropdown-toggle');
+        tools.forEach(btn => btn.disabled = !isBlueprintEditMode);
+        
+        // Also disable draggable on shape buttons
+        toolbar.querySelectorAll('[draggable]').forEach(el => {
+            el.setAttribute('draggable', isBlueprintEditMode);
+        });
+    }
+
+    if (!isBlueprintEditMode) {
+        deselectAll();
+    }
 }

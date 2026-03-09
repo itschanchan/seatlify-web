@@ -71,6 +71,7 @@
                         <div id="totalSeatsContainer">
                             <label for="eventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Number of Seats</label>
                             <input type="number" class="form-control" id="eventTotalSeats" placeholder="0" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                            <div id="createTotalSeatsCapacityWarning" class="text-danger small fw-bold mt-1" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Total seats exceed total capacity!</div>
                         </div>
 
                         <div id="tableSeatingContainer" style="display: none;">
@@ -230,6 +231,8 @@
             if (warning) warning.style.display = (capacity > 0 && calculated > capacity) ? '' : 'none';
         } else {
             calculated = parseInt(document.getElementById('eventTotalSeats')?.value) || 0;
+            const warning = document.getElementById('createTotalSeatsCapacityWarning');
+            if (warning) warning.style.display = (capacity > 0 && calculated > capacity) ? '' : 'none';
         }
 
         if (indicator) indicator.textContent = 'Current number of seats: ' + calculated + ' / ' + capacity;
@@ -244,6 +247,8 @@
         toggle.addEventListener('change', function () {
             const on = toggle.checked;
             if (totalSeatsContainer) totalSeatsContainer.style.display = on ? 'none' : '';
+            const totalWarning = document.getElementById('createTotalSeatsCapacityWarning');
+            if (totalWarning) totalWarning.style.display = 'none';
             if (tableContainer)      tableContainer.style.display      = on ? ''     : 'none';
             _updateSeatIndicator();
         });
@@ -370,8 +375,16 @@
 
         if (!newEvent.title) { alert('Event name is required.'); return; }
 
+        if (newEvent.total_seats > newEvent.attendees && newEvent.attendees > 0) {
+            alert('Total seats cannot exceed total capacity.');
+            return;
+        }
+
         if (typeof MockDB !== 'undefined') {
-            MockDB.addEvent(newEvent);
+            const createdEvent = MockDB.addEvent(newEvent);
+            if (createdEvent) {
+                localStorage.setItem('seatlify_chart_layout_mode_' + createdEvent.event_id, byTable ? 'table' : 'row');
+            }
         }
 
         const modalEl = document.getElementById('createEventModal');
@@ -410,6 +423,8 @@
         if (tableContainer)      tableContainer.style.display      = 'none';
         const warning = document.getElementById('createTableCapacityWarning');
         if (warning) warning.style.display = 'none';
+        const totalWarning = document.getElementById('createTotalSeatsCapacityWarning');
+        if (totalWarning) totalWarning.style.display = 'none';
         const indicator = document.getElementById('seatCountIndicator');
         if (indicator) indicator.textContent = 'Current number of seats: 0 / 0';
 

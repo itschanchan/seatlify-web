@@ -40,6 +40,7 @@ function renderTicketDetails() {
         const dateEl = document.getElementById('ticketEventDate');
         const timeEl = document.getElementById('ticketEventTime');
         const venueEl = document.getElementById('ticketEventVenue');
+        const priceEl = document.getElementById('ticketEventPrice');
 
         if (titleEl) titleEl.textContent = event.title;
         
@@ -63,6 +64,14 @@ function renderTicketDetails() {
                 if (venue) venueName = venue.name;
             }
             venueEl.textContent = venueName;
+        }
+
+        if (priceEl) {
+            if (event.is_paid && event.tickets && event.tickets.length > 0) {
+                priceEl.textContent = `₱${event.tickets[0].price}`;
+            } else {
+                priceEl.textContent = 'Free';
+            }
         }
 
         // --- QR Code API Integration ---
@@ -146,7 +155,7 @@ function createTierRow(group, event, layoutType, isNew = false) {
     const existingTier = !isNew && event.tickets ? event.tickets.find(t => (t.original_name === group.label) || (t.name === group.label)) : null;
     const price = existingTier ? existingTier.price : '';
     const displayName = existingTier ? existingTier.name : group.label;
-    const seats = isNew ? '' : group.seats;
+    const seats = group.seats || 0;
 
     const tr = document.createElement('tr');
     tr.className = 'tier-row-item';
@@ -156,7 +165,7 @@ function createTierRow(group, event, layoutType, isNew = false) {
         <td style="border-bottom-color: var(--border-color);">
             <div class="d-flex flex-column">
                 <input type="text" class="form-control bg-panel-theme text-main-theme border-secondary tier-name-input fw-bold"
-                    value="${displayName}" placeholder="Tier Name" data-original-name="${group.label}" disabled>
+                    value="${displayName}" placeholder="Tier Name" data-original-name="${group.label}" data-seats="${seats}" disabled>
                 <small class="text-muted mt-1">${seats} seats</small>
             </div>
         </td>
@@ -179,9 +188,12 @@ function renderTicketTiersEditor(event) {
     const allTiersContainer = document.getElementById('tier-layout-tabs-content');
     const btnSave = document.getElementById('btnSaveTicketTiers');
     const btnEdit = document.getElementById('btnEditTicketTiers');
-    const btnAddRow = document.getElementById('btnTicketAddRow');
+    
+    const rowActions = document.getElementById('rowTiersActions');
+    const tableActions = document.getElementById('tableTiersActions');
 
-    if (!rowsContainer || !tablesContainer || !allTiersContainer || !btnSave || !btnEdit || !btnAddRow) {
+
+    if (!rowsContainer || !tablesContainer || !allTiersContainer || !btnSave || !btnEdit) {
         return;
     }
 
@@ -196,7 +208,6 @@ function renderTicketTiersEditor(event) {
 
     // Set initial state on the new buttons
     newBtnSave.style.display = 'none';
-    btnAddRow.style.display = 'none'; // Hide global button, we'll use local ones
     newBtnEdit.style.display = 'inline-block';
 
     const createTierGroup = (title, data, type) => {
@@ -205,7 +216,7 @@ function renderTicketTiersEditor(event) {
         table.className = 'table table-hover align-middle w-auto';
         table.innerHTML = `
             <thead style="background-color: var(--bg-muted);">
-                <tr><th colspan="3" class="text-main-theme" style="border-bottom-color: var(--border-color);">${title}</th></tr>
+                <tr><th colspan="3" class="text-main-theme header-title" style="border-bottom-color: var(--border-color);">${title}</th></tr>
                 <tr>
                     <th class="text-main-theme" style="border-bottom-color: var(--border-color); padding-right: 2rem;">Tier / Seats</th>
                     <th class="text-main-theme" style="border-bottom-color: var(--border-color);">Price per ticket</th>
@@ -240,6 +251,10 @@ function renderTicketTiersEditor(event) {
     const pillsRowsTab = document.getElementById('pills-rows-tab');
     const pillsTablesTab = document.getElementById('pills-tables-tab');
 
+    // Hide actions initially
+    if (rowActions) rowActions.style.display = 'none';
+    if (tableActions) tableActions.style.display = 'none';
+
     if (!hasRowData && !hasTableData) {
         newBtnSave.disabled = true;
         newBtnEdit.disabled = true;
@@ -260,15 +275,108 @@ function renderTicketTiersEditor(event) {
         }
     }
 
+    // --- Bind Add/Remove Buttons ---
+    const bindActionButtons = (addBtnId, removeBtnId, container, type, title) => {
+        const btnAdd = document.getElementById(addBtnId);
+        const btnRemove = document.getElementById(removeBtnId);
+        
+        if (btnAdd) {
+            const newBtnAdd = btnAdd.cloneNode(true);
+            btnAdd.parentNode.replaceChild(newBtnAdd, btnAdd);
+            
+            newBtnAdd.addEventListener('click', () => {
+                let tbody = container.querySelector('tbody');
+                if (!tbody) {
+                    // Container is empty (showing "No layout found"), create table structure
+                    container.innerHTML = '';
+                    const wrapper = createTierGroup(title, [], type);
+                    container.appendChild(wrapper);
+                    tbody = container.querySelector('tbody');
+                }
+
+                // Generate Label
+                let nextLabel = '';
+                const existingRows = tbody.querySelectorAll('tr.tier-row-item');
+                if (type === 'row') {
+                    // Simple logic: Row A, B, C... 
+                    // Find max char used
+                    let maxChar = 64; // @
+                    existingRows.forEach(r => {
+                        const input = r.querySelector('.tier-name-input');
+                        if (input) {
+                            const name = input.dataset.originalName || '';
+                            if (name.startsWith('Row ')) {
+                                const charCode = name.replace('Row ', '').charCodeAt(0);
+                                if (charCode > maxChar) maxChar = charCode;
+                            }
+                        }
+                    });
+                    nextLabel = `Row ${String.fromCharCode(maxChar + 1)}`;
+                } else {
+                    // Table 1, Table 2...
+                    let maxNum = 0;
+                    existingRows.forEach(r => {
+                        const input = r.querySelector('.tier-name-input');
+                        if (input) {
+                            const name = input.dataset.originalName || '';
+                            if (name.startsWith('Table ')) {
+                                const num = parseInt(name.replace('Table ', ''));
+                                if (num > maxNum) maxNum = num;
+                            }
+                        }
+                    });
+                    nextLabel = `Table ${maxNum + 1}`;
+                }
+
+                const newGroup = { label: nextLabel, seats: 10 }; // Default 10 seats
+                const tr = createTierRow(newGroup, event, type, true);
+                
+                // Enable inputs immediately since we are in edit mode
+                tr.querySelectorAll('input').forEach(i => i.disabled = false);
+                tbody.appendChild(tr);
+            });
+        }
+
+        if (btnRemove) {
+            const newBtnRemove = btnRemove.cloneNode(true);
+            btnRemove.parentNode.replaceChild(newBtnRemove, btnRemove);
+
+            newBtnRemove.addEventListener('click', () => {
+                const tbody = container.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr.tier-row-item');
+                    if (rows.length > 0) {
+                        rows[rows.length - 1].remove();
+                    }
+                    // If empty, maybe show the "No layout" message again? 
+                    // For now, leaving an empty table is fine or we can check:
+                    if (tbody.querySelectorAll('tr').length === 0) {
+                        container.innerHTML = `<div class="text-center text-muted-theme p-4 border rounded" style="background-color: var(--bg-muted);">No ${type} layout found. Configure ${type}s in the Seat Planner Chart.</div>`;
+                    }
+                }
+            });
+        }
+    };
+
+    bindActionButtons('btnTicketAddRowTier', 'btnTicketRemoveRowTier', rowsContainer, 'row', 'Row-based Tiers');
+    bindActionButtons('btnTicketAddTableTier', 'btnTicketRemoveTableTier', tablesContainer, 'table', 'Table-based Tiers');
+
     newBtnEdit.addEventListener('click', () => {
         allTiersContainer.querySelectorAll('input').forEach(input => input.disabled = false);
-        // Tier management (add/delete) is now in Seat Planner.
+        
+        // Show Action Buttons
+        if (rowActions) rowActions.style.display = 'block';
+        if (tableActions) tableActions.style.display = 'block';
+
         newBtnEdit.style.display = 'none';
         newBtnSave.style.display = 'inline-block';
     });
 
     newBtnSave.addEventListener('click', () => {
         const rows = allTiersContainer.querySelectorAll('.tier-row-item');
+        
+        let newRowLayout = [];
+        let newTableLayout = [];
         let newTickets = [];
 
         rows.forEach(row => {
@@ -279,25 +387,33 @@ function renderTicketTiersEditor(event) {
                 const price = priceInput.value;
                 const name = nameInput.value;
                 const originalName = nameInput.dataset.originalName || name;
+                const seats = parseInt(nameInput.dataset.seats) || 10;
                 const layoutType = row.dataset.layoutType;
 
-                if (name && originalName) { // Only save tiers that correspond to a layout
-                    // Find the original seat count from the layout data
-                    const layoutData = (layoutType === 'row' ? event.row_layout_data : event.table_layout_data) || [];
-                    const groupData = layoutData.find(g => g.label === originalName);
-                    const qty = groupData ? groupData.seats : 0;
+                if (name) {
+                    // Rebuild Layout Data
+                    if (layoutType === 'row') {
+                        newRowLayout.push({ label: originalName, seats: seats });
+                    } else if (layoutType === 'table') {
+                        newTableLayout.push({ label: originalName, seats: seats });
+                    }
 
+                    // Rebuild Tickets
                     newTickets.push({
                         name: name,
                         original_name: originalName,
                         price: parseInt(price) || 0,
-                        qty: parseInt(qty) || 0
+                        qty: seats
                     });
                 }
             }
         });
 
         MockDB.updateEvent(event.event_id, {
+            // We must update layout data too, as rows might have been added/removed
+            row_layout_data: newRowLayout,
+            table_layout_data: newTableLayout,
+            // Update tickets
             tickets: newTickets,
         });
 

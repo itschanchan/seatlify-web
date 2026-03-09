@@ -1,0 +1,86 @@
+<div class="container-fluid pt-0 pb-4 d-flex flex-column">
+    <h2 class="mb-4 fw-bold">Financial Report</h2>
+
+    <!-- Event Selector Warning (if no event selected) -->
+    <div id="financeNoEventAlert" class="alert alert-warning" style="display: none;">
+        Please select an event from the Dashboard to view its financial report.
+    </div>
+
+    <div id="financeContent">
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100" style="background-color: var(--bg-panel);">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Revenue</h6>
+                        <h3 class="mb-0 fw-bold text-success" id="financeTotalRevenue">₱0.00</h3>
+                        <small class="text-muted">Gross ticket sales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100" style="background-color: var(--bg-panel);">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Refunds & Cancellations</h6>
+                        <h3 class="mb-0 fw-bold text-danger" id="financeRefunds">₱0.00</h3>
+                        <small class="text-muted">Processed refunds</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100" style="background-color: var(--bg-panel);">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Net Revenue</h6>
+                        <h3 class="mb-0 fw-bold text-primary" id="financeNetRevenue">₱0.00</h3>
+                        <small class="text-muted">Available for payout</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payout Section -->
+        <div class="card shadow-sm border-0 mb-4" style="background-color: var(--bg-panel);">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="card-title mb-1">Payout Balance</h5>
+                    <p class="text-muted mb-0">Transfer your earnings to your connected bank account.</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <div class="small text-muted">Available Balance</div>
+                        <div class="fw-bold fs-5" id="financePayoutBalance">₱0.00</div>
+                    </div>
+                    <button class="btn btn-primary btn-lg" id="btnPayout">
+                        <i class="bi bi-cash-coin me-2"></i>Payout Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions (Mock Table) -->
+        <div class="card shadow-sm border-0" style="background-color: var(--bg-panel);">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h5 class="mb-0">Recent Transactions</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background-color: var(--bg-muted);">
+                        <tr>
+                            <th class="border-bottom-0 text-muted">Transaction ID</th>
+                            <th class="border-bottom-0 text-muted">Date</th>
+                            <th class="border-bottom-0 text-muted">Guest</th>
+                            <th class="border-bottom-0 text-muted">Type</th>
+                            <th class="border-bottom-0 text-muted text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="financeTransactionTable">
+                        <!-- Populated by JS -->
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No transactions found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -31,28 +31,13 @@ export const chartHistoryManager = {
     },
 
     loadHistory() {
-        const key = this.getStorageKey();
-        if (!key) return;
-        try {
-            const stored = localStorage.getItem(key);
-            if (stored) {
-                const data = JSON.parse(stored);
-                this.undoStack = data.undoStack || [];
-                this.redoStack = data.redoStack || [];
-                this.updateButtons();
-            }
-        } catch (e) { console.error('Failed to load chart history', e); }
+        // History is now transient (in-memory only). Do not load from storage.
+        return;
     },
 
     saveHistory() {
-        const key = this.getStorageKey();
-        if (!key) return;
-        try {
-            localStorage.setItem(key, JSON.stringify({
-                undoStack: this.undoStack,
-                redoStack: this.redoStack
-            }));
-        } catch (e) { console.error('Failed to save chart history', e); }
+        // History is now transient (in-memory only). Do not save to storage.
+        return;
     },
 
     saveState() {
@@ -712,13 +697,26 @@ export function saveChartState(silent = false) {
     });
 
     const seatCount = newLayoutData.reduce((acc, g) => acc + g.seats, 0);
+    
+    // Calculate Map Seats from DB to add to total
+    let mapSeats = 0;
+    if (event.blueprint_layout) {
+        if (typeof event.blueprint_layout === 'string') {
+            const temp = document.createElement('div');
+            temp.innerHTML = event.blueprint_layout;
+            mapSeats = temp.querySelectorAll('.shape.chair').length;
+        } else if (Array.isArray(event.blueprint_layout)) {
+            mapSeats = event.blueprint_layout.filter(s => s.type === 'chair').length;
+        }
+    }
+
     const updatePayload = { tickets };
     updatePayload[`${chartLayoutMode}_layout_data`] = newLayoutData;
-    updatePayload.designed_seats = seatCount;
+    updatePayload.designed_seats = seatCount + mapSeats;
     MockDB.updateEvent(currentEventId, updatePayload);
 
     if (!silent) {
-        alert(`Chart layout saved! Total Seats: ${seatCount}`);
+        alert(`Chart layout saved! Total Seats: ${seatCount + mapSeats}`);
     }
     console.log('Chart state saved.');
     loadCurrentEventStats();
@@ -773,6 +771,12 @@ export function updateChartEditModeUI() {
 
     const btnClearChart = document.getElementById('btnClearChart');
     if (btnClearChart)  btnClearChart.disabled = !isChartEditMode;
+
+    const btnGroupRow = document.getElementById('btnGroupRow');
+    if (btnGroupRow) btnGroupRow.disabled = !isChartEditMode;
+
+    const btnGroupTable = document.getElementById('btnGroupTable');
+    if (btnGroupTable) btnGroupTable.disabled = !isChartEditMode;
 
     const btnSave = document.getElementById('btnSaveChart');
     const btnEdit = document.getElementById('btnEditChart');
@@ -1017,6 +1021,8 @@ function _buildSeatEl(seatNumber, label, displayName, price, currentEventId) {
         seatEl.style.color           = 'white';
         popoverStatus = 'Reserved';
         seatEl.onclick = () => {
+            const popover = bootstrap.Popover.getInstance(seatEl);
+            if (popover) popover.hide();
             if (confirm(`Make seat ${displayName}-${seatNumber} available again? This will remove the guest reservation.`)) {
                 MockDB.unreserveSeat(currentEventId, label, seatNumber);
                 generateChartLayout();
@@ -1027,6 +1033,8 @@ function _buildSeatEl(seatNumber, label, displayName, price, currentEventId) {
         seatEl.style.color           = 'var(--text-main)';
         seatEl.onclick = () => {
             if (isChartEditMode) { alert('Exit edit mode to reserve seats.'); return; }
+            const popover = bootstrap.Popover.getInstance(seatEl);
+            if (popover) popover.hide();
             const guestName = prompt(`Reserve seat ${displayName}-${seatNumber} for:`, 'Guest Name');
             if (guestName) {
                 const guestEmail = prompt(

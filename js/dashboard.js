@@ -53,7 +53,10 @@ export function initDashboard() {
             const currentEventId = localStorage.getItem('seatlify_current_event_id');
             if (currentEventId) {
                 if (confirm("Are you sure you want to reset all simulated sales and guest data for this event? This cannot be undone.")) {
-                    MockDB.resetSales(currentEventId);
+                    const result = MockDB.resetSales(currentEventId);
+                    if (result && result.message) {
+                        alert(result.message);
+                    }
                 }
             } else {
                 alert("Please select an event first to reset sales.");
@@ -446,7 +449,19 @@ function renderDashboardEvent(id) {
     // --- NEW STATS LOGIC ---
     const totalCapacity = parseInt(event.total_seats) || 0;
     const ticketsSold = event.sold || 0;
-    const designedSeats = parseInt(event.designed_seats) || 0;
+    
+    // Calculate designed seats based on the active layout mode (Row vs Table)
+    const storedLayoutMode = localStorage.getItem(`seatlify_chart_layout_mode_${event.event_id}`);
+    const effectiveMode = storedLayoutMode || (event.seating_by_table ? 'table' : 'row');
+
+    let designedSeats = 0;
+    if (effectiveMode === 'table') {
+        designedSeats = (event.table_layout_data || []).reduce((sum, group) => sum + (parseInt(group.seats) || 0), 0);
+    } else {
+        designedSeats = (event.row_layout_data || []).reduce((sum, group) => sum + (parseInt(group.seats) || 0), 0);
+    }
+    if (designedSeats === 0 && event.designed_seats) designedSeats = parseInt(event.designed_seats) || 0;
+
     const overallEventCapacity = parseInt(event.attendees) || 0;
     const checkedIn = event.checked_in_count || 0;
     
@@ -634,6 +649,15 @@ function clearDashboardView() {
 
 function initEventManager() {
     console.log("Initializing Event Manager");
+
+    // Bind View Switchers
+    const btnTable = document.getElementById('btnViewTable');
+    const btnCalendar = document.getElementById('btnViewCalendar');
+    const btnSimplified = document.getElementById('btnViewSimplified');
+
+    if (btnTable) btnTable.addEventListener('click', () => setEventView('table'));
+    if (btnCalendar) btnCalendar.addEventListener('click', () => setEventView('calendar'));
+    if (btnSimplified) btnSimplified.addEventListener('click', () => setEventView('simplified'));
 
     // Reset view state on load to match HTML default
     currentEventView = 'table';

@@ -85,6 +85,14 @@ async function handleNavClick(e, link) {
             window.saveCurrentPlannerState();
         }
     }
+    
+    // If navigating away from invitations, trigger a silent save.
+    if (currentActiveTab === 'invitations' && target !== 'invitations') {
+        if (typeof window.saveInvitationState === 'function') {
+            console.log('Navigating away from invitations, auto-saving state.');
+            window.saveInvitationState();
+        }
+    }
 
     // Update Active State in both Sidebar and Bottom Nav
     document.querySelectorAll('.sidebar-nav .nav-link, .bottom-nav-bar .nav-link').forEach(l => l.classList.remove('active'));
@@ -98,7 +106,7 @@ async function handleNavClick(e, link) {
         await loadLazyModule(container, "dashboard", "dashboard-content.html", "../js/dashboard.js", "initDashboard");
     }
     else if (target === "seat-planner") {
-        await loadLazyModule(container, "seat-planner", "seat-planner/seat-mapper.html", "../js/seat-planner.js", "initSeatPlanner", true);
+        await loadLazyModule(container, "seat-planner", "seat-planner/seat-planner.html", "../js/seat-planner.js", "initSeatPlanner", true);
     }
     else if (target === "tickets") {
         await loadLazyModule(container, "tickets", "ticket.html", "../js/tickets.js", "initTickets");
@@ -107,33 +115,41 @@ async function handleNavClick(e, link) {
         loadSimpleContent(container, "analytics.html", "Analytics");
     }
     else if (target === "finance") {
-        loadSimpleContent(container, "finance.html", "Finance");
+        await loadLazyModule(container, "finance", "finance.html", "../js/finance.js", "initFinance");
     }
     else if (target === "invitations") {
         // MODIFIED: Load HTML, then the mock service script, then execute the inline logic.
         // This ensures the mock service is used, avoiding CORS errors with the PHP backend.
         container.innerHTML = `<div class="demo-panel p-3">Loading Invitations...</div>`;
         try {
-            const res = await fetch("invitations/invitations.html");
+            const res = await fetch("invitations/invitations.html"); // Relative to the dashboard page
             if (!res.ok) throw new Error('Failed to load invitations.html');
             
-            container.innerHTML = await res.text();
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
 
-            // Find the original inline script but don't run it yet.
-            const inlineScript = container.querySelector('script');
-            const inlineScriptContent = inlineScript ? inlineScript.textContent : '';
-            if (inlineScript) {
-                inlineScript.remove(); // Prevent original from executing
-            }
+            // Find all script tags, store their src attributes, and remove them from the parsed doc
+            const scriptTags = Array.from(doc.querySelectorAll('script'));
+            scriptTags.forEach(s => s.remove());
+
+            // Set the HTML content without the scripts
+            container.innerHTML = doc.body.innerHTML;
 
             // Now, load the external mock service script. This will set up window.InvitationService.
             await import('../js/invitations.js');
 
-            // After the mock service is on the window, execute the original inline script's logic.
-            if (inlineScriptContent) {
-                const script = document.createElement('script');
-                script.textContent = inlineScriptContent;
-                document.body.appendChild(script).remove(); // Append, run, and immediately remove.
+            // After the mock service is on the window, load and execute the original scripts in order
+            for (const scriptTag of scriptTags) {
+                if (scriptTag.getAttribute('src')) {
+                    await new Promise((resolve, reject) => {
+                        const newScript = document.createElement('script');
+                        newScript.src = scriptTag.getAttribute('src');
+                        newScript.onload = resolve;
+                        newScript.onerror = () => reject(new Error(`Failed to load script: ${newScript.src}`));
+                        document.head.appendChild(newScript);
+                    });
+                }
             }
         } catch (err) { console.error(err); container.innerHTML = `<p class="text-danger">Error loading Invitations.</p>`; }
     }

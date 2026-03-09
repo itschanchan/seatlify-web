@@ -64,6 +64,7 @@
                     <div id="editTotalSeatsContainer">
                         <label for="editEventTotalSeats" class="form-label" style="color: var(--text-muted);">Total Number of Seats</label>
                         <input type="number" class="form-control mb-3" id="editEventTotalSeats" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);">
+                        <div id="editTotalSeatsCapacityWarning" class="text-danger small fw-bold mb-3" style="display: none;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Total seats exceed total capacity!</div>
                     </div>
 
                     <div id="editTableSeatingContainer" style="display: none;">
@@ -115,7 +116,6 @@
                 </form>
             </div>
             <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-outline-info me-auto" id="btnSendTestTicketFromEdit">Send Test Ticket</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="btnSaveEdit" style="background-color: var(--primary); border-color: var(--primary);">Save Changes</button>
             </div>
@@ -261,6 +261,12 @@
             } else {
                 totalSeats = document.getElementById('editEventTotalSeats').value;
             }
+
+            const capacity = parseInt(document.getElementById('editEventAttendees').value) || 0;
+            if (parseInt(totalSeats) > capacity && capacity > 0) {
+                alert('Total seats cannot exceed total capacity.');
+                return;
+            }
     
             const updateData = {
                 title: document.getElementById('editEventName').value,
@@ -295,6 +301,8 @@
             if (seatingSwitch.checked) {
                 totalSeatsContainer.style.display = 'none';
                 tableSeatingContainer.style.display = 'block';
+                const totalWarning = document.getElementById('editTotalSeatsCapacityWarning');
+                if (totalWarning) totalWarning.style.display = 'none';
             } else {
                 totalSeatsContainer.style.display = 'block';
                 tableSeatingContainer.style.display = 'none';
@@ -320,6 +328,11 @@
                 }
             } else {
                 calculated = parseInt(document.getElementById('editEventTotalSeats')?.value) || 0;
+                const warning = document.getElementById('editTotalSeatsCapacityWarning');
+                if (warning) {
+                    warning.style.display = (capacity > 0 && calculated > capacity) ? 'block' : 'none';
+                    warning.textContent = `Total seats (${calculated}) exceed total capacity (${capacity})!`;
+                }
             }
     
             indicator.textContent = `Current number of seats: ${calculated} / ${capacity}`;
