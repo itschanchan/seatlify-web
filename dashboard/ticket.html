@@ -148,22 +148,142 @@
         const eventId = localStorage.getItem('seatlify_current_event_id');
         let currentEventData = null;
 
-        // 2. Fetch Event Data
-        if (eventId) {
-            // Determine API Base URL (Handle Live Server vs Apache)
-            const isLiveServer = window.location.port === '5500';
-            const apiBase = isLiveServer ? 'http://localhost/seatlify/backend' : '/seatlify/backend';
+        /* ═══════════════════════════════════════════════════════
+           TICKET TIER RENDERER
+           Reads row_layout_data / table_layout_data from the
+           event and fills #ticketTierRowsContainer and
+           #ticketTierTablesContainer automatically.
+        ═══════════════════════════════════════════════════════ */
+        function renderTicketTiers(event) {
+            renderTierTable(
+                event.row_layout_data   || [],
+                '#ticketTierRowsContainer',
+                event,
+                'row'
+            );
+            renderTierTable(
+                event.table_layout_data || [],
+                '#ticketTierTablesContainer',
+                event,
+                'table'
+            );
+        }
 
-            fetch(`${apiBase}/get_event_public.php?event_id=${eventId}`)
-                .then(response => response.json())
+        function renderTierTable(layoutData, containerSelector, event, mode) {
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
+
+            // Update the total-seats badge
+            const totalSeatsEl = document.getElementById('ticketConfigTotalSeats');
+            if (totalSeatsEl) {
+                totalSeatsEl.textContent = parseInt(event.total_seats) || 0;
+            }
+
+            if (!layoutData.length) {
+                container.innerHTML =
+                    `<p class="text-muted text-center py-3">No ${mode === 'table' ? 'table' : 'row'} layout configured for this event.</p>`;
+                return;
+            }
+
+            // Build a lookup from ticket name → price
+            const priceMap = {};
+            (event.tickets || []).forEach(t => {
+                priceMap[t.name]          = t.price;
+                priceMap[t.original_name] = t.price;
+            });
+
+            const totalAllocated = layoutData.reduce((s, g) => s + (parseInt(g.seats) || 0), 0);
+
+            const table = document.createElement('table');
+            table.className = 'table table-bordered table-sm align-middle mb-0';
+            table.style.minWidth = '420px';
+            table.innerHTML = `
+                <thead>
+                    <tr style="background-color: var(--bg-muted); color: var(--text-muted);">
+                        <th>#</th>
+                        <th>${mode === 'table' ? 'Table' : 'Row / Tier'}</th>
+                        <th>Seats</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${layoutData.map((group, idx) => {
+                        const price  = priceMap[group.label] ?? (event.is_paid ? '—' : 'Free');
+                        const priceDisplay = event.is_paid && price !== '—' && price !== 'Free'
+                            ? `₱${price}` : (event.is_paid ? '—' : 'Free');
+                        return `
+                        <tr>
+                            <td class="text-muted">${idx + 1}</td>
+                            <td><strong>${group.label}</strong></td>
+                            <td>${group.seats}</td>
+                            <td>${priceDisplay}</td>
+                            <td><span class="badge bg-success">Active</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold" style="background-color: var(--bg-muted);">
+                        <td colspan="2" class="text-end">Total</td>
+                        <td>${totalAllocated}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            `;
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           LOAD EVENT DATA
+        ═══════════════════════════════════════════════════════ */
+        /* ═══════════════════════════════════════════════════════
+           LOAD EVENT DATA
+           Priority: MockDB (in-memory, always up-to-date) →
+                     backend API (fallback for production)
+        ═══════════════════════════════════════════════════════ */
+        function loadEventData(id) {
+            // 1. Try MockDB first (available in the SPA / demo environment)
+            if (typeof MockDB !== 'undefined') {
+                const ev = MockDB.getEvents().find(e => e.event_id == id);
+                if (ev) {
+                    currentEventData = ev;
+                    populateTicketPreview(ev);
+                    renderTicketTiers(ev);
+                    return;
+                }
+            }
+
+            // 2. Fall back to the PHP backend (production)
+            const isLiveServer = window.location.port === '5500';
+            const apiBase = isLiveServer
+                ? 'http://localhost/seatlify/backend'
+                : '/seatlify/backend';
+
+            fetch(`${apiBase}/get_event_public.php?event_id=${id}`)
+                .then(r => r.json())
                 .then(data => {
                     if (data.success && data.event) {
                         currentEventData = data.event;
                         populateTicketPreview(data.event);
+                        renderTicketTiers(data.event);
                     }
                 })
                 .catch(err => console.error('Error loading event for ticket:', err));
         }
+
+        if (eventId) loadEventData(eventId);
+
+        // ── Auto-sync: refresh when the event is created / edited ────
+        // event-creator.js and edit-event-modal.html both fire this
+        // custom event after persisting new layout / tier data.
+        window.addEventListener('seatlify:layout-changed', (e) => {
+            const currentId = localStorage.getItem('seatlify_current_event_id');
+            if (!currentId) return;
+            // Reload regardless of which event fired — active event may
+            // have just been set by the create flow.
+            loadEventData(currentId);
+        });
 
         function populateTicketPreview(event) {
             const titleEl = document.getElementById('ticketEventTitle');

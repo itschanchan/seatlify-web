@@ -45,6 +45,24 @@ export async function initSeatPlanner() {
         window.saveCurrentPlannerState = saveCurrentPlannerState;
         window.addEventListener('beforeunload', saveCurrentPlannerState);
         window.addEventListener('pagehide',     saveCurrentPlannerState);
+
+        // ── Auto-sync: react to event create / edit ───────────────────
+        // When event-creator.js or edit-event-modal saves new layout data,
+        // they fire this event. We refresh the chart so the new rows /
+        // tables / seats appear immediately without a manual tab switch.
+        window.addEventListener('seatlify:layout-changed', (e) => {
+            const currentId = localStorage.getItem('seatlify_current_event_id');
+            if (!currentId || String(e.detail?.eventId) !== String(currentId)) return;
+
+            // Only refresh if the seat-planner tab is currently mounted in the DOM
+            const chartTabActive =
+                document.getElementById('pills-chart-tab')?.classList.contains('active');
+
+            if (chartTabActive) {
+                refreshChartLayout();
+            }
+            loadCurrentEventStats();
+        });
     }
 
     seatPlannerInitialized = true;

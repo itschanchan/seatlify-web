@@ -129,6 +129,16 @@ window.EventCreator = {
                     `seatlify_chart_layout_mode_${createdEvent.event_id}`,
                     seatingByTable ? 'table' : 'row'
                 );
+
+                // ── Auto-sync: notify seat planner & ticket page ──────
+                // Fired after the event is fully persisted so any listener
+                // can safely read the fresh data from MockDB.
+                window.dispatchEvent(new CustomEvent('seatlify:layout-changed', {
+                    detail: {
+                        eventId: createdEvent.event_id,
+                        source:  'create'
+                    }
+                }));
             }
 
             // ── Teardown ──────────────────────────────────────────────

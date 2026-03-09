@@ -270,6 +270,47 @@
                 return;
             }
     
+            // ── Rebuild layout data from current form values ──────────
+            // This ensures the seat planner and ticket page always reflect
+            // whatever the user just configured, even if they changed the
+            // number of rows / tables / seats per table.
+
+            let rowLayoutData   = [];
+            let tableLayoutData = [];
+
+            if (seatingByTable) {
+                // Table mode: one entry per table, each with seats-per-table
+                const numTables = parseInt(totalTables) || 0;
+                const seatsPer  = parseInt(seatsPerTable) || 0;
+                for (let i = 1; i <= numTables; i++) {
+                    tableLayoutData.push({ label: `Table ${i}`, seats: seatsPer });
+                }
+            } else {
+                // Row mode: derive from ticket tiers (paid) or a single block (free)
+                if (document.getElementById('editTypePaid').checked && tickets.length > 0) {
+                    tickets.forEach(t => {
+                        if (t.name) {
+                            rowLayoutData.push({
+                                label: t.name,
+                                seats: parseInt(t.qty) || 0
+                            });
+                        }
+                    });
+                } else {
+                    // Free event or no tiers — one generic "General Admission" row
+                    rowLayoutData.push({
+                        label: 'General Admission',
+                        seats: parseInt(totalSeats) || 0
+                    });
+                }
+            }
+
+            // Ensure tickets carry an original_name used by the seat planner
+            tickets = tickets.map(t => ({
+                ...t,
+                original_name: t.original_name || t.name
+            }));
+
             const updateData = {
                 title: document.getElementById('editEventName').value,
                 start_datetime: `${date}T${time}`,
@@ -283,11 +324,26 @@
                 seats_per_table: seatingByTable ? seatsPerTable : 0,
                 layout_preference: document.getElementById('editSeatLayout').value,
                 is_paid: document.getElementById('editTypePaid').checked,
-                tickets: tickets,
-                status: document.getElementById('editEventStatus').value
+                tickets,
+                status: document.getElementById('editEventStatus').value,
+                row_layout_data:   rowLayoutData,
+                table_layout_data: tableLayoutData
             };
     
             MockDB.updateEvent(id, updateData);
+
+            // ── Persist preferred layout mode & notify listeners ──────
+            localStorage.setItem(
+                `seatlify_chart_layout_mode_${id}`,
+                seatingByTable ? 'table' : 'row'
+            );
+
+            // seatlify:layout-changed is caught by:
+            //   • seat-planner.js   → refreshChartLayout()
+            //   • ticket.html       → renderTicketTiers()
+            window.dispatchEvent(new CustomEvent('seatlify:layout-changed', {
+                detail: { eventId: id, source: 'edit' }
+            }));
             
             const modalEl = document.getElementById('editEventModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
