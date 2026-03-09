@@ -1,0 +1,89 @@
+<!-- Guest Info Modal -->
+<div class="modal fade" id="guestInfoModal" tabindex="-1" aria-labelledby="guestInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main);">
+
+            <!-- Header -->
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                <div class="d-flex align-items-center gap-3">
+                    <div id="guestInfoAvatar"
+                         style="width:46px;height:46px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#fff;flex-shrink:0;">
+                        ?
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="guestInfoModalLabel">Guest Details</h5>
+                        <small id="guestInfoSubtitle" class="text-muted"></small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body px-4 py-3">
+
+                <!-- Status Banner -->
+                <div id="guestInfoStatusBanner" class="rounded-3 p-3 mb-4 d-flex align-items-center gap-3" style="background-color: var(--bg-secondary, rgba(255,255,255,0.05));">
+                    <i id="guestInfoStatusIcon" class="fs-4"></i>
+                    <div>
+                        <div id="guestInfoStatusLabel" class="fw-semibold"></div>
+                        <small id="guestInfoStatusSub" class="text-muted"></small>
+                    </div>
+                </div>
+
+                <!-- Info Rows -->
+                <ul class="list-unstyled mb-0" style="display:grid;gap:0.85rem;">
+
+                    <li class="d-flex align-items-start gap-3">
+                        <i class="bi bi-envelope-fill text-muted mt-1" style="width:18px;text-align:center;"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">Email</div>
+                            <div id="guestInfoEmail" class="fw-medium"></div>
+                        </div>
+                    </li>
+
+                    <li class="d-flex align-items-start gap-3" id="guestInfoSeatRow">
+                        <i class="bi bi-grid-3x3-gap-fill text-muted mt-1" style="width:18px;text-align:center;"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">Assigned Seat</div>
+                            <div id="guestInfoSeat" class="fw-medium"></div>
+                        </div>
+                    </li>
+
+                    <li class="d-flex align-items-start gap-3">
+                        <i class="bi bi-calendar-plus-fill text-muted mt-1" style="width:18px;text-align:center;"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">Added On</div>
+                            <div id="guestInfoAdded" class="fw-medium"></div>
+                        </div>
+                    </li>
+
+                    <li class="d-flex align-items-start gap-3" id="guestInfoCheckinRow" style="display:none!important;">
+                        <i class="bi bi-clock-history text-muted mt-1" style="width:18px;text-align:center;"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">Checked-in At</div>
+                            <div id="guestInfoCheckinTime" class="fw-medium"></div>
+                        </div>
+                    </li>
+
+                    <li class="d-flex align-items-start gap-3">
+                        <i class="bi bi-fingerprint text-muted mt-1" style="width:18px;text-align:center;"></i>
+                        <div>
+                            <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;">Guest ID</div>
+                            <div id="guestInfoId" class="fw-medium font-monospace" style="font-size:0.85rem;"></div>
+                        </div>
+                    </li>
+
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="guestInfoDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>Remove Guest
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
